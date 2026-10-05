@@ -191,7 +191,7 @@ function renderTrend(m){const ids=[...new Set(m.events.map(e=>e.row.userUuid))];
  const times=[...new Set(m.events.map(e=>e.end))],values=new Map();for(const id of ids)values.set(id,new Map());for(const e of m.events){const v=values.get(e.row.userUuid);v.set(e.end,(v.get(e.end)||0)+e.delta);}
  const visible=ids.filter(id=>!hiddenAgents.has(id)),W=1000,H=300,left=55,bottom=250,max=Math.max(1,...visible.flatMap(id=>[...values.get(id).values()])),x=i=>left+i*(W-left-30)/Math.max(1,times.length-1),y=v=>bottom-v/max*220;
  let svg=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Прирост просмотров по агентам">`;for(let i=0;i<=4;i++){const yy=y(max*i/4);svg+=`<line x1="${left}" y1="${yy}" x2="980" y2="${yy}" stroke="#e3eaf1"/><text x="45" y="${yy+4}" text-anchor="end" font-size="12">${fmt(Math.round(max*i/4))}</text>`;}
- for(const id of visible){const color=palette[ids.indexOf(id)%palette.length],v=values.get(id);svg+=`<polyline points="${times.map((t,i)=>x(i)+','+y(v.get(t)||0)).join(' ')}" fill="none" stroke="${color}" stroke-width="2"/>`;times.forEach((t,i)=>{svg+=`<circle cx="${x(i)}" cy="${y(v.get(t)||0)}" r="4" fill="${color}"><title>${esc(names.get(id))} · конец интервала ${date(t)} · +${v.get(t)||0}</title></circle>`;});}
+ for(const id of visible){const color=palette[ids.indexOf(id)%palette.length],v=values.get(id);let path='',connected=false;times.forEach((t,i)=>{if(!v.has(t)){connected=false;return;}path+=(connected?' L':' M')+x(i)+' '+y(v.get(t));connected=true;});svg+=`<path d="${path}" fill="none" stroke="${color}" stroke-width="2"/>`;times.forEach((t,i)=>{if(!v.has(t))return;svg+=`<circle cx="${x(i)}" cy="${y(v.get(t)||0)}" r="4" fill="${color}"><title>${esc(names.get(id))} · конец интервала ${date(t)} · +${v.get(t)||0}</title></circle>`;});}
  times.forEach((t,i)=>{if(times.length<12||i%Math.ceil(times.length/10)===0)svg+=`<text x="${x(i)}" y="280" text-anchor="middle" font-size="11">${date(t).slice(0,5)} ${date(t).slice(-5)}</text>`;});$('agentTrend').innerHTML=svg+'</svg>';
 }
 function renderWorks(m){
@@ -217,7 +217,7 @@ async function loadPhotos(){if(photoLoaded){renderGallery(currentModel);return;}
 function detailExtras(id){
  const ev=currentModel.events.filter(e=>e.id===id),changes=currentModel.changes.filter(c=>c.id===id);
  const split=['paid','free','unknown'].map(cat=>{const es=ev.filter(e=>e.category===cat);return `<div class="card"><div>${categoryName[cat]}</div><strong>${es.length?'+'+fmt(totalEvents(es)):'—'}</strong><small>${es.length} сопоставимых интервалов</small></div>`;}).join('');
- const html=`<section class="panel"><h3>Прирост за выбранный период</h3><div class="detailgrid">${split}</div><p class="muted tiny">Пусто означает отсутствие сопоставимого интервала. Нули появляются только при двух полученных одинаковых счётчиках.</p>${makeTable(['Начало','Конец','Прирост','Статус'],ev.map(e=>`<tr><td>${date(e.start)}</td><td>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td></tr>`))}<h3>Изменения за период</h3>${changesHTML(changes)}</section>`;
+ const html=`<section class="panel"><h3>Прирост за выбранный период</h3><div class="detailgrid">${split}</div><p class="muted tiny">Пусто означает отсутствие сопоставимого интервала. Нули появляются только при двух полученных одинаковых счётчиках.</p>${makeTable(['Начало','Конец','Прирост','Статус'],ev.map(e=>`<tr><td>${date(e.start)}</td><td>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td></tr>`))}<h3>Изменения за период</h3>${changesHTML(changes).replace(/<button data-detail="[^"]+">История<\/button>/g,'')}</section>`;
  $('detail').insertAdjacentHTML('beforeend',html);
 }
 function activateView(view){activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);}
@@ -227,6 +227,7 @@ $('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','ro
 $('agentLegend').onclick=e=>{const b=e.target.closest('[data-line]');if(!b)return;const id=b.dataset.line;if(hiddenAgents.has(id))hiddenAgents.delete(id);else hiddenAgents.add(id);renderTrend(currentModel);};
 $('intervalButtons').onclick=e=>{const b=e.target.closest('[data-interval]');if(b){chosenInterval=b.dataset.interval;renderInterval(currentModel);}};
 $('loadPhotos').onclick=loadPhotos;
+for(const id of ['areaMin','areaMax'])$(id).addEventListener('input',()=>{page=0;render();});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b&&!b.closest('#listings')&&!b.closest('#drawer'))showDetail(b.dataset.detail);const a=e.target.closest('[data-select-agent]');if(a){$('agent').value=a.dataset.selectAgent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();activateView('ads');}});
 
 load();
