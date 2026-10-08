@@ -2,36 +2,80 @@ name: Realt collector
 
 on:
   schedule:
-    # каждые 3 часа (UTC). Правь расписание под себя: https://crontab.guru
-    - cron: "0 6,9,12,15,18 * * *"
-  workflow_dispatch: {}   # кнопка ручного запуска во вкладке Actions
+    # Main: 09:17, 12:17, 15:17, 18:17, 21:17 Minsk (UTC+3).
+    - cron: "17 6,9,12,15,18 * * *"
+    # Recovery checks retry missed slots without collecting fresh data again.
+    - cron: "47 6-18 * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/collect.yml
+      - .github/scripts/collection_due.py
 
 permissions:
-  contents: write          # чтобы коммитить собранные данные обратно в репозиторий
+  contents: write
+
+concurrency:
+  group: realt-collector
+  cancel-in-progress: false
 
 jobs:
   collect:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
+      - name: Check whether collection is due
+        id: freshness
+        env:
+          COLLECTION_EVENT: ${{ github.event_name }}
+        run: python .github/scripts/collection_due.py
+
       - name: Install deps
+        if: steps.freshness.outputs.due == 'true'
         run: pip install -r requirements.txt
 
       - name: Collect
-        run: python collector.py
+        if: steps.freshness.outputs.due == 'true'
+        run: python -u collector.py
+
+      - name: Verify new snapshot
+        if: steps.freshness.outputs.due == 'true'
+        env:
+          PREVIOUS_SNAPSHOT: ${{ steps.freshness.outputs.last_snapshot }}
+        run: |
+          python - <<'PY'
+          import csv, os
+          with open('data/snapshots.csv', encoding='utf-8-sig', newline='') as f:
+              latest = max((r['snapshot_at'] for r in csv.DictReader(f) if r.get('uuid')), default='')
+          if not latest or latest <= os.environ['PREVIOUS_SNAPSHOT']:
+              raise SystemExit('Collector did not produce a new non-empty snapshot')
+          print('Verified new snapshot:', latest)
+          PY
 
       - name: Analytics
+        if: steps.freshness.outputs.due == 'true'
         run: python analytics.py
 
       - name: Commit data
+        if: steps.freshness.outputs.due == 'true'
         run: |
           git config user.name "realt-collector"
           git config user.email "bot@users.noreply.github.com"
           git add data
-          git commit -m "data: snapshot $(date -u +%Y-%m-%dT%H:%MZ)" || echo "нет изменений"
-          git push
+          if git diff --cached --quiet; then
+            echo "No data changes"
+            exit 0
+          fi
+          git commit -m "data: snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
