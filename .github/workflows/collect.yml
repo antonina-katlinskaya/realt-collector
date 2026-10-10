@@ -4,8 +4,8 @@ on:
   schedule:
     # Main: 09:17, 12:17, 15:17, 18:17, 21:17 Minsk (UTC+3).
     - cron: "17 6,9,12,15,18 * * *"
-    # Recovery checks retry missed slots without collecting fresh data again.
-    - cron: "47 6-18 * * *"
+    # Recovery checks every 15 minutes retry missed slots.
+    - cron: "11,26,41,56 6-21 * * *"
   workflow_dispatch: {}
   push:
     branches: [main]
