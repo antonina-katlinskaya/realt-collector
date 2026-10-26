@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "complete": true,
+  "snapshot_at": "2026-10-26T15:34:02Z",
+  "completed_at": "2026-10-26T15:41:00.072297+00:00",
+  "rows": 1519,
+  "raw_paths": [
+    "data/raw/2026-10-26_15-34_etazhi.json.gz"
+  ],
+  "observed_at": "per-object in raw snapshots",
+  "duration_seconds": 417.675
+}

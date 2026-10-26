@@ -1,0 +1,21 @@
+[
+  {
+    "started_at": "2026-10-26T15:34:02.397626+00:00",
+    "status": "ok",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 89,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-10-26T18:10:00+03:00",
+    "completed_at": "2026-10-26T15:41:00.072297+00:00",
+    "snapshot_at": "2026-10-26T15:34:02Z",
+    "objects": 1519,
+    "duration_seconds": 417.675,
+    "storage": {
+      "archive_days": 22,
+      "recent_snapshots": 32,
+      "recent_csv_bytes": 29056857
+    }
+  }
+]
