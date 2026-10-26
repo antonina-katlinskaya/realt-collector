@@ -2,16 +2,16 @@ name: Realt collector
 
 on:
   schedule:
-    # Main: 09:17, 12:17, 15:17, 18:17, 21:17 Minsk (UTC+3).
-    - cron: "17 6,9,12,15,18 * * *"
-    # Recovery checks every 15 minutes retry missed slots.
-    - cron: "11,26,41,56 6-21 * * *"
+    # 07:10/07:40..21:40 Minsk; freshness gate starts hourly.
+    - cron: "10,40 4-18 * * *"
   workflow_dispatch: {}
   push:
     branches: [main]
     paths:
       - .github/workflows/collect.yml
       - .github/scripts/collection_due.py
+      - pipeline/**
+      - tests/**
 
 permissions:
   contents: write
@@ -23,7 +23,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,19 +33,22 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Check whether collection is due
-        id: freshness
-        env:
-          COLLECTION_EVENT: ${{ github.event_name }}
-        run: python .github/scripts/collection_due.py
-
       - name: Install deps
-        if: steps.freshness.outputs.due == 'true'
         run: pip install -r requirements.txt
 
+      - name: Verify scheduler and archive safety
+        run: python -m unittest discover -s tests -v
+
+      - name: Check whether collection is due
+        id: freshness
+        run: python .github/scripts/collection_due.py
+
       - name: Collect
+        id: collect
         if: steps.freshness.outputs.due == 'true'
-        run: python -u collector.py
+        env:
+          COLLECTION_SLOT: ${{ steps.freshness.outputs.slot }}
+        run: python -u -m pipeline.collect
 
       - name: Verify new snapshot
         if: steps.freshness.outputs.due == 'true'
@@ -53,9 +56,12 @@ jobs:
           PREVIOUS_SNAPSHOT: ${{ steps.freshness.outputs.last_snapshot }}
         run: |
           python - <<'PY'
-          import csv, os
-          with open('data/snapshots.csv', encoding='utf-8-sig', newline='') as f:
-              latest = max((r['snapshot_at'] for r in csv.DictReader(f) if r.get('uuid')), default='')
+          import json, os
+          with open('data/collection_state.json', encoding='utf-8') as f:
+              state = json.load(f)
+          if state.get('complete') is not True:
+              raise SystemExit('Incomplete snapshot')
+          latest = state['snapshot_at']
           if not latest or latest <= os.environ['PREVIOUS_SNAPSHOT']:
               raise SystemExit('Collector did not produce a new non-empty snapshot')
           print('Verified new snapshot:', latest)
@@ -66,11 +72,15 @@ jobs:
         run: python analytics.py
 
       - name: Commit data
-        if: steps.freshness.outputs.due == 'true'
+        if: always() && steps.freshness.outputs.due == 'true'
         run: |
           git config user.name "realt-collector"
           git config user.email "bot@users.noreply.github.com"
-          git add data
+          if [ "${{ steps.collect.outcome }}" = "success" ]; then
+            git add data
+          else
+            git add data/health
+          fi
           if git diff --cached --quiet; then
             echo "No data changes"
             exit 0

@@ -2,7 +2,7 @@ name: Realt collection watchdog
 
 on:
   schedule:
-    - cron: "8,23,38,53 * * * *"
+    - cron: "7,37 4-19 * * *"
   workflow_dispatch: {}
 
 permissions:
