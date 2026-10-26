@@ -115,7 +115,9 @@ function render(){if(!index)return;const m=model();currentModel=m;
   const countTimes=index.times.filter(t=>day(t)>=m.from&&day(t)<=m.to).length;
   $('coverage').textContent=countTimes<2?'Пока в выбранном периоде меньше двух снимков. Прирост, длительность продвижения и время активности начнут уточняться с новыми обходами.':`${countTimes} снимков в выбранном периоде. Прирост за полностью покрытые интервалы: ${fmt(delta)}. При продвижении: ${fmt(m.events.filter(e=>e.category==='paid').reduce((s,e)=>s+e.delta,0))}; без продвижения: ${fmt(m.events.filter(e=>e.category==='free').reduce((s,e)=>s+e.delta,0))}; при смене / неизвестном статусе: ${fmt(m.events.filter(e=>e.category==='unknown').reduce((s,e)=>s+e.delta,0))}.`;
   const groups=new Map();for(const e of m.events){const k=e.end;if(!groups.has(k))groups.set(k,{paid:0,free:0,unknown:0,title:date(e.start)+' → '+date(e.end),label:date(e.end).slice(0,5)+' '+date(e.end).slice(-5)});groups.get(k)[e.category]+=e.delta;}
-  $('traffic').innerHTML=svgBars([...groups.values()]);renderRanking(m);renderTable(m);renderUnified(m);
+  if(activeView==='overview'){$('traffic').innerHTML=svgBars([...groups.values()]);renderRanking(m);}
+  if(activeView==='ads')renderTable(m);
+  if(activeView!=='ads')renderUnified(m);
 }
 function renderRanking(m){const agents=new Map();for(const r of m.current){const id=r.userUuid;if(!agents.has(id))agents.set(id,{id,name:agentName(r),phone:r.contactPhone,count:0,paid:0,views:0,growth:0});const a=agents.get(id);a.count++;a.paid+=paid(r)?1:0;a.views+=number(r.views)||0;}
   for(const e of m.events){if(agents.has(e.row.userUuid))agents.get(e.row.userUuid).growth+=e.delta;}
@@ -144,7 +146,8 @@ async function showDetail(id){const token=++detailSeq,h=index.histories.get(id)|
   try{if(!seenPromise)seenPromise=fetch(ROOT+'listings_seen.json?refresh='+Date.now(),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json();});seen=await seenPromise;if(token!==detailSeq||$('drawer').hidden)return;const hist=seen[id]?.history_views||{};$('historyraw').innerHTML=Object.keys(hist).length?'<table><thead><tr><th>Опорная дата</th><th>Значение API</th></tr></thead><tbody>'+Object.entries(hist).sort().map(([d,v])=>`<tr><td>${esc(d)}</td><td>${fmt(v)}</td></tr>`).join('')+'</tbody></table>':'Исторические значения отсутствуют';}catch(e){seenPromise=null;if(token===detailSeq)$('historyraw').textContent='История пока недоступна: '+e.message;}
 }
 function closeDetail(){$('drawer').hidden=true;detailSeq++;lastFocused?.focus();}
-for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){preciseBounds=null;for(const x of $('quick').querySelectorAll('button'))x.classList.remove('active');}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();});$('search').addEventListener('input',()=>{page=0;render();});
+for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){preciseBounds=null;for(const x of $('quick').querySelectorAll('button'))x.classList.remove('active');}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();});let searchRenderTimer=null;
+$('search').addEventListener('input',()=>{page=0;clearTimeout(searchRenderTimer);searchRenderTimer=setTimeout(()=>render(),180);});
 function applyQuickPeriod(n){const today=day(new Date());preciseBounds=null;
 if(n==='all'){$('from').value=day(index.times[0]);$('to').value=day(index.times.at(-1));}
 else if(n==='24h'){preciseBounds={start:Date.now()-86400000,end:Date.now()};$('from').value=day(preciseBounds.start);$('to').value=day(preciseBounds.end);}
@@ -177,14 +180,21 @@ function renderDaily(m){
 }
 function agentsFor(m){const out=new Map();const ensure=r=>{if(!out.has(r.userUuid))out.set(r.userUuid,{row:r,current:0,paid:0,observed:new Set(),delta:0,changes:0,newly:0,total:0});return out.get(r.userUuid);};for(const r of m.current){const a=ensure(r);a.current++;a.paid+=paid(r)?1:0;a.total+=number(r.views)||0;}for(const r of m.observed)ensure(r).observed.add(r.uuid);for(const e of m.events)ensure(e.row).delta+=e.delta;for(const c of m.changes)ensure(c.row).changes++;for(const r of m.newly)ensure(r).newly++;return [...out.values()].sort((a,b)=>b.delta-a.delta||b.current-a.current);}
 function renderUnified(m){
- renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);$('employeeChanges').innerHTML=changesHTML(m.changes);
+ if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
+ if(activeView==='leaders'){
  const list=m.observed.filter(r=>m.growth.has(r.uuid)).sort((a,b)=>m.growth.get(b.uuid)-m.growth.get(a.uuid));
  $('leadersTable').innerHTML=m.events.length?makeTable(['Место','Агент','Объявление','Прирост','Общий счётчик',''],list.slice(0,100).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(agentName(r))}</td><td class="wrap">${adLink(r)}</td><td>+${fmt(m.growth.get(r.uuid))}</td><td>${fmt(number(r.views))}</td><td>${detailButton(r)}</td></tr>`)):empty('Рейтинг прироста появится после второго подходящего снимка. Общие просмотры доступны в разделе «Объявления».');
+ }
+ if(activeView==='employees'){
+ $('employeeChanges').innerHTML=changesHTML(m.changes);
  const agents=agentsFor(m);$('employeeTable').innerHTML=makeTable(['Агент','На конец периода','В продвижении','Замечено за период','Прирост','Новые после базового снимка','Изменений'],agents.map(a=>`<tr><td><button data-select-agent="${esc(a.row.userUuid)}">${esc(agentName(a.row))}</button><br><small>${esc(a.row.contactPhone)}</small></td><td>${a.current}</td><td>${a.paid}</td><td>${a.observed.size}</td><td>${m.events.length?fmt(a.delta):'—'}</td><td>${a.newly}</td><td>${a.changes}</td></tr>`));
- renderPromotions(m);renderWorks(m);renderPlacements(m);renderInterval(m);
- if(photoLoaded)renderGallery(m);
+ }
+ if(activeView==='promotion')renderPromotions(m);
+ if(activeView==='works')renderWorks(m);
+ if(activeView==='placements'){renderPlacements(m);if(photoLoaded)renderGallery(m);}
+ if(activeView==='hours')renderInterval(m);
  const baseline=m.newly.length===0&&index.times.length===1?' Базовый снимок содержит уже существовавшие объявления; он не считается массовой новой публикацией.':'';
- $('coverage').textContent+=baseline;
+ if(activeView==='overview')$('coverage').textContent+=baseline;
 }
 function liveAgentCard(id,items){const r=items[0];return `<article class="agentcard"><h3>${esc(agentName(r))}</h3><span class="badge promo">${items.length} в продвижении</span>${items.map(r=>{const st=statusStart(index,r);return `<div class="adlink">${adLink(r)}<br><small>${price(r)} · ${esc(label(r))}<br>Наблюдается с ${date(st.time)}; ${st.open?'начало неизвестно':'смена между обходами'}</small> ${detailButton(r)}</div>`;}).join('')}</article>`;}
 function renderPromotions(m){
@@ -234,7 +244,7 @@ function detailExtras(id){
  const html=`<section class="panel"><h3>Прирост за выбранный период</h3><div class="detailgrid">${split}</div><p class="muted tiny">Пусто означает отсутствие сопоставимого интервала. Нули появляются только при двух полученных одинаковых счётчиках.</p>${makeTable(['Начало','Конец','Прирост','Статус'],ev.map(e=>`<tr><td>${date(e.start)}</td><td>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td></tr>`))}<h3>Изменения за период</h3>${changesHTML(changes).replace(/<button data-detail="[^"]+">История<\/button>/g,'')}</section>`;
  $('detail').insertAdjacentHTML('beforeend',html);
 }
-function activateView(view){activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);}
+function activateView(view){const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index)render();}
 $('views').onclick=e=>{const b=e.target.closest('[data-view]');if(b)activateView(b.dataset.view);};
 for(const id of ['multiAgents','weekdays'])$(id).onchange=()=>{if(id==='multiAgents')$('agent').value='';page=0;render();};
 $('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','rooms','house','areaMin','areaMax','search'])$(id).value='';for(const x of document.querySelectorAll('#multiAgents input,#weekdays input'))x.checked=false;page=0;render();};
