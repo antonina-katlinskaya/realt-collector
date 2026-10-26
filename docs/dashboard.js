@@ -80,7 +80,7 @@ const known={'i.s.barashenko':'Ирина Барашенко','e.v.boriskina':'�
 const knownById={'77ff7ab0-6e68-11ee-818e-0935d63487ea':'Ирина Барашенко','ff985560-a80d-11f0-bfef-45b6701187ce':'Елена Борискина','d6a0a26a-26a6-11ec-ae6c-dee111c4eff3':'Вероника Хатковская'};
 function agentName(r){const email=(r.contactEmail||'').split('@')[0];return knownById[r.userUuid]||known[email]||(r.contactName||'Без имени');}
 let index,rows=[],seen=null,seenPromise=null,selectedTab='current',page=0,currentModel=null,loadSeq=0;
-let preciseBounds=null,activeView='overview',hiddenAgents=new Set(),chosenInterval=null,photos=new Map(),photoLoaded=false,photoDate=null;
+let preciseBounds=null,activeView='promotion',hiddenAgents=new Set(),chosenInterval=null,photos=new Map(),photoLoaded=false,photoDate=null;
 function updateFreshness(){
   const last=index?.times.at(-1);if(!last)return;
   const state=collectionFreshness(last);$('freshness').textContent='Последний снимок: '+date(last);
@@ -182,8 +182,8 @@ function agentsFor(m){const out=new Map();const ensure=r=>{if(!out.has(r.userUui
 function renderUnified(m){
  if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
  if(activeView==='leaders'){
- const list=m.observed.filter(r=>m.growth.has(r.uuid)).sort((a,b)=>m.growth.get(b.uuid)-m.growth.get(a.uuid));
- $('leadersTable').innerHTML=m.events.length?makeTable(['Место','Агент','Объявление','Прирост','Общий счётчик',''],list.slice(0,100).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(agentName(r))}</td><td class="wrap">${adLink(r)}</td><td>+${fmt(m.growth.get(r.uuid))}</td><td>${fmt(number(r.views))}</td><td>${detailButton(r)}</td></tr>`)):empty('Рейтинг прироста появится после второго подходящего снимка. Общие просмотры доступны в разделе «Объявления».');
+ const promoted=new Map();for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}const list=[...promoted.values()].sort((a,b)=>b.delta-a.delta);
+ $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Общий счётчик',''],list.slice(0,100).map((v,i)=>`<tr><td>${i+1}</td><td>${esc(agentName(v.row))}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
  }
  if(activeView==='employees'){
  $('employeeChanges').innerHTML=changesHTML(m.changes);
