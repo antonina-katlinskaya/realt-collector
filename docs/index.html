@@ -10,6 +10,14 @@
 [hidden]{display:none!important}.viewtabs{display:flex;gap:7px;flex-wrap:wrap;margin:20px 0}.viewtabs button{border-radius:12px}.morefilters{padding:14px 20px;margin:12px 0}.secondary{border:0;padding:12px 0}.secondary input[type=number]{width:110px}.checklist{max-height:155px;overflow:auto;min-width:260px;padding:8px;background:#f4f7fb;border-radius:8px}.checklist label,.daychips label{display:flex;flex-direction:row;align-items:center;color:var(--ink)}.checklist input,.daychips input{accent-color:var(--teal)}.daychips{display:flex;gap:15px;align-items:center;flex-wrap:wrap;margin:12px 0}.agentcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-top:18px}.agentcard{border:1px solid var(--line);border-radius:14px;padding:18px}.agentcard h3{margin:0 0 8px}.agentcard .adlink{display:block;padding:10px 0;border-top:1px solid var(--line)}.agentcard .big{font-size:28px;font-weight:800}.changes{padding:14px 0;border-bottom:1px solid var(--line)}.changes ul{margin:6px 0}.gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:18px}.gallery article{border:1px solid var(--line);border-radius:14px;overflow:hidden}.gallery img{width:100%;height:200px;object-fit:cover;background:#eef2f7}.gallery .gbody{padding:15px}.photoStrip{display:flex;overflow:auto}.photoStrip img{flex:0 0 100%}.heat td{text-align:center;min-width:32px}.heat th{position:static}.intervalpick{font-size:12px;text-align:left}.metricline{display:flex;gap:14px;flex-wrap:wrap}.legend button{font-size:12px;padding:5px 8px}.placeitems{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0}.placeitem{padding:12px;background:#f5f7fa;border-radius:8px}.tiny{font-size:12px}.tablewrap td.wrap{white-space:normal;min-width:210px}.deltaUp{color:var(--teal)}
 @media(max-width:900px){.agentcards,.gallery{grid-template-columns:1fr}.placeitems{grid-template-columns:1fr}.viewtabs{position:static}.checklist{min-width:0}}
  .secondaryviews{margin:0;align-self:center}.secondaryviews summary{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}.secondaryviews .tabs{padding:10px;background:#fff;border:1px solid var(--line);border-radius:10px}
+
+/* Priority navigation aligned to the Kufar radar tab treatment. */
+.viewtabs{gap:4px;background:#f6f6f5;border:1px solid #e6e4e1;border-radius:12px;padding:8px;align-items:center}
+.viewtabs>button{border:0;border-radius:7px;padding:11px 13px;background:transparent;color:#333;font-size:15px;font-weight:500}
+.viewtabs>button:hover{background:#e9eeeb;color:#12614b}
+.viewtabs>button.active{background:#146248;color:white;font-weight:700}
+.viewtabs .secondaryviews{margin-left:auto}
+@media(max-width:900px){.viewtabs>button{padding:9px 10px;font-size:13px}}
 </style>
 <script src="dashboard.js?v=20261008-schedule-recovery-1" defer></script>
 </head>
