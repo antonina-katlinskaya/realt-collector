@@ -39,6 +39,10 @@ jobs:
       - name: Verify scheduler and archive safety
         run: python -m unittest discover -s tests -v
 
+      - name: Preserve exact legacy history including old duplicate occurrences
+        id: history
+        run: python -m pipeline.restore_legacy
+
       - name: Check whether collection is due
         id: freshness
         run: python .github/scripts/collection_due.py
@@ -72,7 +76,7 @@ jobs:
         run: python analytics.py
 
       - name: Commit data
-        if: always() && steps.freshness.outputs.due == 'true'
+        if: always() && (steps.freshness.outputs.due == 'true' || steps.history.outputs.changed == 'true')
         run: |
           git config user.name "realt-collector"
           git config user.email "bot@users.noreply.github.com"
@@ -80,6 +84,9 @@ jobs:
             git add data
           else
             git add data/health
+            if [ "${{ steps.history.outputs.changed }}" = "true" ]; then
+              git add data/snapshots
+            fi
           fi
           if git diff --cached --quiet; then
             echo "No data changes"

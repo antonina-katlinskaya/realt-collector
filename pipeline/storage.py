@@ -3,7 +3,7 @@ import csv
 import gzip
 import io
 import json
-from collections import defaultdict
+from collections import defaultdict, Counter
 from pathlib import Path
 
 
@@ -16,25 +16,33 @@ def rotate(data_dir):
         rows = list(reader)
     if not rows or "snapshot_at" not in fields:
         raise ValueError("Cannot rotate an empty or invalid snapshot")
-    groups = defaultdict(dict)
+    groups = defaultdict(list)
     for row in rows:
-        groups[row["snapshot_at"][:10]][(row["snapshot_at"], row["uuid"])] = row
+        groups[row["snapshot_at"][:10]].append(row)
+    def identity(row):
+        return tuple(sorted((k,v) for k,v in row.items() if v not in (None,'')))
     archive = data / "snapshots"
     archive.mkdir(exist_ok=True)
     for day, current in groups.items():
         target = archive / (day + ".csv.gz")
-        merged = {}
+        old_rows = []
         if target.exists():
             with gzip.open(target, "rt", encoding="utf-8-sig", newline="") as f:
                 old = csv.DictReader(f)
                 fields = list(dict.fromkeys(fields + list(old.fieldnames or [])))
                 for row in old:
-                    merged[(row["snapshot_at"], row["uuid"])] = row
-        merged.update(current)
+                    old_rows.append(row)
+        # Preserve conflicting versions and the multiplicity of identical old rows.
+        # The recent window overlaps the archive: merge maximum occurrence counts.
+        old_counts=Counter(identity(row) for row in old_rows)
+        current_counts=Counter(identity(row) for row in current)
+        merged=old_counts | current_counts
+        examples={identity(row):row for row in old_rows+current}
         stream = io.StringIO(newline="")
         writer = csv.DictWriter(stream, fields)
         writer.writeheader()
-        writer.writerows(merged[k] for k in sorted(merged))
+        for key in sorted(merged,key=lambda k:(examples[k]["snapshot_at"],examples[k]["uuid"],k)):
+            writer.writerows([examples[key]]*merged[key])
         encoded = stream.getvalue().encode("utf-8-sig")
         temp = target.with_suffix(".tmp")
         temp.write_bytes(gzip.compress(encoded, mtime=0))

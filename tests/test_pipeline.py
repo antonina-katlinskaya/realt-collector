@@ -67,3 +67,18 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(old_paths,{k:getattr(config,k) for k in old_paths})
             import json
             self.assertEqual(json.loads((data/'health'/'collection_runs.json').read_text())[-1]['status'],'failed')
+
+
+class LegacyDuplicateTests(unittest.TestCase):
+    def test_conflicting_versions_and_exact_duplicate_occurrences_are_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            first={'snapshot_at':'2026-10-10T10:00:00Z','uuid':'same','price':'100'}
+            rows=[first,first,{**first,'price':'101'}]
+            with (root/'snapshots.csv').open('w',newline='',encoding='utf-8-sig') as f:
+                w=csv.DictWriter(f,list(first));w.writeheader();w.writerows(rows)
+            rotate(root);rotate(root)
+            with gzip.open(root/'snapshots'/'2026-10-10.csv.gz','rt',encoding='utf-8-sig',newline='') as f:
+                archived=list(csv.DictReader(f))
+            from collections import Counter
+            self.assertEqual(Counter(x['price'] for x in archived),Counter({'100':2,'101':1}))
