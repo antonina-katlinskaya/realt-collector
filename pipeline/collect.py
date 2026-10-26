@@ -15,6 +15,7 @@ import requests
 import collector
 import config as C
 from pipeline.storage import rotate, compress_raw
+from pipeline.archive import archive_snapshot, tail
 
 ROOT = Path.cwd()
 DATA = ROOT / "data"
@@ -113,15 +114,26 @@ def run():
             writer = csv.DictWriter(f, fields)
             writer.writeheader()
             writer.writerows(rows)
-        # Preserve every historic CSV row before bounding the compatibility file.
-        if (DATA / "snapshots").exists():
-            shutil.copytree(DATA / "snapshots", staging / "snapshots")
-        storage = rotate(staging)
+        release_archive = os.environ.get('REALT_RELEASE_ARCHIVE') == '1'
+        if not release_archive:
+            if (DATA / "snapshots").exists():
+                shutil.copytree(DATA / "snapshots", staging / "snapshots")
+            storage = rotate(staging)
         # Reject an implausible listing collapse instead of committing a partial snapshot.
         marker=DATA/'collection_state.json'
         if marker.exists() and objects_count<json.loads(marker.read_text()).get('rows',0)*0.8:
             raise RuntimeError('Suspicious source count drop exceeds 20%; requires review')
         compress_raw(staging / "raw")
+        archive_entry = None
+        if release_archive:
+            if (DATA / 'archive').exists():shutil.copytree(DATA / 'archive',staging / 'archive')
+            archive_entry=archive_snapshot(staging,list((staging/'raw').glob('*.gz')),
+                {'snapshot_at':latest,'completed_at':completed.isoformat(),'rows':objects_count})
+            storage={**tail(staging/'snapshots.csv'),'archive':'verified-github-release','packet_bytes':archive_entry['bytes']}
+            # Only newly-created staging RAW files are omitted from Git after verified readback.
+            # Existing repository RAW and legacy daily CSV archives are untouched.
+            shutil.rmtree(staging/'raw')
+            raw_paths=[]
         # A full snapshot is made visible only after all checks complete.
         for file in staging.rglob("*"):
             if file.is_file():
@@ -133,7 +145,7 @@ def run():
                       storage=storage)
         atomic_json(DATA / "collection_state.json", {"schema": 1, "complete": True,
                     "snapshot_at": latest, "completed_at": completed.isoformat(), "rows": objects_count,
-                    "raw_paths": raw_paths, "observed_at": "per-object in raw snapshots", "duration_seconds": record["duration_seconds"]})
+                    "raw_paths": raw_paths, "archive_entry":archive_entry, "observed_at": "per-object in raw snapshots", "duration_seconds": record["duration_seconds"]})
     except BaseException as error:
         record.update(error=type(error).__name__ + ": " + str(error), duration_seconds=round((dt.datetime.now(dt.timezone.utc)-started).total_seconds(),3))
         raise
