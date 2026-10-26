@@ -1,0 +1,11 @@
+{
+  "schema": 2,
+  "source_commit": "60e7890d73ce95dc5b772125a33fe7518eb39fac",
+  "source_sha256": "7e73f4cf1b04bf6d48e627184c23809a4d51dd9136eb5cd1d1f7a820c2289d32",
+  "previous_csv_rows": 94564,
+  "duplicate_listing_keys": 5,
+  "restored_missing_occurrences": 5,
+  "missing_previous_rows": 0,
+  "archive_rows": 96083,
+  "merge_policy": "maximum occurrence count per complete row; conflicting versions retained"
+}
