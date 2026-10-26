@@ -17,5 +17,26 @@
       "recent_snapshots": 32,
       "recent_csv_bytes": 29056857
     }
+  },
+  {
+    "started_at": "2026-10-26T16:32:36.958465+00:00",
+    "status": "ok",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 89,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-10-26T19:10:00+03:00",
+    "completed_at": "2026-10-26T16:39:38.532555+00:00",
+    "snapshot_at": "2026-10-26T16:32:36Z",
+    "objects": 1519,
+    "duration_seconds": 421.574,
+    "storage": {
+      "recent_snapshots": 2,
+      "recent_rows": 3038,
+      "recent_csv_bytes": 1964503,
+      "archive": "verified-github-release",
+      "packet_bytes": 834298
+    }
   }
 ]
