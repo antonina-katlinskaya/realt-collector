@@ -17,3 +17,12 @@ Every CSV history row is retained in lossless daily gzip partitions under data/s
 19–25 October: most days had 3–4 inferred full collections despite five nominal daily slots; schedule wakeups can be delayed or omitted by GitHub. The measured 26 October run 40326081859 collected for 644 seconds (12:54:11–13:04:55 UTC). Existing raw: 63 files, 691,287,179 bytes uncompressed; snapshots.csv: 57,978,052 bytes. These measurements justify a trial, not immediate 30-minute activation.
 
 GitHub schedule is best effort. The watchdog uses the same dynamically chosen slots and 25-minute grace, and can itself be delayed by GitHub. No hard maximum alert latency is guaranteed.
+
+
+## Live validation after deployment
+
+Access was granted and the implementation applied in commit 26a0eb2f8018c6d1a2a36a23135fa729432d8e66. Run https://github.com/antonina-katlinskaya/realt-collector/actions/runs/40350492556 collected 1,519 objects, 89 source requests, zero 403/429, in 417.675 seconds. Snapshot started 18:34:02 Minsk and completed 18:41:00. All actual object receipt timestamps were checked. This was a push-triggered collection, not evidence of a full day of scheduled slots.
+
+Exact legacy-history validation found five duplicate listing/time keys. Storage now preserves full row versions and occurrence counts. Run https://github.com/antonina-katlinskaya/realt-collector/actions/runs/40353122409 restored these five occurrences from pinned commit 60e7890d73ce95dc5b772125a33fe7518eb39fac. All 94,564 old CSV rows are preserved; with the new snapshot the archive contains 96,083 rows across 22 daily gzip files. An independent content/multiplicity comparison confirmed zero missing old rows. The repeated job correctly skipped recollecting fresh data.
+
+Seven scheduler/archive tests passed. Thirty-minute operation still requires the real 24-hour trial. The 2 GB working-data guard is finite: the current raw snapshot is 748,069 bytes compressed, so 30/day adds about 22.4 MB/day before CSV archive growth. Long-term archival needs further work before the guard is reached; no history is deleted automatically and no paid storage has been enabled.

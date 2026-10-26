@@ -1,0 +1,26 @@
+{
+  "commit": "15d76ad4e040838bf5c444dad567356b5d04ba03",
+  "objects": 1519,
+  "observed_times_valid": true,
+  "raw_gzip_bytes": 748069,
+  "raw_uncompressed_bytes": 11123079,
+  "archive_days": 22,
+  "previous_csv_rows": 94564,
+  "archive_rows": 96083,
+  "missing_previous_rows": 0,
+  "new_snapshot_archive_ids_match": true,
+  "recent_snapshots": 32,
+  "recent_rows": 47207,
+  "marker": {
+    "schema": 1,
+    "complete": true,
+    "snapshot_at": "2026-10-26T15:34:02Z",
+    "completed_at": "2026-10-26T15:41:00.072297+00:00",
+    "rows": 1519,
+    "raw_paths": [
+      "data/raw/2026-10-26_15-34_etazhi.json.gz"
+    ],
+    "observed_at": "per-object in raw snapshots",
+    "duration_seconds": 417.675
+  }
+}
