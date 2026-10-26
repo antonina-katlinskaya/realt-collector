@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'docs/dashboard.js'
+      - 'tests/dashboard.test.cjs'
       - '.github/workflows/dashboard-check.yml'
   workflow_dispatch: {}
 
@@ -20,3 +21,5 @@ jobs:
           node-version: '22'
       - name: Verify JavaScript syntax
         run: node --check docs/dashboard.js
+      - name: Run dashboard regression tests
+        run: node --test tests/dashboard.test.cjs
