@@ -1,0 +1,22 @@
+name: Dashboard JavaScript check
+
+on:
+  pull_request:
+    paths:
+      - 'docs/dashboard.js'
+      - '.github/workflows/dashboard-check.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript syntax
+        run: node --check docs/dashboard.js
