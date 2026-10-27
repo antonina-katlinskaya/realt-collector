@@ -47,3 +47,12 @@ test('declining view counter excludes all of that listing from ranked growth wit
  assert.ok(m.excludedEvents.some(e=>e.id==='unstable'&&e.delta===32988));
  assert.equal(idx.histories.get('unstable').length,3);
 });
+
+test('ranking excludes all pre-fix intervals but preserves raw history',()=>{
+ const idx=buildIndex([row('a',t1,3),row('a',t2,30000),row('a',t3,4)]);
+ const m=periodData(idx,'2026-10-25','2026-10-25',()=>true,null,'2026-10-25T10:30:00Z');
+ assert.equal(m.events.length,0);
+ assert.equal(m.excludedLegacyEvents,1);
+ assert.equal(m.observed.length,1);
+ assert.equal(idx.histories.get('a').length,3);
+});
