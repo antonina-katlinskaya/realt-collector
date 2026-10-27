@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'docs/dashboard.js'
+      - 'collector.py'
+      - 'tests/test_collector_views.py'
       - 'tests/dashboard.test.cjs'
       - 'tests/dashboard-diagnostics.cjs'
       - '.github/workflows/dashboard-check.yml'
@@ -20,6 +22,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify Python view mapping and syntax
+        run: |
+          python -m py_compile collector.py
+          python -m unittest discover -s tests -p 'test_collector_views.py' -v
       - name: Verify JavaScript syntax
         run: node --check docs/dashboard.js
       - name: Run dashboard regression tests
