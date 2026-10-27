@@ -25,4 +25,6 @@ jobs:
       - name: Run dashboard regression tests
         run: node --test tests/dashboard.test.cjs
       - name: Diagnose extreme view deltas (read only)
-        run: node tests/dashboard-diagnostics.cjs
+        run: |
+          curl -fsSL 'https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/snapshots.csv' -o /tmp/realt-current.csv
+          node tests/dashboard-diagnostics.cjs /tmp/realt-current.csv
