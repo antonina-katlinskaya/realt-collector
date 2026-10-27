@@ -1,0 +1,19 @@
+name: Verify developer manifest transition
+on:
+  pull_request:
+    paths:
+      - pipeline/collect.py
+      - docs/dashboard.js
+      - .github/workflows/verify-manifest-v2.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m py_compile pipeline/collect.py
+      - run: node --check docs/dashboard.js

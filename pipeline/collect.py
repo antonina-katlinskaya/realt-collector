@@ -92,7 +92,8 @@ def run():
         known_developer_ids = set()
         if (DATA / 'developer_manifest.json').exists():
             existing = json.loads((DATA / 'developer_manifest.json').read_text(encoding='utf-8'))
-            known_developer_ids.update(existing.get('ids') or [])
+            if existing.get('rule_version') == 2:
+                known_developer_ids.update(existing.get('ids') or [])
         current_developer_ids = set()
         for file in raw_files:
             raw = json.loads(file.read_text())
@@ -116,7 +117,7 @@ def run():
             objects_count += len(objects)
             raw_paths.append("data/raw/" + file.name + ".gz")
         atomic_json(staging / 'photo_manifest.json', {'snapshot_at': latest, 'images': photo_manifest})
-        atomic_json(staging / 'developer_manifest.json', {'snapshot_at': latest, 'rule_version': 1, 'ids': sorted(known_developer_ids), 'current_ids': sorted(current_developer_ids), 'current_total': objects_count})
+        atomic_json(staging / 'developer_manifest.json', {'snapshot_at': latest, 'rule_version': 2, 'ids': sorted(known_developer_ids), 'current_ids': sorted(current_developer_ids), 'current_total': objects_count})
         with (staging / "snapshots.csv").open(encoding="utf-8-sig", newline="") as f:
             rows = list(csv.DictReader(f))
         fields = list(rows[0])
