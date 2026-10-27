@@ -1,0 +1,30 @@
+name: Promotion browser check
+on:
+  pull_request:
+    paths:
+      - docs/index.html
+      - docs/dashboard.js
+      - tests/dashboard.test.cjs
+      - tests/promotion-browser.cjs
+      - .github/workflows/promotion-browser.yml
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check docs/dashboard.js
+      - run: node --test tests/dashboard.test.cjs
+      - run: npm install --no-save --package-lock=false playwright@1.51.1
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/promotion-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: promotion-browser-screenshots
+          path: test-results/

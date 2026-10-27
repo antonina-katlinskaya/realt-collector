@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const {parseCSV,buildIndex,intervals,periodData,statusStart,promotionPeriods} = require('../docs/dashboard.js');
+const {parseCSV,buildIndex,intervals,periodData,statusStart,promotionPeriods,promotionSummary} = require('../docs/dashboard.js');
 const t1='2026-10-25T09:00:00Z', t2='2026-10-25T10:00:00Z', t3='2026-10-25T11:00:00Z';
 const row=(uuid,snapshot_at,views,paymentStatus='0')=>({uuid,snapshot_at,views:String(views),paymentStatus,userUuid:'agent',title:'Квартира',price:'50000'});
 test('promotion history splits when the listing is absent from an intervening snapshot',()=>{
@@ -100,3 +100,22 @@ test('organic view renders gallery cards as well as table',()=>{
  assert.match(body,/renderGallery\(m\);/);
 });
 
+
+test('promotion summary counts an ad once across two promotion types on the same day',()=>{
+ const idx=buildIndex([row('a',t1,10,'2'),row('a',t2,12,'2'),row('a',t3,15,'3')]);
+ const summary=promotionSummary(idx,periodData(idx,'2026-10-25','2026-10-25'));
+ assert.equal(summary.ads.size,1);assert.equal(summary.adDays.size,1);
+ assert.equal(summary.ads.get('a').views,2);assert.equal(summary.types.size,2);
+ assert.equal(summary.agents.get('agent').days.size,1);
+});
+test('no comparable views remains missing rather than a measured zero',()=>{
+ const idx=buildIndex([row('a',t1,10,'2')]);
+ const summary=promotionSummary(idx,periodData(idx,'2026-10-25','2026-10-25'));
+ assert.equal(summary.ads.get('a').measured,0);
+ assert.equal(summary.events.length,0);assert.equal(summary.ads.size,1);
+});
+test('employee transfer does not credit the transfer interval as promotion performance',()=>{
+ const idx=buildIndex([row('a',t1,10,'2'),{...row('a',t2,12,'2'),userUuid:'second'}]);
+ const summary=promotionSummary(idx,periodData(idx,'2026-10-25','2026-10-25'));
+ assert.equal(summary.events.length,0);assert.equal(summary.agents.get('second').measured,0);
+});
