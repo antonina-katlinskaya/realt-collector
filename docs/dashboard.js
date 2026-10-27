@@ -87,7 +87,7 @@ async function restoreArchiveRange(){
  const seq=++archiveRequestSeq,from=$('from').value,to=$('to').value,last=day(index.times.at(-1));
  if(!from||!to||from>to)return;
  const dates=[];for(let t=Date.parse((from>ARCHIVE_START?from:ARCHIVE_START)+'T12:00:00Z'),end=Date.parse((to<last?to:last)+'T12:00:00Z');t<=end;t+=86400000){const d=new Date(t).toISOString().slice(0,10);if(!archiveRows.has(d)&&!archiveMissing.has(d))dates.push(d);}
- if(!dates.length){if(seq===archiveRequestSeq){rows=baseRows.concat(...archiveRows.values());index=buildIndex(rows);render();}return;}
+ if(!dates.length){if(seq===archiveRequestSeq)render();return;}
  $('status').textContent='Загружаю сохранённую историю за '+dates.length+' дн. Без неё рейтинг за период неполный…';
  const failures=[];let next=0;
  async function worker(){while(next<dates.length){const d=dates[next++];try{
@@ -111,11 +111,15 @@ const checks=id=>new Set([...$(id).querySelectorAll('input:checked')].map(x=>x.v
 function matches(r,t=r.snapshot_at,ignorePromo=false){const multi=checks('multiAgents'),week=checks('weekdays'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
 return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(ignorePromo||!week.size||week.has(String(weekday(t))))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agencyName===$('company').value)&&(!$('rooms').value||r.rooms===$('rooms').value)&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
 function promoMatch(r){const p=$('promo').value;return !p||(p==='paid'?paid(r):p==='other'?![0,2,3,4].includes(number(r.paymentStatus)):r.paymentStatus===p);}
+let cachedModelIndex=null,cachedModelKey='',cachedModelValue=null;
 function model(){
+ const fields=['from','to','agent','promo','quarter','company','rooms','house','areaMin','areaMax','search','sort'];
+ const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),[...checks('weekdays')].sort(),selectedTab,preciseBounds]);
+ if(cachedModelIndex===index&&cachedModelKey===key&&cachedModelValue)return cachedModelValue;
  const m=periodData(index,$('from').value,$('to').value,matches,preciseBounds);
  let listing=selectedTab==='paid'?m.current.filter(paid):selectedTab==='new'?m.newly:selectedTab==='gone'?m.gone:selectedTab==='period'?m.observed:m.current;
  const sort=$('sort').value;listing=listing.slice().sort((a,b)=>sort==='growth'?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):sort==='views'?(number(b.views)||0)-(number(a.views)||0):sort==='price'?String(a.priceCurrency).localeCompare(String(b.priceCurrency))||(number(a.price)||0)-(number(b.price)||0):String(b.createdAt).localeCompare(String(a.createdAt)));
- return {...m,listing};
+ cachedModelIndex=index;cachedModelKey=key;cachedModelValue={...m,listing};return cachedModelValue;
 }
 function svgBars(groups){
   if(!groups.length)return '<div class="empty">Нужны хотя бы два обхода внутри выбранного периода.<br>Общий счётчик уже доступен в таблице.</div>';
