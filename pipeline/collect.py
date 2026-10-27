@@ -87,6 +87,7 @@ def run():
         completed = dt.datetime.now(dt.timezone.utc)
         latest, objects_count = "", 0
         raw_paths = []
+        photo_manifest = {}
         for file in raw_files:
             raw = json.loads(file.read_text())
             objects = raw.get("minsk_mir_objects") or []
@@ -94,6 +95,9 @@ def run():
             if not ids or not all(ids) or len(ids) != len(set(ids)):
                 raise RuntimeError("Empty or duplicate source UUIDs")
             for obj in objects:
+                images = obj.get('images') or []
+                image_urls = [value for value in images if isinstance(value,str) and value.startswith('https://')]
+                if image_urls: photo_manifest[str(obj['uuid'])] = image_urls[:5]
                 obj["observed_at"] = received.get(str(obj["uuid"]))
                 if not obj["observed_at"]:
                     raise RuntimeError("Missing actual observation time")
@@ -102,6 +106,7 @@ def run():
             latest = max(latest, raw["snapshot_at"])
             objects_count += len(objects)
             raw_paths.append("data/raw/" + file.name + ".gz")
+        atomic_json(staging / 'photo_manifest.json', {'snapshot_at': latest, 'images': photo_manifest})
         with (staging / "snapshots.csv").open(encoding="utf-8-sig", newline="") as f:
             rows = list(csv.DictReader(f))
         fields = list(rows[0])
