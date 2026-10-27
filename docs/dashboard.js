@@ -265,6 +265,14 @@ function renderUnified(m){
 function liveAgentCard(id,items){const r=items[0];return `<article class="agentcard"><h3>${esc(agentName(r))}</h3><span class="badge promo">${items.length} в продвижении</span>${items.map(r=>{const st=statusStart(index,r);return `<div class="adlink">${adLink(r)}<br><small>${price(r)} · ${esc(label(r))}<br>Наблюдается с ${date(st.time)}; ${st.open?'начало неизвестно':'смена между обходами'}</small> ${detailButton(r)}</div>`;}).join('')}</article>`;}
 function renderPromotions(m){
  const paidEvents=m.events.filter(e=>e.category==='paid');
+ const byDate=new Map();
+ for(const e of paidEvents){
+  const d=day(e.end);
+  if(!byDate.has(d))byDate.set(d,{title:d,label:d.slice(5),paid:0,free:0,unknown:0});
+  byDate.get(d).paid+=e.delta;
+ }
+ $('promoDailyChart').innerHTML=paidEvents.length?svgBars([...byDate.values()].sort((a,b)=>a.title.localeCompare(b.title))):empty('Нет двух достоверных последовательных замеров с платным статусом. График появится по мере новых обходов.');
+
  const active=[...index.byTime.get(index.times.at(-1)).values()].filter(r=>matches(r,r.snapshot_at,true)&&paid(r));
  const promotedObserved=m.observed.filter(paid);
  const paidIds=new Set(promotedObserved.map(r=>r.uuid));
