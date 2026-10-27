@@ -1,0 +1,32 @@
+name: Backfill current verified photo manifest
+on:
+  push:
+    branches:
+      - realt-photo-backfill-20261027
+    paths:
+      - scripts/backfill_photo_manifest.py
+      - .github/workflows/backfill-photos.yml
+permissions:
+  contents: write
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Read verified archived photos without new scraping
+        run: python scripts/backfill_photo_manifest.py
+      - name: Commit verified manifest to test branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/photo_manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: recover current photo manifest from verified release"
+            git push
+          fi
