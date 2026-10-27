@@ -296,7 +296,7 @@ function renderUnified(m){
 }
 function liveAgentCard(id,items){const r=items[0];return `<article class="agentcard"><h3>${esc(agentName(r))}</h3><span class="badge promo">${items.length} в продвижении</span>${items.map(r=>{const st=statusStart(index,r);return `<div class="adlink">${adLink(r)}<br><small>${price(r)} · ${esc(label(r))}<br>Наблюдается с ${date(st.time)}; ${st.open?'начало неизвестно':'смена между обходами'}</small> ${detailButton(r)}</div>`;}).join('')}</article>`;}
 function renderPromotions(m){
- const paidEvents=m.events.filter(e=>e.category==='paid');
+ const paidEvents=m.events.filter(e=>e.category==='paid'&&index.byTime.get(e.start)?.get(e.id)?.userUuid===e.row.userUuid);
  const byDate=new Map();
  for(const e of paidEvents){
   const d=day(e.end);
@@ -308,7 +308,7 @@ function renderPromotions(m){
  const active=[...index.byTime.get(index.times.at(-1)).values()].filter(r=>matches(r,r.snapshot_at,true)&&paid(r));
  const promotedObserved=m.observed.filter(paid);
  const paidIds=new Set(promotedObserved.map(r=>r.uuid));
- const totalPaid=m.events.filter(e=>e.category==='paid').reduce((n,e)=>n+e.delta,0);
+ const totalPaid=totalEvents(paidEvents);
  const kpis=[
  ['Объявлений в продвижении',paidIds.size,'замечено за выбранный период'],
  ['Просмотры при продвижении',paidEvents.length?totalPaid:null,'только проверенные последовательные замеры'],
@@ -344,7 +344,7 @@ function renderPromotions(m){
   return `<tr><td><button data-select-agent="${esc(x.row.userUuid)}">${esc(agentName(x.row))}</button></td><td class="wrap">${adLink(x.row)}</td><td><span class="badge promo">${esc(label({paymentStatus:x.status}))}</span></td><td>${date(x.start)}</td><td>${date(x.last)}<br><small>${endNote}${x.next?' · '+date(x.next):''}</small></td><td>${v}</td><td>${detailButton(x.row)}</td></tr>`;
  });
  const table=rows.length?makeTable(['Сотрудник','Объявление','Вид продвижения','Впервые замечено','Последнее подтверждение','Прирост за выбранный период',''],rows):empty('В выбранном периоде продвижение не обнаружено.');
- $('promoPeriods').innerHTML=table+'<p class="muted tiny">Показаны все '+fmt(spans.length)+' периодов. Даты относятся ко всей доступной истории, просмотры — только к выбранному периоду. Пропуск объявления в обходе разделяет периоды. Даты оплаты и выключения рекламы неизвестны.</p>';
+ $('promoPeriods').innerHTML=table+'<p class="muted tiny">Периодов показано: '+fmt(spans.length)+'. Даты относятся ко всей доступной истории, просмотры — только к выбранному периоду. Пропуск объявления в обходе разделяет периоды. Даты оплаты и выключения рекламы неизвестны.</p>';
 
 }
 
