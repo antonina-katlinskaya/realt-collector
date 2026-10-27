@@ -74,13 +74,34 @@ function periodData(index,from,to,accept=()=>true,bounds=null,trustedFrom=null){
  return {from,to,end,current,observed:[...observed.values()],events,unstableIds,excludedEvents,excludedLegacyEvents,growth,newly,gone:[...gone.values()],changes};
 }
 
+function promotionPeriods(index,from,to,accept=()=>true,bounds=null){
+ const spans=[],positions=new Map(index.times.map((t,i)=>[t,i]));
+ const inside=t=>day(t)>=from&&day(t)<=to&&(!bounds||(Date.parse(t)>=bounds.start&&Date.parse(t)<=bounds.end));
+ for(const [id,history] of index.histories){
+  let span=null;
+  const finish=(next,reason)=>{if(!span)return;span.next=next;span.reason=reason;if(span.selected)spans.push(span);span=null;};
+  for(const row of history){
+   if(span){
+    const adjacent=positions.get(row.snapshot_at)===positions.get(span.last)+1;
+    if(!adjacent)finish(index.times[positions.get(span.last)+1],'missing');
+    else if(row.paymentStatus!==span.status||row.userUuid!==span.row.userUuid)finish(row.snapshot_at,'changed');
+   }
+   if(!paid(row))continue;
+   if(!span)span={id,row,start:row.snapshot_at,last:row.snapshot_at,status:row.paymentStatus,selected:false};
+   span.last=row.snapshot_at;
+   if(inside(row.snapshot_at)&&accept(row,row.snapshot_at)){span.row=row;span.selected=true;}
+  }
+  if(span){const next=index.times[positions.get(span.last)+1];finish(next||null,next?'missing':'latest');}
+ }
+ return spans.sort((a,b)=>b.start.localeCompare(a.start));
+}
 function collectionFreshness(last,now=Date.now()){
  const grace=45*60*1000,d=new Date(now),midnight=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
  const slots=[];for(const base of [midnight-86400000,midnight])for(let hour=4;hour<=18;hour++)slots.push(base+(hour*60+10)*60000);
  const due=slots.filter(t=>t+grace<=now),expected=due.length?Math.max(...due):midnight-86400000+18*3600000+10*60000;
  return {expected,stale:!Number.isFinite(Date.parse(last))||Date.parse(last)<expected};
 }
-if(typeof module!=='undefined')module.exports={parseCSV,buildIndex,intervals,statusStart,day,weekday,changesBetween,periodData,collectionFreshness};
+if(typeof module!=='undefined')module.exports={parseCSV,buildIndex,intervals,statusStart,day,weekday,changesBetween,periodData,promotionPeriods,collectionFreshness};
 if(typeof document!=='undefined'){
 const ROOT='https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/';
 const $=id=>document.getElementById(id);
@@ -291,33 +312,14 @@ function renderPromotions(m){
  const kpis=[
  ['Объявлений в продвижении',paidIds.size,'замечено за выбранный период'],
  ['Просмотры при продвижении',paidEvents.length?totalPaid:null,'только проверенные последовательные замеры'],
- ['Открытия телефона','—','Нет в публичных данных радара'],
+ ['Открытия телефона','—','Источник пока не подтверждён'],
  ['Сейчас в рекламе',active.length,'подтверждены последним обходом']
  ];
  $('promoOverviewKpi').innerHTML=kpis.map(([name,value,note])=>`<div class="card"><strong>${value===null?'—':typeof value==='number'?fmt(value):value}</strong><div class="kpi-label">${name}</div><span>${note}</span></div>`).join('');
  const groups=new Map();
  for(const r of active){const id=r.userUuid||'';if(!groups.has(id))groups.set(id,[]);groups.get(id).push(r);}
  $('livePromo').innerHTML=[...groups].sort((a,b)=>b[1].length-a[1].length).map(([id,ads])=>liveAgentCard(id,ads)).join('')||empty('Сейчас нет подтверждённых объявлений в продвижении.');
- const stats=new Map();
- for(const r of promotedObserved){const id=r.userUuid||'';if(!stats.has(id))stats.set(id,{row:r,ids:new Set(),views:0,intervals:0});stats.get(id).ids.add(r.uuid);}
- for(const e of paidEvents){const id=e.row.userUuid||'';if(!stats.has(id))stats.set(id,{row:e.row,ids:new Set(),views:0,intervals:0});const st=stats.get(id);st.ids.add(e.id);st.views+=e.delta;st.intervals++;}
- $('promoResults').innerHTML=makeTable(['Сотрудник','Объявлений в рекламе','Просмотры при рекламе','Открытия телефона'],[...stats.values()].sort((a,b)=>b.ids.size-a.ids.size).map(st=>`<tr><td>${esc(agentName(st.row))}</td><td>${st.ids.size}</td><td>${st.intervals?'+'+fmt(st.views):'—'}</td><td>—</td></tr>`))+'<p class="muted tiny">Просмотры — не уникальные клиенты и не доказанная отдача рекламы. Открытия телефона неизвестны.</p>';
- const spans=[];
- const promoFilter=createMatcher();
- for(const [id,h] of index.histories){
-  let first=null,previous=null;
-  for(const row of h){
-   const t=row.snapshot_at;if(day(t)>m.to||day(t)<m.from||!promoFilter(row,t,true))continue;
-   const isPaid=paid(row);
-   if(isPaid){
-    if(!first){first=row;previous=row;}
-    else if(row.paymentStatus!==previous.paymentStatus){spans.push({id,row:previous,start:first.snapshot_at,end:t,status:first.paymentStatus,open:false});first=row;previous=row;}
-    else previous=row;
-   }else if(first){spans.push({id,row:first,start:first.snapshot_at,end:t,status:first.paymentStatus,open:false});first=null;previous=null;}
-  }
-  if(first){spans.push({id,row:first,start:first.snapshot_at,end:null,status:first.paymentStatus,open:true});}
- }
- spans.sort((x,y)=>String(y.start).localeCompare(String(x.start)));
+ const spans=promotionPeriods(index,m.from,m.to,createMatcher(),preciseBounds);
  const allPromoted=new Set(spans.map(x=>x.id));
   $('promoOverviewKpi').querySelector('.card strong').textContent=fmt(allPromoted.size);
  const perAgent=new Map();
@@ -332,17 +334,18 @@ function renderPromotions(m){
   const entry=perAgent.get(id);
   if(entry){entry.views+=e.delta;entry.intervals++;}
  }
- $('promoResults').innerHTML=makeTable(['Сотрудник','Объявлений с продвижением','Периодов','Прирост просмотров','Открытия номера'],[...perAgent.values()].sort((a,b)=>b.ids.size-a.ids.size).map(x=>`<tr><td>${esc(agentName(x.row))}</td><td>${x.ids.size}</td><td>${x.starts}</td><td>${x.intervals?'+'+fmt(x.views):'—'}</td><td>Нет данных</td></tr>`))+'<p class="muted tiny">Исторические периоды показаны даже тогда, когда на последнем обходе реклама уже выключена. Число просмотров выводится только при достоверных последовательных замерах.</p>';
+ $('promoResults').innerHTML=makeTable(['Сотрудник','Объявлений с продвижением','Периодов','Прирост просмотров','Открытия номера'],[...perAgent.values()].sort((a,b)=>b.ids.size-a.ids.size).map(x=>`<tr><td><button data-select-agent="${esc(x.row.userUuid)}">${esc(agentName(x.row))}</button></td><td>${x.ids.size}</td><td>${x.starts}</td><td>${x.intervals?'+'+fmt(x.views):'—'}</td><td>Нет данных</td></tr>`))+'<p class="muted tiny">Исторические периоды показаны даже тогда, когда на последнем обходе реклама уже выключена. Число просмотров выводится только при достоверных последовательных замерах.</p>';
 
 
- const rows=spans.slice(0,150).map(x=>{
-  const ev=paidEvents.filter(e=>e.id===x.id&&e.start>=x.start&&(!x.end||e.end<=x.end));
+ const rows=spans.map(x=>{
+  const ev=paidEvents.filter(e=>e.id===x.id&&e.row.paymentStatus===x.status&&e.row.userUuid===x.row.userUuid&&e.start>=x.start&&e.end<=x.last);
   const v=ev.length?'+'+fmt(totalEvents(ev)):'—';
-  return `<tr><td>${esc(agentName(x.row))}</td><td class="wrap">${adLink(x.row)}</td><td>${esc(label({paymentStatus:x.status}))}</td><td>${date(x.start)}</td><td>${x.end?date(x.end):'На последнем наблюдении'}</td><td>${v}</td><td>${detailButton(x.row)}</td></tr>`;
+  const endNote=x.reason==='latest'?'Есть в последнем обходе':x.reason==='missing'?'Затем объявление отсутствует':'Затем статус / сотрудник изменился';
+  return `<tr><td><button data-select-agent="${esc(x.row.userUuid)}">${esc(agentName(x.row))}</button></td><td class="wrap">${adLink(x.row)}</td><td><span class="badge promo">${esc(label({paymentStatus:x.status}))}</span></td><td>${date(x.start)}</td><td>${date(x.last)}<br><small>${endNote}${x.next?' · '+date(x.next):''}</small></td><td>${v}</td><td>${detailButton(x.row)}</td></tr>`;
  });
- const table=rows.length?makeTable(['Сотрудник','Объявление','Вид продвижения','Замечено с','Замечено до','Прирост просмотров',''],rows):empty('В выбранном периоде продвижение не обнаружено.');
- $('promoPeriods').innerHTML=table+'<p class="muted tiny">Начало и конец — время ближайших обходов, а не момент покупки рекламы. Открытия телефона и переходы Realt не предоставил; показывать вместо них просмотры нельзя.</p>';
- if(spans.length>150)$('promoPeriods').insertAdjacentHTML('beforeend','<p class="muted">Показаны первые 150 периодов, уточните даты или сотрудника для остальных.</p>');
+ const table=rows.length?makeTable(['Сотрудник','Объявление','Вид продвижения','Впервые замечено','Последнее подтверждение','Прирост за выбранный период',''],rows):empty('В выбранном периоде продвижение не обнаружено.');
+ $('promoPeriods').innerHTML=table+'<p class="muted tiny">Показаны все '+fmt(spans.length)+' периодов. Даты относятся ко всей доступной истории, просмотры — только к выбранному периоду. Пропуск объявления в обходе разделяет периоды. Даты оплаты и выключения рекламы неизвестны.</p>';
+
 }
 
 const palette=['#396cc1','#d97558','#147b73','#885ac5','#b67b25','#ba4b86','#1a899e','#5e728a'];
@@ -462,4 +465,5 @@ load();
 setInterval(updateFreshness,60000);
 setInterval(()=>{if(!document.hidden&&!$('refresh').disabled)load();},300000);
 }
+
 
