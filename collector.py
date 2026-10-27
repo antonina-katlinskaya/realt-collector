@@ -25,6 +25,7 @@ import requests
 
 import config as C
 import queries as Q
+from pipeline.newbuild import is_primary_newbuild
 
 
 # ----------------------------- вспомогательное -----------------------------
@@ -355,7 +356,7 @@ def run():
     for agency_key, agency_uuid in C.AGENCIES.items():
         print(f"=== Агентство: {agency_key} ===")
         all_objs = fetch_agency_listings(session, agency_uuid)
-        mm_objs = [o for o in all_objs if is_minsk_mir(o)]
+        mm_objs = [o for o in all_objs if is_minsk_mir(o) and is_primary_newbuild(o)]
         print(f"    Минск Мир: {len(mm_objs)} из {len(all_objs)}")
 
         uuids = [o["uuid"] for o in mm_objs if o.get("uuid")]
