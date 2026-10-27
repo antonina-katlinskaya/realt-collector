@@ -54,13 +54,15 @@ function changesBetween(index,from,to,accept=()=>true){
  for(let i=1;i<index.times.length;i++){const a=index.times[i-1],b=index.times[i];if(day(b)<from||day(b)>to)continue;const prev=index.byTime.get(a),cur=index.byTime.get(b);for(const [id,r]of cur){const p=prev.get(id);if(!p||!accept(r,b))continue;const changes=Object.entries(fields).filter(([k])=>p[k]!==''&&p[k]!=null&&r[k]!==''&&r[k]!=null&&p[k]!==r[k]).map(([key,name])=>({key,name,old:p[key],new:r[key]}));if(changes.length)result.push({id,row:r,start:a,end:b,changes});}}
  return result;
 }
-function periodData(index,from,to,accept=()=>true,bounds=null){
+function periodData(index,from,to,accept=()=>true,bounds=null,trustedFrom=null){
  const inside=t=>day(t)>=from&&day(t)<=to&&(!bounds||(Date.parse(t)>=bounds.start&&Date.parse(t)<=bounds.end));
  const available=index.times.filter(inside),end=available.at(-1),current=end?[...index.byTime.get(end).values()].filter(r=>accept(r,end)):[];
  const observed=new Map();for(const t of available)for(const [id,r] of index.byTime.get(t))if(accept(r,t))observed.set(id,r);
  const lastValues=new Map(),unstableIds=new Set();
- for(const t of available)for(const [id,r] of index.byTime.get(t)){const v=number(r.views),prev=lastValues.get(id);if(v!==null){if(prev!==undefined&&v<prev)unstableIds.add(id);lastValues.set(id,v);}}
- const rawEvents=intervals(index,from,to).filter(e=>inside(e.start)&&inside(e.end)&&accept(e.row,e.end));
+ for(const t of available.filter(t=>!trustedFrom||t>=trustedFrom))for(const [id,r] of index.byTime.get(t)){const v=number(r.views),prev=lastValues.get(id);if(v!==null){if(prev!==undefined&&v<prev)unstableIds.add(id);lastValues.set(id,v);}}
+ const allEvents=intervals(index,from,to).filter(e=>inside(e.start)&&inside(e.end)&&accept(e.row,e.end));
+ const rawEvents=allEvents.filter(e=>!trustedFrom||e.start>=trustedFrom);
+ const excludedLegacyEvents=allEvents.length-rawEvents.length;
  const events=rawEvents.filter(e=>!unstableIds.has(e.id));
  const excludedEvents=rawEvents.filter(e=>unstableIds.has(e.id));
  const growth=new Map();for(const e of events)growth.set(e.id,(growth.get(e.id)||0)+e.delta);
@@ -69,7 +71,7 @@ function periodData(index,from,to,accept=()=>true,bounds=null){
  for(let i=1;i<index.times.length;i++){const a=index.times[i-1],b=index.times[i];if(!inside(b))continue;for(const [id,r]of index.byTime.get(a))if(!index.byTime.get(b).has(id)&&!currentIds.has(id)&&accept(r,b))gone.set(id,{...r,goneAt:b});}
  for(const [id,r]of gone)if(!observed.has(id))observed.set(id,r);
  const changes=changesBetween(index,from,to,(r,t)=>inside(t)&&accept(r,t));
- return {from,to,end,current,observed:[...observed.values()],events,unstableIds,excludedEvents,growth,newly,gone:[...gone.values()],changes};
+ return {from,to,end,current,observed:[...observed.values()],events,unstableIds,excludedEvents,excludedLegacyEvents,growth,newly,gone:[...gone.values()],changes};
 }
 
 function collectionFreshness(last,now=Date.now()){
@@ -141,7 +143,7 @@ function model(){
  const fields=['from','to','agent','promo','quarter','company','rooms','house','areaMin','areaMax','search','sort'];
  const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),[...checks('weekdays')].sort(),selectedTab,preciseBounds]);
  if(cachedModelIndex===index&&cachedModelKey===key&&cachedModelValue)return cachedModelValue;
- const m=periodData(index,$('from').value,$('to').value,createMatcher(),preciseBounds);
+ const m=periodData(index,$('from').value,$('to').value,createMatcher(),preciseBounds,'2026-10-27T11:41:00Z');
  let listing=selectedTab==='paid'?m.current.filter(paid):selectedTab==='new'?m.newly:selectedTab==='gone'?m.gone:selectedTab==='period'?m.observed:m.current;
  const sort=$('sort').value;listing=listing.slice().sort((a,b)=>sort==='growth'?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):sort==='views'?(number(b.views)||0)-(number(a.views)||0):sort==='price'?String(a.priceCurrency).localeCompare(String(b.priceCurrency))||(number(a.price)||0)-(number(b.price)||0):String(b.createdAt).localeCompare(String(a.createdAt)));
  cachedModelIndex=index;cachedModelKey=key;cachedModelValue={...m,listing};return cachedModelValue;
@@ -165,6 +167,7 @@ function render(){if(!index)return;const m=model();currentModel=m;const quick=$(
   $('status').textContent=m.end?'Состояние объявлений на '+date(m.end)+' · '+index.times.length+' снимков в истории':'Нет снимков до выбранной даты';
   const countTimes=index.times.filter(t=>day(t)>=m.from&&day(t)<=m.to).length;
   $('coverage').textContent=countTimes<2?'Пока в выбранном периоде меньше двух снимков. Прирост, длительность продвижения и время активности начнут уточняться с новыми обходами.':`${countTimes} снимков в выбранном периоде. Прирост за полностью покрытые интервалы: ${fmt(delta)}. При продвижении: ${fmt(m.events.filter(e=>e.category==='paid').reduce((s,e)=>s+e.delta,0))}; без продвижения: ${fmt(m.events.filter(e=>e.category==='free').reduce((s,e)=>s+e.delta,0))}; при смене / неизвестном статусе: ${fmt(m.events.filter(e=>e.category==='unknown').reduce((s,e)=>s+e.delta,0))}.`;
+  if(m.excludedLegacyEvents){$('coverage').textContent+=` До исправления привязки просмотров к UUID исключено ${fmt(m.excludedLegacyEvents)} исторических интервалов. Для рейтингов нужны два новых достоверных обхода после 27.10.2026, 14:41 Минск.`;}
   if(m.unstableIds.size){const excludedTotal=m.excludedEvents.reduce((sum,e)=>sum+e.delta,0);$('coverage').textContent+=` ⚠ У ${fmt(m.unstableIds.size)} объявлений счётчик просмотров снижался между обходами; их положительные скачки (+${fmt(excludedTotal)}) исключены из рейтингов и итогового прироста. Исходные значения сохранены в истории.`;}
   const currentTotal=m.current.reduce((sum,r)=>sum+(number(r.views)||0),0);
   if(delta>currentTotal*2&&currentTotal>0){$('coverage').textContent+=' ⚠ Это сумма наблюдаемых приращений по историческим объявлениям, а не число уникальных покупателей. В архиве обнаружены аномально большие скачки счётчиков: источник и причина пока не подтверждены; нельзя трактовать их как доказанную эффективность рекламы.';}
