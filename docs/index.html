@@ -32,6 +32,16 @@ button.active{background:#1f5f4a}
 .filterbox{background:#fcfcfb;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:14px 0}.filterbox>summary{cursor:pointer;display:flex;gap:12px;align-items:center;justify-content:space-between;list-style:none}.filterbox>summary::-webkit-details-marker{display:none}.filterbox>summary:after{content:"▾";margin-left:6px;color:var(--muted)}.filterbox[open]>summary{margin-bottom:15px}.filterbox[open]>summary:after{content:"▴"}.filterbox .filters{border:0;padding:12px 0}.filterbox .morefilters{margin:12px 0 0}
 .employee-highlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}.employee-highlight{background:#fcfcfb;border:1px solid var(--line);border-radius:12px;padding:15px;min-width:0}.employee-highlight button{border:0;background:transparent;padding:0;font-weight:700;text-align:left}.employee-highlight .big{font-size:25px;font-weight:800;margin:8px 0}.employee-highlight .track{height:7px;background:#e3efe9;border-radius:8px;overflow:hidden}.employee-highlight .track span{display:block;height:100%;background:#1f5f4a;border-radius:8px}.employee-highlight small{display:block;margin-top:7px}.panel>details>summary{color:#1f5f4a;font-weight:600;padding:10px 0}@media(max-width:850px){.employee-highlights{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.employee-highlights{grid-template-columns:1fr}}
 .filterbox{margin:12px 0;padding:15px 18px}.filterbox>summary{cursor:pointer;font-weight:650;display:flex;justify-content:space-between;align-items:center}.filterbox[open]>summary{margin-bottom:16px}.filterbox .filters{border:0;padding:4px 0;box-shadow:none;background:transparent}.filterbox .morefilters{margin:12px 0;padding:10px 14px;background:#f0efeb}.filterbox .quick{margin-bottom:12px}
+
+/* Layout values copied from the live Kufar radar reference. */
+.viewtabs{display:flex;gap:4px;margin:16px 0 10px;overflow-x:auto;padding:0 0 2px;border:0;background:transparent;border-radius:0}
+.viewtabs>button{border:0;background:transparent;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600;color:#52514e;white-space:nowrap}
+.viewtabs>button.active{background:#1f5f4a;color:#fff}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.cards>.card{padding:12px;background:#fcfcfb;border:1px solid #e3e1db;border-radius:12px}
+.cards>.card strong{font-size:26px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+.cards>.card .kpi-label{color:#52514e;font-size:13px}
+.cards>.card span{color:#86847d;font-size:12px}
 </style>
 <script src="dashboard.js?v=20261027-cards-5" defer></script>
 </head>
