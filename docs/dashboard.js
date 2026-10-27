@@ -340,18 +340,8 @@ function renderPromotions(m){
   const v=ev.length?'+'+fmt(totalEvents(ev)):'—';
   return `<tr><td>${esc(agentName(x.row))}</td><td class="wrap">${adLink(x.row)}</td><td>${esc(label({paymentStatus:x.status}))}</td><td>${date(x.start)}</td><td>${x.end?date(x.end):'На последнем наблюдении'}</td><td>${v}</td><td>${detailButton(x.row)}</td></tr>`;
  });
- const cards=spans.slice(0,150).map(x=>{
-  const ev=paidEvents.filter(e=>e.id===x.id&&e.start>=x.start&&(!x.end||e.end<=x.end));
-  const viewed=ev.length?'+'+fmt(totalEvents(ev)):'—';
-  return `<article class="promo-history-card" data-detail="${esc(x.id)}">
-    <div class="promo-history-title">${adLink(x.row)}</div>
-    <div class="muted">${esc(agentName(x.row))} · ${esc(x.row.areaTotal||'')} м² · ${price(x.row)}</div>
-    <div class="promo-history-stats"><div><small>Реклама</small><b>${esc(label({paymentStatus:x.status}))}</b></div><div><small>Зафиксирована с</small><b>${date(x.start)}</b></div><div><small>До</small><b>${x.end?date(x.end):'Конец неизвестен'}</b></div><div><small>Прирост просмотров</small><b>${viewed}</b></div><div><small>Открытия номера</small><b>Нет данных</b></div></div>
-    <div class="muted tiny">Показаны моменты наблюдения, не точные часы оплаты и выключения.</div>
-    ${detailButton(x.row)}
-   </article>`;
- }).join('');
- $('promoPeriods').innerHTML=cards||empty('В выбранном периоде продвижение не обнаружено.');
+ const table=rows.length?makeTable(['Сотрудник','Объявление','Вид продвижения','Замечено с','Замечено до','Прирост просмотров',''],rows):empty('В выбранном периоде продвижение не обнаружено.');
+ $('promoPeriods').innerHTML=table+'<p class="muted tiny">Начало и конец — время ближайших обходов, а не момент покупки рекламы. Открытия телефона и переходы Realt не предоставил; показывать вместо них просмотры нельзя.</p>';
  if(spans.length>150)$('promoPeriods').insertAdjacentHTML('beforeend','<p class="muted">Показаны первые 150 периодов, уточните даты или сотрудника для остальных.</p>');
 }
 
