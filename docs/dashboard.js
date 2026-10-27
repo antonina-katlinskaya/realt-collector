@@ -256,7 +256,7 @@ function renderUnified(m){
  if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
  if(activeView==='leaders'){
  const promoted=new Map();for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}const list=[...promoted.values()].sort((a,b)=>b.delta-a.delta);
- $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Общий счётчик',''],list.slice(0,100).map((v,i)=>`<tr><td>${i+1}</td><td>${esc(agentName(v.row))}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
+ $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Всего просмотров страницы',''],list.slice(0,100).map((v,i)=>`<tr><td>${i+1}</td><td>${esc(agentName(v.row))}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
  if(photoLoaded)renderPromotedGallery(m);
  }
  if(activeView==='employees'){
