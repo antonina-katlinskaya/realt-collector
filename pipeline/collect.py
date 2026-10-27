@@ -15,6 +15,7 @@ import requests
 import collector
 import config as C
 from pipeline.storage import rotate, compress_raw
+from pipeline.developer_filter import developer_offer
 from pipeline.archive import archive_snapshot, tail
 
 ROOT = Path.cwd()
@@ -88,6 +89,11 @@ def run():
         latest, objects_count = "", 0
         raw_paths = []
         photo_manifest = {}
+        known_developer_ids = set()
+        if (DATA / 'developer_manifest.json').exists():
+            existing = json.loads((DATA / 'developer_manifest.json').read_text(encoding='utf-8'))
+            known_developer_ids.update(existing.get('ids') or [])
+        current_developer_ids = set()
         for file in raw_files:
             raw = json.loads(file.read_text())
             objects = raw.get("minsk_mir_objects") or []
@@ -95,6 +101,9 @@ def run():
             if not ids or not all(ids) or len(ids) != len(set(ids)):
                 raise RuntimeError("Empty or duplicate source UUIDs")
             for obj in objects:
+                if developer_offer(obj):
+                    current_developer_ids.add(str(obj['uuid']))
+                    known_developer_ids.add(str(obj['uuid']))
                 images = obj.get('images') or []
                 image_urls = [value for value in images if isinstance(value,str) and value.startswith('https://')]
                 if image_urls: photo_manifest[str(obj['uuid'])] = image_urls[:5]
@@ -107,6 +116,7 @@ def run():
             objects_count += len(objects)
             raw_paths.append("data/raw/" + file.name + ".gz")
         atomic_json(staging / 'photo_manifest.json', {'snapshot_at': latest, 'images': photo_manifest})
+        atomic_json(staging / 'developer_manifest.json', {'snapshot_at': latest, 'rule_version': 1, 'ids': sorted(known_developer_ids), 'current_ids': sorted(current_developer_ids), 'current_total': objects_count})
         with (staging / "snapshots.csv").open(encoding="utf-8-sig", newline="") as f:
             rows = list(csv.DictReader(f))
         fields = list(rows[0])
