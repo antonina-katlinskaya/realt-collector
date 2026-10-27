@@ -1,4 +1,5 @@
 """Read-only bounded comparison of batch vs singleton Realt GraphQL view counts."""
+import json
 import csv
 import io
 import requests
@@ -31,5 +32,13 @@ print('forward_equals_singletons',forward==singles)
 print('reverse_equals_reversed_singletons',reverse==list(reversed(singles)))
 print('forward_values',forward)
 print('single_values',singles)
-if len(forward)!=len(uuids) or len(reverse)!=len(uuids) or forward!=singles or reverse!=list(reversed(singles)):
-    raise RuntimeError('Batch mapping to UUID is not trustworthy')
+aliases=' '.join(f'v{i}:objectsViewsCountsByUuids(uuids:{json.dumps([u])}){{views}}' for i,u in enumerate(uuids))
+alias_response=collector.gql(session,'query v{'+aliases+'}',{},'v')
+if alias_response.get('errors'):
+    raise RuntimeError('Aliases rejected: '+str(alias_response['errors']))
+alias_values=[alias_response['data'][f'v{i}'][0]['views'] for i in range(len(uuids))]
+print('aliased_values',alias_values)
+print('aliases_equal_singletons',alias_values==singles)
+if alias_values!=singles:
+    raise RuntimeError('Aliased response is not UUID-safe')
+
