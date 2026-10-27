@@ -1,26 +1,26 @@
 {
   "schema": 1,
   "complete": true,
-  "snapshot_at": "2026-10-27T11:41:07Z",
-  "completed_at": "2026-10-27T11:48:54.269936+00:00",
-  "rows": 1524,
+  "snapshot_at": "2026-10-27T13:46:55Z",
+  "completed_at": "2026-10-27T13:54:20.671967+00:00",
+  "rows": 1525,
   "raw_paths": [],
   "archive_entry": {
     "tag": "realt-data-2026-W44",
-    "asset_id": 681442270,
-    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W44/snapshot-2026-10-27_11-41-07-e570b3095711.zip",
-    "name": "snapshot-2026-10-27_11-41-07-e570b3095711.zip",
-    "bytes": 840620,
-    "sha256": "e570b3095711bf9b6906a78d493e6fa9953750dd641fba326effbff58a5a5b85",
+    "asset_id": 681750417,
+    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W44/snapshot-2026-10-27_13-46-55-8b64003773e4.zip",
+    "name": "snapshot-2026-10-27_13-46-55-8b64003773e4.zip",
+    "bytes": 838474,
+    "sha256": "8b64003773e4a133e628f472708ec4798dc7c20611961fc60c7b88327e5759a1",
     "verified": true,
-    "snapshot_at": "2026-10-27T11:41:07Z",
-    "completed_at": "2026-10-27T11:48:54.269936+00:00",
-    "rows": 1524,
+    "snapshot_at": "2026-10-27T13:46:55Z",
+    "completed_at": "2026-10-27T13:54:20.671967+00:00",
+    "rows": 1525,
     "raw_members": [
-      "2026-10-27_11-41_etazhi.json.gz"
+      "2026-10-27_13-46_etazhi.json.gz"
     ],
     "csv_member": "rows.csv.gz"
   },
   "observed_at": "per-object in raw snapshots",
-  "duration_seconds": 466.728
+  "duration_seconds": 445.573
 }
