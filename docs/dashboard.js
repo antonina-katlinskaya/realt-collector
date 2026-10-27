@@ -62,10 +62,10 @@ function periodData(index,from,to,accept=()=>true,bounds=null){
 }
 
 function collectionFreshness(last,now=Date.now()){
-  const grace=45*60*1000,dayStart=new Date(now);dayStart.setUTCHours(0,17,0,0);
-  const slots=[6,9,12,15,18].map(h=>dayStart.getTime()+h*3600000);
-  const expected=Math.max(...slots.map(t=>t+grace<=now?t:t-86400000));
-  return {expected,stale:!Number.isFinite(Date.parse(last))||Date.parse(last)<expected};
+ const grace=45*60*1000,d=new Date(now),midnight=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
+ const slots=[];for(const base of [midnight-86400000,midnight])for(let hour=4;hour<=18;hour++)slots.push(base+(hour*60+10)*60000);
+ const due=slots.filter(t=>t+grace<=now),expected=due.length?Math.max(...due):midnight-86400000+18*3600000+10*60000;
+ return {expected,stale:!Number.isFinite(Date.parse(last))||Date.parse(last)<expected};
 }
 if(typeof module!=='undefined')module.exports={parseCSV,buildIndex,intervals,statusStart,day,weekday,changesBetween,periodData,collectionFreshness};
 if(typeof document!=='undefined'){
