@@ -30,12 +30,12 @@ button.active{background:#1f5f4a}
 .eyebrow{color:#1f5f4a}
 .listing-thumb{width:80px;height:64px;object-fit:cover;float:left;margin:0 10px 4px 0;border-radius:7px;background:#eef0ee}.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}
 </style>
-<script src="dashboard.js?v=20261027-kufar-parity-preview-2" defer></script>
+<script src="dashboard.js?v=20261027-archive-range-1" defer></script>
 </head>
 <body><main>
 <header><div><div class="eyebrow">REALT · MINSK MIR INTELLIGENCE</div><h1>Объявления и продвижение<br>агентов «Этажей»</h1><div class="muted">Минск Мир · просмотры, реклама и изменения</div></div><div class="meta"><div id="freshness">Загружаем данные…</div><div>Сбор: 09:17 · 12:17 · 15:17 · 18:17 · 21:17 Минск</div><div class="headerlinks"><button id="refresh" title="Перечитать сохранённые снимки; новый сбор запускается по расписанию">Обновить данные</button><a href="https://antonina-katlinskaya.github.io/kufar-promo-report/" target="_blank" rel="noopener">Дашборд Kufar ↗</a></div></div></header>
 <div class="notice error" id="freshnessWarning" role="status" aria-live="polite" hidden></div>
-<div class="quick" id="quick"><button data-days="1">Сегодня</button><button data-days="yesterday">Вчера</button><button data-days="24h">24 часа</button><button data-days="7">7 дней</button><button data-days="14">14 дней</button><button data-days="30">30 дней</button><button data-days="90">90 дней</button><button data-days="all" class="active">Вся история</button></div>
+<div class="quick" id="quick"><button data-days="1">Сегодня</button><button data-days="yesterday">Вчера</button><button data-days="24h">24 часа</button><button data-days="7" class="active">7 дней</button><button data-days="14">14 дней</button><button data-days="30">30 дней</button><button data-days="90">90 дней</button><button data-days="all">Вся история</button></div>
 <div class="filters">
 <label>С даты<input type="date" id="from"></label><label>По дату<input type="date" id="to"></label>
 <label class="filter-wide">Агент<select id="agent"><option value="">Все агенты</option></select></label>
