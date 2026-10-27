@@ -264,28 +264,47 @@ function renderUnified(m){
 function liveAgentCard(id,items){const r=items[0];return `<article class="agentcard"><h3>${esc(agentName(r))}</h3><span class="badge promo">${items.length} в продвижении</span>${items.map(r=>{const st=statusStart(index,r);return `<div class="adlink">${adLink(r)}<br><small>${price(r)} · ${esc(label(r))}<br>Наблюдается с ${date(st.time)}; ${st.open?'начало неизвестно':'смена между обходами'}</small> ${detailButton(r)}</div>`;}).join('')}</article>`;}
 function renderPromotions(m){
  const paidEvents=m.events.filter(e=>e.category==='paid');
- const promotedCount=new Set(paidEvents.map(e=>e.id)).size;
- const paidGrowth=totalEvents(paidEvents);
- const freeGrowth=totalEvents(m.events.filter(e=>e.category==='free'));
- const currentlyPaid=m.current.filter(paid).length;
- const promoKpis=[
-  ['Объявлений с продвижением',promotedCount,'с подтверждёнными платными интервалами'],
-  ['Прирост при продвижении',paidGrowth,'наблюдаемые интервалы, не эффект рекламы'],
-  ['Прирост без продвижения',freeGrowth,'наблюдаемые бесплатные интервалы'],
-  ['Сейчас в продвижении',currentlyPaid,'на конце выбранного периода'],
-  ['Открытия номера','—','Realt не предоставляет эти данные']
+ const active=[...index.byTime.get(index.times.at(-1)).values()].filter(r=>matches(r,r.snapshot_at,true)&&paid(r));
+ const promotedObserved=m.observed.filter(paid);
+ const paidIds=new Set(promotedObserved.map(r=>r.uuid));
+ const totalPaid=m.events.filter(e=>e.category==='paid').reduce((n,e)=>n+e.delta,0);
+ const kpis=[
+ ['Объявлений в продвижении',paidIds.size,'замечено за выбранный период'],
+ ['Просмотры при продвижении',paidEvents.length?totalPaid:null,'только проверенные последовательные замеры'],
+ ['Открытия телефона','—','Realt не предоставляет эти значения'],
+ ['Сейчас в рекламе',active.length,'подтверждены последним обходом']
  ];
- $('promoOverviewKpi').innerHTML=promoKpis.map(([name,value,detail])=>`<div class="card"><strong>${value===null?'—':(typeof value==='number'?fmt(value):value)}</strong><div class="kpi-label">${name}</div><span>${detail}</span></div>`).join('');
- const live=[...index.byTime.get(index.times.at(-1)).values()].filter(r=>matches(r,r.snapshot_at,true)&&paid(r)),byAgent=new Map();
- for(const r of live){if(!byAgent.has(r.userUuid))byAgent.set(r.userUuid,[]);byAgent.get(r.userUuid).push(r);}
- const mainIds=new Set(Object.keys(knownById));$('livePromo').innerHTML=[...byAgent].filter(([id])=>mainIds.has(id)).map(([id,a])=>liveAgentCard(id,a)).join('')||empty('У основных агентов нет продвижения по последнему снимку и выбранным фильтрам.');
- $('otherPromo').innerHTML=[...byAgent].filter(([id])=>!mainIds.has(id)).map(([id,a])=>liveAgentCard(id,a)).join('')||empty('Других агентов с продвижением нет.');
- const score=agentsFor(m).filter(a=>mainIds.has(a.row.userUuid)).map(a=>{const ev=m.events.filter(e=>e.row.userUuid===a.row.userUuid&&e.category==='paid'),ids=new Set(ev.map(e=>e.id));return `<article class="agentcard"><h3>${esc(agentName(a.row))}</h3><div class="big">${m.events.length?'+'+fmt(totalEvents(ev)):'—'}</div><small>просмотров при наблюдаемом продвижении</small><p>${ids.size} объявлений с сопоставимыми платными интервалами</p></article>`;});$('promoScorecards').innerHTML=score.join('')||empty('Основные агенты не входят в выбранную подборку.');
- let typeTables='';for(const status of ['2','3','4']){const ev=m.events.filter(e=>e.category==='paid'&&e.row.paymentStatus===status),groups=new Map();for(const e of ev){if(!groups.has(e.row.userUuid))groups.set(e.row.userUuid,{r:e.row,ids:new Set(),views:0,hours:0});const g=groups.get(e.row.userUuid);g.ids.add(e.id);g.views+=e.delta;g.hours+=(Date.parse(e.end)-Date.parse(e.start))/3600000;}
- const observed=new Set(m.observed.filter(r=>r.paymentStatus===status).map(r=>r.uuid));typeTables+=`<h3>${esc(label({paymentStatus:status}))} · ${observed.size} объявлений в замерах периода</h3>`+makeTable(['Агент','Объявлений в интервалах','Прирост','Объявление-часов','Просмотров / час'],[...groups.values()].map(g=>`<tr><td>${esc(agentName(g.r))}</td><td>${g.ids.size}</td><td>${fmt(g.views)}</td><td>${fmt(Math.round(g.hours*10)/10)}</td><td>${fmt(Math.round(g.views/Math.max(g.hours,.001)*10)/10)}</td></tr>`));}
- $('promoTypes').innerHTML=typeTables+'<p class="muted tiny">Часы суммируются по объявлениям. Между обходами статус мог измениться; источник просмотров не подтверждён.</p>';
- $('promoChanges').innerHTML=changesHTML(m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus')));renderTrend(m);
+ $('promoOverviewKpi').innerHTML=kpis.map(([name,value,note])=>`<div class="card"><strong>${value===null?'—':typeof value==='number'?fmt(value):value}</strong><div class="kpi-label">${name}</div><span>${note}</span></div>`).join('');
+ const groups=new Map();
+ for(const r of active){const id=r.userUuid||'';if(!groups.has(id))groups.set(id,[]);groups.get(id).push(r);}
+ $('livePromo').innerHTML=[...groups].sort((a,b)=>b[1].length-a[1].length).map(([id,ads])=>liveAgentCard(id,ads)).join('')||empty('Сейчас нет подтверждённых объявлений в продвижении.');
+ const stats=new Map();
+ for(const r of promotedObserved){const id=r.userUuid||'';if(!stats.has(id))stats.set(id,{row:r,ids:new Set(),views:0,intervals:0});stats.get(id).ids.add(r.uuid);}
+ for(const e of paidEvents){const id=e.row.userUuid||'';if(!stats.has(id))stats.set(id,{row:e.row,ids:new Set(),views:0,intervals:0});const st=stats.get(id);st.ids.add(e.id);st.views+=e.delta;st.intervals++;}
+ $('promoResults').innerHTML=makeTable(['Сотрудник','Объявлений в рекламе','Просмотры при рекламе','Открытия телефона'],[...stats.values()].sort((a,b)=>b.ids.size-a.ids.size).map(st=>`<tr><td>${esc(agentName(st.row))}</td><td>${st.ids.size}</td><td>${st.intervals?'+'+fmt(st.views):'—'}</td><td>—</td></tr>`))+'<p class="muted tiny">Просмотры — не уникальные клиенты и не доказанная отдача рекламы. Открытия телефона неизвестны.</p>';
+ const spans=[];
+ for(const [id,h] of index.histories){
+  let first=null,previous=null;
+  for(const row of h){
+   const t=row.snapshot_at;if(day(t)>m.to||day(t)<m.from)continue;
+   const isPaid=paid(row);
+   if(isPaid){
+    if(!first){first=row;previous=row;}
+    else if(row.paymentStatus!==previous.paymentStatus){spans.push({id,row:previous,start:first.snapshot_at,end:t,status:first.paymentStatus,open:false});first=row;previous=row;}
+    else previous=row;
+   }else if(first){spans.push({id,row:first,start:first.snapshot_at,end:t,status:first.paymentStatus,open:false});first=null;previous=null;}
+  }
+  if(first){spans.push({id,row:first,start:first.snapshot_at,end:null,status:first.paymentStatus,open:true});}
+ }
+ spans.sort((x,y)=>String(y.start).localeCompare(String(x.start)));
+ const rows=spans.slice(0,150).map(x=>{
+  const ev=paidEvents.filter(e=>e.id===x.id&&e.start>=x.start&&(!x.end||e.end<=x.end));
+  const v=ev.length?'+'+fmt(totalEvents(ev)):'—';
+  return `<tr><td>${esc(agentName(x.row))}</td><td class="wrap">${adLink(x.row)}</td><td>${esc(label({paymentStatus:x.status}))}</td><td>${date(x.start)}</td><td>${x.end?date(x.end):'На последнем наблюдении'}</td><td>${v}</td><td>${detailButton(x.row)}</td></tr>`;
+ });
+ $('promoPeriods').innerHTML=makeTable(['Сотрудник','Объявление','Продвижение','Замечено с','Замечено до','Прирост просмотров',''],rows)+(spans.length>150?'<p class="muted">Показаны первые 150 периодов, уточните даты или сотрудника для остальных.</p>':'');
 }
+
 const palette=['#396cc1','#d97558','#147b73','#885ac5','#b67b25','#ba4b86','#1a899e','#5e728a'];
 function renderTrend(m){const ids=[...new Set(m.events.map(e=>e.row.userUuid))];const names=new Map(m.events.map(e=>[e.row.userUuid,agentName(e.row)]));
  $('agentLegend').innerHTML=ids.map((id,i)=>`<button data-line="${esc(id)}" aria-pressed="${!hiddenAgents.has(id)}" style="opacity:${hiddenAgents.has(id)?'.4':'1'}"><i class="dot" style="background:${palette[i%palette.length]}"></i>${esc(names.get(id))}</button>`).join('');
