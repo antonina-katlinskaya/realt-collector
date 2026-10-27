@@ -18,6 +18,16 @@
 .viewtabs>button.active{background:#146248;color:white;font-weight:700}
 .viewtabs .secondaryviews{margin-left:auto}
 @media(max-width:900px){.viewtabs>button{padding:9px 10px;font-size:13px}}
+
+/* Kufar reference palette observed from the actual worker HTML on 2026-10-27. */
+:root{--bg:#f6f5f2;--ink:#0b0b0b;--muted:#52514e;--line:#e3e1db;--blue:#2a78d6;--teal:#1f5f4a;--gold:#9a5b00}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+.panel,.filters,.card{background:#fcfcfb;border-color:var(--line);box-shadow:none}
+.panel{border-radius:12px}.card{border-radius:12px}
+.viewtabs{background:#f0efeb;border-color:#e3e1db}
+.viewtabs>button.active{background:#1f5f4a}
+button.active{background:#1f5f4a}
+.eyebrow{color:#1f5f4a}
 </style>
 <script src="dashboard.js?v=20261008-schedule-recovery-1" defer></script>
 </head>
