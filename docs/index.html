@@ -52,6 +52,9 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 /* Per-tab metrics replace legacy global KPI clutter. */
 #cards,#coverage{display:none}
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
+
+/* Priority filters patterned on the compact Kufar radar arrangement. */
+.kfilter-body{padding:12px 0 3px}.kfilter-line{display:flex;align-items:center;gap:12px;min-height:35px;flex-wrap:wrap}.kfilter-caption{font-size:12px;min-width:78px;color:var(--muted)}.kfilter-line .quick{margin:0;gap:5px;display:flex;flex-wrap:wrap}.kfilter-line .quick button{padding:5px 9px;font-size:12px;border-radius:15px}.kfilter-line select{padding:6px 10px;font-size:12px;max-width:260px}.kfilter-line .daychips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.kfilter-line .daychips label{display:inline-flex;flex-direction:row;align-items:center;gap:3px;padding:3px 7px;border:1px solid var(--line);border-radius:16px;font-size:11px}.kfilter-line .daychips input{margin:0;accent-color:#1f5f4a}.kfilter-hint{font-size:11px;color:var(--muted)}.kfilter-search input{width:min(100%,560px);padding:8px 10px;font-size:12px}.kfilter-search{padding:8px 0}.kfilter-actions{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-size:11px}.kfilter-actions button{padding:7px 12px;font-size:12px}.kfilter-verified{display:flex;flex-direction:row;gap:6px;align-items:center}.kfilter-verified input{accent-color:#1f5f4a}.kfilter-body>.morefilters{padding:6px 0;margin-top:5px;background:none;border:0;box-shadow:none}.kfilter-body>.morefilters>summary{font-size:12px;color:var(--muted);cursor:pointer}@media(max-width:650px){.kfilter-caption{min-width:100%}.kfilter-line{gap:5px;margin:6px 0}}
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
 <script src="dashboard.js?v=20261027-kufar-parity-full-rebuild-r1" defer></script>
@@ -59,16 +62,28 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 <body><main>
 <header><div><h1>Радар Realt</h1><div class="muted">Минск Мир · объявления сотрудников, просмотры и наблюдаемое продвижение</div></div><div class="meta"><div id="freshness">Загружаем данные…</div><div>Сбор: 07:10–21:10 по Минску (часовые интервалы; возможен переход на получасовые)</div><div class="headerlinks"><button id="refresh" title="Перечитать сохранённые снимки; новый сбор запускается по расписанию">Обновить данные</button></div></div></header>
 <div class="notice error" id="freshnessWarning" role="status" aria-live="polite" hidden></div>
-<details class="filterbox" id="filterBox"><summary><strong>Фильтры</strong><span id="filtersSummaryPeriod">7 дней</span></summary><div class="quick" id="quick"><button data-days="1">Сегодня</button><button data-days="yesterday">Вчера</button><button data-days="24h">24 часа</button><button data-days="7" class="active">7 дней</button><button data-days="14">14 дней</button><button data-days="30">30 дней</button><button data-days="90">90 дней</button><button data-days="all">Вся история</button></div>
-<div class="filters">
-<label>С даты<input type="date" id="from"></label><label>По дату<input type="date" id="to"></label>
-<label class="filter-wide">Агент<select id="agent"><option value="">Все агенты</option></select></label>
-<label>Продвижение в замере<select id="promo"><option value="">Любое</option><option value="paid">Есть продвижение</option><option value="0">Бесплатно</option><option value="2">Выделение</option><option value="3">Поднятие</option><option value="4">Спецпредложение</option><option value="other">Другой статус</option></select></label>
-<label>Дом / квартал<select id="quarter"><option value="">Все</option></select></label>
-<label class="filter-wide">Поиск<input id="search" type="search" placeholder="Адрес, заголовок или номер объявления"></label>
-</div>
-<details class="panel morefilters"><summary>Несколько агентов, комнатность, компания, адрес и площадь</summary><div class="filters secondary"><div class="filter-wide"><div class="muted tiny">Несколько агентов (выбери галочками)</div><div id="multiAgents" class="checklist" role="group" aria-label="Несколько агентов"></div></div><label>Компания<select id="company"><option value="">Все</option></select></label><label>Комнатность<select id="rooms"><option value="">Любая</option></select></label><label class="filter-wide">Адрес<select id="house"><option value="">Все</option></select></label><label>Площадь от, м²<input id="areaMin" type="number" min="0" step="0.1"></label><label>до, м²<input id="areaMax" type="number" min="0" step="0.1"></label></div><div class="daychips" id="weekdays"><b>Дни недели:</b> <label><input type="checkbox" value="0">Пн</label><label><input type="checkbox" value="1">Вт</label><label><input type="checkbox" value="2">Ср</label><label><input type="checkbox" value="3">Чт</label><label><input type="checkbox" value="4">Пт</label><label><input type="checkbox" value="5">Сб</label><label><input type="checkbox" value="6">Вс</label></div><small>Без галочек — все дни. Для прироста выбран день конца интервала; точный день посещений неизвестен.</small><div><button id="reset">Сбросить фильтры</button></div></details>
-</details>
+<details class="filterbox" id="filterBox" open><summary><strong>Фильтры</strong><span id="filtersSummaryPeriod">7 дней</span></summary>
+<div class="kfilter-body">
+ <div class="kfilter-line"><span class="kfilter-caption">Период</span><div class="quick" id="quick"><button data-days="1">Сегодня</button><button data-days="yesterday">Вчера</button><button data-days="7" class="active">7 дней</button><button data-days="30">30 дней</button><button data-days="90">90 дней</button><button data-days="all">Всё время</button><button data-days="24h">24 часа</button><button data-days="14">14 дней</button></div></div>
+ <div class="kfilter-line"><span class="kfilter-caption">Дни недели</span><div class="daychips" id="weekdays"><label><input type="checkbox" value="0">Пн</label><label><input type="checkbox" value="1">Вт</label><label><input type="checkbox" value="2">Ср</label><label><input type="checkbox" value="3">Чт</label><label><input type="checkbox" value="4">Пт</label><label><input type="checkbox" value="5">Сб</label><label><input type="checkbox" value="6">Вс</label></div></div>
+ <div class="kfilter-line"><span class="kfilter-caption">Компания</span><select id="company" aria-label="Компания"><option value="">Все</option></select></div>
+ <div class="kfilter-line"><span class="kfilter-caption">Сотрудники</span><select id="agent" aria-label="Сотрудник"><option value="">Все сотрудники</option></select></div>
+ <div class="kfilter-line"><span class="kfilter-caption">Комнат</span><select id="rooms" aria-label="Комнатность"><option value="">Все</option></select><span class="kfilter-hint">Только подтверждённые новостройки Минск-Мира</span></div>
+ <div class="kfilter-search"><input id="search" type="search" aria-label="Поиск" placeholder="Поиск по заголовку, адресу или номеру объявления"></div>
+ <div class="kfilter-actions"><label class="kfilter-verified"><input type="checkbox" checked disabled> Только новостройки</label><button id="reset">Сбросить фильтры</button></div>
+ <details class="morefilters"><summary>Дополнительные фильтры</summary>
+  <div class="filters secondary">
+   <label>С даты<input type="date" id="from"></label><label>По дату<input type="date" id="to"></label>
+   <label>Продвижение в замере<select id="promo"><option value="">Любое</option><option value="paid">Есть продвижение</option><option value="0">Бесплатно</option><option value="2">Выделение</option><option value="3">Поднятие</option><option value="4">Спецпредложение</option><option value="other">Другой статус</option></select></label>
+   <label>Дом / квартал<select id="quarter"><option value="">Все</option></select></label>
+   <label>Адрес<select id="house"><option value="">Все</option></select></label>
+   <label>Площадь от, м²<input id="areaMin" type="number" min="0" step="0.1"></label>
+   <label>до, м²<input id="areaMax" type="number" min="0" step="0.1"></label>
+   <div class="filter-wide"><div class="muted tiny">Несколько сотрудников</div><div id="multiAgents" class="checklist" role="group" aria-label="Несколько сотрудников"></div></div>
+  </div>
+  <p class="muted tiny">Дни недели относятся ко времени наблюдения. Это не точное время просмотра клиентом.</p>
+ </details>
+</div></details>
 <nav id="views" class="viewtabs" aria-label="Основные разделы радара"><button data-view="promotion" class="active">Продвижение</button><button data-view="ads">Объявления за период</button><button data-view="employees">Сотрудники</button><button data-view="works">Топ органика</button><button data-view="leaders">Топ продвижение</button></nav>
 <div id="status" class="muted" role="status" aria-live="polite"></div>
 <div class="cards" id="cards"></div>
