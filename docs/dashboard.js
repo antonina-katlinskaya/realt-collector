@@ -191,6 +191,7 @@ function renderTable(m){const size=40;page=Math.min(page,Math.max(0,Math.ceil(m.
     const posted=r.createdAt?date(r.createdAt):'дата неизвестна';
     return `<article class="ad-tile" data-detail="${esc(r.uuid)}">${photo}<div class="tile-content"><div class="tile-title">${esc(r.title||r.address||'Объявление')}</div><div class="tile-address">${esc(r.address||'Адрес не указан')}</div><div class="tile-meta">${esc(agentName(r))} · ${esc(r.rooms||'?')}-комн. · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div><div class="tile-meta">Размещено: ${posted} · ${esc(label(r))}</div><div class="tile-stats"><span>${fmt(number(r.views))} просм. всего</span><span>${growth} за период</span></div></div></article>`;
   }).join('')||empty('Объявления по выбранным фильтрам отсутствуют.');
+  if($('publishedCount'))$('publishedCount').textContent='· '+fmt(m.listing.length);
   $('rowcount').textContent=`${m.listing.length? page*size+1:0}–${Math.min((page+1)*size,m.listing.length)} из ${fmt(m.listing.length)}`;$('prev').disabled=page===0;$('next').disabled=(page+1)*size>=m.listing.length;
 }
 async function load(){const seq=++loadSeq;$('refresh').disabled=true;$('status').textContent='Загружаем снимки…';try{const manifestResponse=await fetch(ROOT+'developer_manifest.json?refresh='+Date.now(),{cache:'no-store'});if(!manifestResponse.ok)throw Error('Нет проверенного списка объявлений от застройщика: HTTP '+manifestResponse.status);const developerManifest=await manifestResponse.json();if(developerManifest.rule_version!==1||!Array.isArray(developerManifest.ids))throw Error('Неизвестная версия отбора новостроек');developerIds=new Set(developerManifest.ids);const response=await fetch(ROOT+'snapshots.csv?refresh='+Date.now(),{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);const text=await response.text();if(seq!==loadSeq)return;baseRows=parseCSV(text);rows=baseRows.concat(...archiveRows.values());index=buildIndex(rows.filter(r=>developerIds.has(r.uuid)));if(!index.times.length)throw Error('Снимки пока отсутствуют');const last=index.times.at(-1);updateFreshness();
@@ -367,7 +368,7 @@ function activateView(view){const changed=activeView!==view;activeView=view;for(
 $('views').onclick=e=>{const b=e.target.closest('[data-view]');if(b)activateView(b.dataset.view);};
 for(const id of ['multiAgents','weekdays'])$(id).onchange=()=>{if(id==='multiAgents')$('agent').value='';page=0;render();};
 $('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','rooms','house','areaMin','areaMax','search'])$(id).value='';for(const x of document.querySelectorAll('#multiAgents input,#weekdays input'))x.checked=false;page=0;render();};
-$('agentLegend').onclick=e=>{const b=e.target.closest('[data-line]');if(!b)return;const id=b.dataset.line;if(hiddenAgents.has(id))hiddenAgents.delete(id);else hiddenAgents.add(id);renderTrend(currentModel);};
+
 $('intervalButtons').onclick=e=>{const b=e.target.closest('[data-interval]');if(b){chosenInterval=b.dataset.interval;renderInterval(currentModel);}};
 
 for(const id of ['areaMin','areaMax'])$(id).addEventListener('input',()=>{page=0;render();});
