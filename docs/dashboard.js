@@ -182,14 +182,22 @@ function renderRanking(m){const agents=new Map();for(const r of m.current){const
   const list=[...agents.values()].sort((a,b)=>b[key]-a[key]).slice(0,10),max=Math.max(1,...list.map(a=>a[key]));
   $('ranking').innerHTML=list.map(a=>`<div class="barrow"><button data-agent="${esc(a.id)}" title="${esc(a.phone)}">${esc(a.name)}</button><div class="bartrack"><div class="bar" style="width:${a[key]/max*100}%"></div></div><b>${fmt(a[key])}</b></div>`).join('')||'<div class="empty">Нет объявлений по выбранным фильтрам</div>';
 }
+function kufarStyleCard(r,primary,subline,secondary){
+ const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
+ return `<article class="acard" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
+  <div class="at">${esc(r.title||r.address||'Объявление')}</div>
+  <div class="am">${esc(r.address||'Адрес не указан')}</div>
+  <div class="aw">${esc(agentName(r))} · ${esc(r.rooms||'?')}-комн. · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
+  <div class="ad8">${secondary||''}</div>
+  <div class="amet"><span><b>${primary}</b></span><span>${subline||''}</span></div>
+ </div></article>`;
+}
 function renderTable(m){const size=40;page=Math.min(page,Math.max(0,Math.ceil(m.listing.length/size)-1));const part=m.listing.slice(page*size,(page+1)*size);
   $('listings').innerHTML=part.map(r=>{const st=statusStart(index,r),dv=m.growth.get(r.uuid);return `<tr><td>${esc(agentName(r))}<br><small>${esc(r.contactPhone)}</small></td><td class="title">${photos.has(r.uuid)?`<img loading="lazy" class="listing-thumb" src="${esc(photos.get(r.uuid)[0])}" alt="Фото объявления ${esc(r.code)}">`:''}<a href="https://realt.by/sale-flats/object/${encodeURIComponent(r.code)}/" target="_blank" rel="noopener">${esc(r.address||r.title)} ↗</a><br><small>${esc(r.code)} · ${esc(r.areaTotal)} м² · ${esc(r.storey)}/${esc(r.storeys)} эт. · ${esc(r.quarter||'дом не распознан')}</small>${r.goneAt?'<br><small>Отсутствует с '+date(r.goneAt)+'</small>':''}</td><td>${price(r)}</td><td><span class="badge ${paid(r)?'promo':''}">${esc(label(r))}</span></td><td>${date(st.time)}<br><small>${st.open?'Начало неизвестно':'Смена замечена между обходами'}</small></td><td>${fmt(number(r.views))}</td><td>${fmt(dv)}</td><td><button data-detail="${esc(r.uuid)}">История</button></td></tr>`;}).join('')||'<tr><td colspan="8" class="empty">Нет объявлений по выбранным фильтрам</td></tr>';
   $('adCards').innerHTML=part.map(r=>{
-    const imgs=photos.get(r.uuid)||[];
-    const photo=imgs.length?`<img loading="lazy" src="${esc(imgs[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="photo-fallback">Фото из снимка отсутствует</div>';
-    const dv=m.growth.get(r.uuid),growth=dv===undefined?'—':'+'+fmt(dv);
-    const posted=r.createdAt?date(r.createdAt):'дата неизвестна';
-    return `<article class="ad-tile" data-detail="${esc(r.uuid)}">${photo}<div class="tile-content"><div class="tile-title">${esc(r.title||r.address||'Объявление')}</div><div class="tile-address">${esc(r.address||'Адрес не указан')}</div><div class="tile-meta">${esc(agentName(r))} · ${esc(r.rooms||'?')}-комн. · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div><div class="tile-meta">Размещено: ${posted} · ${esc(label(r))}</div><div class="tile-stats"><span>${fmt(number(r.views))} просм. всего</span><span>${growth} за период</span></div></div></article>`;
+   const dv=m.growth.get(r.uuid);
+   const seen=r.createdAt?'Размещено '+date(r.createdAt):'Дата размещения неизвестна';
+   return kufarStyleCard(r,fmt(number(r.views))+' просм.','Прирост за период: '+(dv===undefined?'—':'+'+fmt(dv)),seen+' · '+esc(label(r)));
   }).join('')||empty('Объявления по выбранным фильтрам отсутствуют.');
   if($('publishedCount'))$('publishedCount').textContent='· '+fmt(m.listing.length);
   $('rowcount').textContent=`${m.listing.length? page*size+1:0}–${Math.min((page+1)*size,m.listing.length)} из ${fmt(m.listing.length)}`;$('prev').disabled=page===0;$('next').disabled=(page+1)*size>=m.listing.length;
