@@ -27,4 +27,6 @@ jobs:
       - name: Diagnose extreme view deltas (read only)
         run: |
           curl -fsSL 'https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/snapshots.csv' -o /tmp/realt-current.csv
-          node tests/dashboard-diagnostics.cjs /tmp/realt-current.csv --archive
+          mkdir -p /tmp/realt-archive
+          for day in $(seq -w 20 26); do curl -fsSL "https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/snapshots/2026-10-${day}.csv.gz" -o "/tmp/realt-archive/2026-10-${day}.csv.gz"; done
+          ARCHIVE_DIR=/tmp/realt-archive node tests/dashboard-diagnostics.cjs /tmp/realt-current.csv --archive
