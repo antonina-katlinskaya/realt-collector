@@ -5,7 +5,7 @@ import unittest
 source = pathlib.Path('collector.py').read_text(encoding='utf-8')
 tree = ast.parse(source)
 nodes = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in {'map_view_batch', 'fetch_views'}]
-ns = {}
+ns = {'json': json}
 exec(compile(ast.Module(body=nodes, type_ignores=[]), 'collector.py', 'exec'), ns)
 map_view_batch = ns['map_view_batch']
 
