@@ -140,6 +140,8 @@ function render(){if(!index)return;const m=model();currentModel=m;const quick=$(
   $('status').textContent=m.end?'Состояние объявлений на '+date(m.end)+' · '+index.times.length+' снимков в истории':'Нет снимков до выбранной даты';
   const countTimes=index.times.filter(t=>day(t)>=m.from&&day(t)<=m.to).length;
   $('coverage').textContent=countTimes<2?'Пока в выбранном периоде меньше двух снимков. Прирост, длительность продвижения и время активности начнут уточняться с новыми обходами.':`${countTimes} снимков в выбранном периоде. Прирост за полностью покрытые интервалы: ${fmt(delta)}. При продвижении: ${fmt(m.events.filter(e=>e.category==='paid').reduce((s,e)=>s+e.delta,0))}; без продвижения: ${fmt(m.events.filter(e=>e.category==='free').reduce((s,e)=>s+e.delta,0))}; при смене / неизвестном статусе: ${fmt(m.events.filter(e=>e.category==='unknown').reduce((s,e)=>s+e.delta,0))}.`;
+  const currentTotal=m.current.reduce((sum,r)=>sum+(number(r.views)||0),0);
+  if(delta>currentTotal*2&&currentTotal>0){$('coverage').textContent+=' ⚠ Необычно большой накопленный прирост относительно текущих счётчиков. Требуется проверка исходных интервалов; не используйте эту сумму как подтверждённый показатель эффективности.';}
   const groups=new Map();for(const e of m.events){const k=e.end;if(!groups.has(k))groups.set(k,{paid:0,free:0,unknown:0,title:date(e.start)+' → '+date(e.end),label:date(e.end).slice(0,5)+' '+date(e.end).slice(-5)});groups.get(k)[e.category]+=e.delta;}
   if(activeView==='overview'){$('traffic').innerHTML=svgBars([...groups.values()]);renderRanking(m);}
   if(activeView==='ads')renderTable(m);
