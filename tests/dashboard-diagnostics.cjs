@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs');
 const {parseCSV,buildIndex,intervals}=require('../docs/dashboard.js');
-const raw=fs.readFileSync('data/snapshots.csv','utf8');
+const raw=fs.readFileSync(process.argv[2]||'data/snapshots.csv','utf8');
 const rows=parseCSV(raw),idx=buildIndex(rows);
 const from=idx.times.length?idx.times[0].slice(0,10):'2000-01-01';
 const to=idx.times.length?idx.times.at(-1).slice(0,10):'2000-01-01';
