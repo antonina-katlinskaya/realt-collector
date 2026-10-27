@@ -1,0 +1,19 @@
+name: Verify UUID-safe Realt views
+on:
+  pull_request:
+    paths:
+      - collector.py
+      - tests/test_collector_views.py
+      - .github/workflows/verify-views.yml
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check collector syntax and mapping
+        run: |
+          python -m py_compile collector.py
+          python -m unittest discover -s tests -p 'test_collector_views.py' -v

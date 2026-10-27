@@ -135,24 +135,62 @@ def fetch_agency_listings(session, agency_uuid):
 
 # --------------------------- просмотры -------------------------------------
 
+def map_view_batch(batch, response_items):
+    """Do not attribute views when positional correspondence is unverified."""
+    if not isinstance(response_items, list) or len(response_items) != len(batch):
+        return {uuid: None for uuid in batch}
+    output = {}
+    for uuid, item in zip(batch, response_items):
+        if not isinstance(item, dict):
+            output[uuid] = None
+            continue
+        value = item.get("views")
+        try:
+            count = int(value) if value is not None else None
+            output[uuid] = count if count is not None and count >= 0 else None
+        except (TypeError, ValueError):
+            output[uuid] = None
+    return output
+
+
 def fetch_views(session, uuids):
-    """Текущие просмотры пачками. Возвращает dict uuid -> int(views)."""
+    """Fetch exact per-UUID counts through aliased singleton fields in one GraphQL request.
+
+    IMPORTANT: objectsViewsCountsByUuids(uuids:[...]) does not preserve the order of
+    the input identifiers. Positional zip() produced incorrect historical figures.
+    Explicit aliases keep batching efficient without guessing response order.
+    """
     out = {}
+    unknown = 0
     for i in range(0, len(uuids), C.VIEWS_BATCH_SIZE):
         batch = uuids[i:i + C.VIEWS_BATCH_SIZE]
-        resp = gql(session, Q.VIEWS_QUERY, {"uuids": batch}, "v")
-        if resp.get("errors"):
-            print(f"    просмотры: пачка {i} ошибка, пропускаю")
-        else:
-            arr = resp["data"]["objectsViewsCountsByUuids"]
-            # ответ в том же порядке, что batch
-            for u, item in zip(batch, arr):
-                try:
-                    out[u] = int(item["views"])
-                except (TypeError, ValueError, KeyError):
-                    out[u] = None
+        fields = " ".join(
+            f"v{j}:objectsViewsCountsByUuids(uuids:{json.dumps([uuid])}){{views}}"
+            for j, uuid in enumerate(batch)
+        )
+        query = "query v{" + fields + "}"
+        try:
+            resp = gql(session, query, {}, "v")
+            data = resp.get("data")
+            if resp.get("errors") or not isinstance(data, dict):
+                raise ValueError("GraphQL errors or missing data")
+            for j, uuid in enumerate(batch):
+                item = data.get(f"v{j}")
+                if not isinstance(item, list) or len(item) != 1:
+                    out[uuid] = None
+                    unknown += 1
+                    continue
+                out[uuid] = map_view_batch([uuid], item)[uuid]
+                if out[uuid] is None:
+                    unknown += 1
+        except (RuntimeError, ValueError, TypeError) as exc:
+            print(f"    просмотры: пакет {i} не подтверждён ({exc}); значения неизвестны")
+            out.update({uuid: None for uuid in batch})
+            unknown += len(batch)
         if i + C.VIEWS_BATCH_SIZE < len(uuids):
             sleep_between(C.PAUSE_BETWEEN_VIEW_BATCHES)
+    if unknown:
+        print(f"    просмотры: {unknown} значений не определены, не подменяем их чужими")
     return out
 
 
