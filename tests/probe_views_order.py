@@ -41,4 +41,10 @@ print('aliased_values',alias_values)
 print('aliases_equal_singletons',alias_values==singles)
 if alias_values!=singles:
     raise RuntimeError('Aliased response is not UUID-safe')
+large=uuids_all[:50]
+large_aliases=' '.join(f'v{i}:objectsViewsCountsByUuids(uuids:{json.dumps([u])}){{views}}' for i,u in enumerate(large))
+large_response=collector.gql(session,'query v{'+large_aliases+'}',{},'v')
+if large_response.get('errors') or len(large_response['data']) != len(large):
+    raise RuntimeError('Fifty aliases were not accepted')
+print('alias_batch_50_accepted',True)
 
