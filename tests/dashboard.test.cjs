@@ -56,3 +56,9 @@ test('ranking excludes all pre-fix intervals but preserves raw history',()=>{
  assert.equal(m.observed.length,1);
  assert.equal(idx.histories.get('a').length,3);
 });
+
+test('organic view renders gallery cards as well as table',()=>{
+ const js=require('node:fs').readFileSync(require('node:path').join(__dirname,'../docs/dashboard.js'),'utf8');
+ const body=js.split('function renderWorks(m){')[1].split('\nfunction renderPlacements(m)')[0];
+ assert.match(body,/renderGallery\(m\);/);
+});
