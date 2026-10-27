@@ -380,13 +380,36 @@ function renderGallery(m){const organic=new Map();for(const e of m.events){if(e.
 }
 function renderPromotedGallery(m){
  const promoted=new Map();
- for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}
+ for(const e of m.events){
+  if(e.category!=='paid')continue;
+  const entry=promoted.get(e.id)||{row:e.row,delta:0};
+  entry.delta+=e.delta;entry.row=e.row;promoted.set(e.id,entry);
+ }
+ const filter=createMatcher(),historical=new Map();
+ for(const [id,history] of index.histories){
+  const paidRows=history.filter(r=>paid(r)&&day(r.snapshot_at)>=m.from&&day(r.snapshot_at)<=m.to&&filter(r,r.snapshot_at,true));
+  if(!paidRows.length)continue;
+  const recent=paidRows.at(-1),latest=history.at(-1);
+  historical.set(id,{row:latest||recent,first:paidRows[0].snapshot_at,last:recent.snapshot_at,kind:label(recent)});
+ }
  const confirmed=[...promoted.values()].filter(v=>v.delta>0).sort((a,b)=>b.delta-a.delta);
  const fallback=confirmed.length===0;
- const ranked=fallback?m.current.filter(paid).sort((a,b)=>(number(b.views)||0)-(number(a.views)||0)).map(r=>({row:r,delta:null})):confirmed;
- const items=ranked.filter(v=>photos.has(v.row.uuid)).slice(0,30);
- $('promotedGallery').innerHTML=(fallback?'<p class="muted">Пока нет двух достоверных обходов для расчёта прироста. Ниже — объявления в продвижении на последнем снимке, упорядоченные по общему счётчику, НЕ по эффективности рекламы.</p>':'')+
- items.map(v=>{const r=v.row;return `<article class="adcard-clickable" data-detail="${esc(r.uuid)}"><div class="photoStrip">${photos.get(r.uuid).slice(0,5).map(u=>`<img loading="lazy" src="${esc(u)}" alt="Фото объявления ${esc(r.code)}">`).join('')}</div><div class="gbody">${adLink(r)}<p>${esc(agentName(r))} · ${price(r)}</p><b>${v.delta===null?fmt(number(r.views))+' всего просмотров':('+'+fmt(v.delta)+' при платном статусе')}</b><p class="tiny">Фото из снимка ${date(photoDate)}. ${v.delta===null?'Прирост ещё не проверен.':'Источник просмотров не доказан.'}</p>${detailButton(r)}</div></article>`;}).join('')+(items.length?'':empty(photoLoaded?'Нет подходящих фотографий в источнике.':'Фотографии загружаются.'));
+ const ranked=fallback?[...historical.values()].sort((a,b)=>String(b.last).localeCompare(String(a.last))).map(x=>({...x,delta:null})):confirmed.map(x=>({...x,...historical.get(x.row.uuid)}));
+ const total=ranked.length;
+ const rooms=new Map();
+ for(const v of ranked){
+  const r=v.row,k=String(r.rooms||'?');
+  const g=rooms.get(k)||{count:0,delta:0,measured:0};
+  g.count++;if(v.delta!==null&&v.delta!==undefined){g.delta+=v.delta;g.measured++;}
+  rooms.set(k,g);
+ }
+ const roomTable=makeTable(['Комнат','Объявлений','Проверенный прирост'],[...rooms].sort((a,b)=>Number(a[0])-Number(b[0])).map(([n,v])=>`<tr><td>${esc(n)}</td><td>${v.count}</td><td>${v.measured?'+'+fmt(v.delta):'—'}</td></tr>`));
+ const items=ranked.slice(0,30);
+ const introduction=fallback?
+ `<p class="muted">За период замечено ${fmt(total)} объявлений с платным статусом. Пока нет достаточных проверенных интервалов для рейтинга по эффективности. Ниже — история рекламы, начиная с недавно замеченных; это НЕ рейтинг по просмотрам.</p>`:
+ `<p class="muted">ТОП-${Math.min(30,total)} по достоверному приросту просмотров в платных интервалах. Открытия номера Realt не предоставляет.</p>`;
+ $('promotedGallery').innerHTML=introduction+'<h3>По комнатности</h3>'+roomTable+'<h3>Объявления с продвижением</h3>'+
+ items.map(v=>{const r=v.row;return `<article class="adcard-clickable" data-detail="${esc(r.uuid)}"><div class="photoStrip">${(photos.get(r.uuid)||[]).slice(0,4).map(u=>`<img loading="lazy" src="${esc(u)}" alt="Фото объявления ${esc(r.code)}">`).join('')}</div><div class="gbody">${adLink(r)}<p>${esc(agentName(r))} · ${price(r)}</p><p class="tiny">${v.first?'Реклама замечена с '+date(v.first)+' до '+date(v.last):'Наблюдаемая реклама'} · ${esc(v.kind||label(r))}</p><b>${v.delta===null?'Прирост ещё не подтверждён':'+'+fmt(v.delta)+' при платном статусе'}</b><p class="tiny">Открытия номера: нет данных · фото ${date(photoDate)}</p>${detailButton(r)}</div></article>`;}).join('')+(items.length?'':empty(photoLoaded?'В архиве обнаружено продвижение, но фотографий этих объявлений нет в текущем снимке.':'Фотографии загружаются.'));
 }
 
 async function loadPhotos(){if(photoLoaded){if(activeView==='ads')renderTable(currentModel);else if(activeView==='leaders')renderPromotedGallery(currentModel);else renderGallery(currentModel);return;}$('photoStatus').textContent='Загружаем обложки объявлений…';try{
