@@ -7,24 +7,28 @@ Unknown listings are excluded from the developer-only radar, not deleted.
 import re
 
 POSITIVE = re.compile(
-    r"застройщик|напрямую\s+от\s+застройщика|рассрочк|первичн(?:ое|ый|ая|ого)?\s+жиль"
-    r"|новостройк|без\s+переплат|отдел\s+продаж|жилищн(?:ые|ый)\s+облигац",
-    re.I,
+    r"застройщик|рассрочк|первичн(?:ое|ый|ая|ого)?\\s+жиль"
+    r"|новостройк|без\\s+переплат|отдел\\s+продаж|жилищн(?:ые|ый)\\s+облигац"
+    r"|скидк.{0,90}быстр|полной\\s+и\\s+быстрой\\s+оплат|любая\\s+форма\\s+оплат",
+    re.I | re.S,
 )
 NEGATIVE = re.compile(
-    r"вторичк|вторичн(?:ый|ое|ая)\s+(?:рынок|жиль)|от\s+собственника"
-    r"|с\s+(?:дизайнерским|авторским|капитальным)\s+ремонтом"
-    r"|с\s+мебелью|полностью\s+укомплектованная|после\s+ремонта"
-    r"|жил(?:и|ая|ое)\s+в\s+квартир|собственник\s+прода"
-    r"|дизайнерск(?:ий|им|ого)\s+ремонт|с\s+(?:хорошим|современным|свежим|качественным)\s+ремонтом"
-    r"|с\s+техникой\s+и\s+мебелью|ремонт\s+делал(?:и)?\s+для\s+себя",
-    re.I,
+    r"вторичк|вторичн(?:ый|ое|ая)\\s+(?:рынок|жиль)|от\\s+собственника"
+    r"|с\\s+(?:дизайнерским|авторским|капитальным|хорошим|современным|качественным)\\s+ремонтом"
+    r"|современн(?:ый|ым)\\s+ремонт|дизайнерск(?:ий|им|ого)\\s+ремонт"
+    r"|с\\s+мебелью|с\\s+техникой|мебель\\s+остае|оснащен.{0,40}мебел"
+    r"|после\\s+ремонта|полностью\\s+готова\\s+к\\s+проживани"
+    r"|чистая\\s+продажа|отделк.{0,40}сантехник|жил(?:и|ая|ое)\\s+в\\s+квартир",
+    re.I | re.S,
 )
 
 def developer_offer(item):
-    parts = [str(item.get(key) or "") for key in ("title", "headline", "description", "specialComment")]
-    text = " ".join(parts)
-    return bool(POSITIVE.search(text)) and not bool(NEGATIVE.search(text))
+    # Agency's generic sales footer often advertises new builds even in resale listings.
+    # Only use the headline and the opening object-specific portion of the description.
+    title = " ".join(str(item.get(k) or "") for k in ("title", "headline"))
+    description = str(item.get("description") or "")[:850]
+    object_text = title + " " + description
+    return bool(POSITIVE.search(object_text)) and not bool(NEGATIVE.search(object_text))
 
 def classification(item):
     return "developer" if developer_offer(item) else "excluded_unverified"
