@@ -14,4 +14,5 @@ const byCat={free:0,paid:0,unknown:0};
 for(const e of ev)byCat[e.category]+=e.delta;
 const byInterval=new Map();for(const e of ev){const key=e.start+' → '+e.end;byInterval.set(key,(byInterval.get(key)||0)+e.delta);}
 const largest=ev.slice().sort((a,b)=>b.delta-a.delta).slice(0,20).map(e=>({id:e.id,code:e.row.code,start:e.start,end:e.end,delta:e.delta,status:e.row.paymentStatus,category:e.category}));
-console.log(JSON.stringify({rows:rows.length,times:idx.times.length,first:idx.times[0],last:idx.times.at(-1),intervals:ev.length,total:ev.reduce((s,e)=>s+e.delta,0),byCat,byInterval:Object.fromEntries(byInterval),largest},null,2));
+const examples=largest.slice(0,5).map(x=>({code:x.code,delta:x.delta,history:(idx.histories.get(x.id)||[]).map(r=>({t:r.snapshot_at,views:r.views,status:r.paymentStatus}))}));
+console.log(JSON.stringify({examples,rows:rows.length,times:idx.times.length,first:idx.times[0],last:idx.times.at(-1),intervals:ev.length,total:ev.reduce((s,e)=>s+e.delta,0),byCat,byInterval:Object.fromEntries(byInterval),largest},null,2));
