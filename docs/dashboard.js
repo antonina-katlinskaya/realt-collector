@@ -256,6 +256,19 @@ function renderUnified(m){
 }
 function liveAgentCard(id,items){const r=items[0];return `<article class="agentcard"><h3>${esc(agentName(r))}</h3><span class="badge promo">${items.length} в продвижении</span>${items.map(r=>{const st=statusStart(index,r);return `<div class="adlink">${adLink(r)}<br><small>${price(r)} · ${esc(label(r))}<br>Наблюдается с ${date(st.time)}; ${st.open?'начало неизвестно':'смена между обходами'}</small> ${detailButton(r)}</div>`;}).join('')}</article>`;}
 function renderPromotions(m){
+ const paidEvents=m.events.filter(e=>e.category==='paid');
+ const promotedCount=new Set(paidEvents.map(e=>e.id)).size;
+ const paidGrowth=totalEvents(paidEvents);
+ const freeGrowth=totalEvents(m.events.filter(e=>e.category==='free'));
+ const currentlyPaid=m.current.filter(paid).length;
+ const promoKpis=[
+  ['Объявлений с продвижением',promotedCount,'с подтверждёнными платными интервалами'],
+  ['Прирост при продвижении',paidGrowth,'наблюдаемые интервалы, не эффект рекламы'],
+  ['Прирост без продвижения',freeGrowth,'наблюдаемые бесплатные интервалы'],
+  ['Сейчас в продвижении',currentlyPaid,'на конце выбранного периода'],
+  ['Открытия номера','—','Realt не предоставляет эти данные']
+ ];
+ $('promoOverviewKpi').innerHTML=promoKpis.map(([name,value,detail])=>`<div class="card"><strong>${typeof value==='number'?fmt(value):value}</strong><div class="kpi-label">${name}</div><span>${detail}</span></div>`).join('');
  const live=[...index.byTime.get(index.times.at(-1)).values()].filter(r=>matches(r,r.snapshot_at,true)&&paid(r)),byAgent=new Map();
  for(const r of live){if(!byAgent.has(r.userUuid))byAgent.set(r.userUuid,[]);byAgent.get(r.userUuid).push(r);}
  const mainIds=new Set(Object.keys(knownById));$('livePromo').innerHTML=[...byAgent].filter(([id])=>mainIds.has(id)).map(([id,a])=>liveAgentCard(id,a)).join('')||empty('У основных агентов нет продвижения по последнему снимку и выбранным фильтрам.');
