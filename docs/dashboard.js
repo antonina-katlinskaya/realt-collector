@@ -28,14 +28,21 @@ function buildIndex(rows) {
   return {times,byTime,histories};
 }
 function intervals(index,from,to) {
-  const out=[];
+  const out=[],highs=new Map();
+  if(!index.times.length)return out;
+  for(const r of index.byTime.get(index.times[0]).values()){const v=number(r.views);if(v!==null)highs.set(r.uuid,v);}
   for(let i=1;i<index.times.length;i++){
-    const a=index.times[i-1],b=index.times[i];
-    if(day(a)<from||day(b)>to)continue;
+    const a=index.times[i-1],b=index.times[i],inside=day(a)>=from&&day(b)<=to;
     const prev=index.byTime.get(a),cur=index.byTime.get(b);
-    for(const [id,r]of cur){const p=prev.get(id);if(!p)continue;const va=number(p.views),vb=number(r.views);if(va===null||vb===null||vb<va)continue;
+    for(const [id,r] of cur){
+      const vb=number(r.views),priorHigh=highs.get(id);
+      if(vb!==null)highs.set(id,priorHigh===undefined?vb:Math.max(priorHigh,vb));
+      const p=prev.get(id);if(!p||!inside)continue;
+      const va=number(p.views);if(va===null||vb===null||vb<va)continue;
+      // Previously observed visits must not be counted again after a counter reset.
+      const delta=Math.max(0,vb-Math.max(va,priorHigh===undefined?va:priorHigh));
       const category=p.paymentStatus===r.paymentStatus&&paid(p)?'paid':free(p)&&free(r)?'free':'unknown';
-      out.push({id,row:r,start:a,end:b,delta:vb-va,category});
+      out.push({id,row:r,start:a,end:b,delta,category});
     }
   }
   return out;
