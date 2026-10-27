@@ -1,0 +1,15 @@
+name: Verify primary-market filter
+on:
+  pull_request:
+    paths:
+      - pipeline/developer_filter.py
+      - tests/test_primary_offers.py
+      - .github/workflows/verify-primary-filter.yml
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m unittest discover -s tests -p test_primary_offers.py -v
