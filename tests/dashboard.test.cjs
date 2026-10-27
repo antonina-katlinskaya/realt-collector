@@ -56,3 +56,16 @@ test('ranking excludes all pre-fix intervals but preserves raw history',()=>{
  assert.equal(m.observed.length,1);
  assert.equal(idx.histories.get('a').length,3);
 });
+
+test('newbuild scope filter accepts direct developer supply and rejects resale / generic flats',()=>{
+ const fs=require('node:fs'),vm=require('node:vm');
+ const js=fs.readFileSync(require('node:path').join(__dirname,'../docs/dashboard.js'),'utf8');
+ const m=js.match(/function isNewbuild\(r\)\{[\s\S]*?\n\}/);
+ assert.ok(m,'scope gate must exist');
+ const context={};vm.runInNewContext(m[0]+';globalThis.classify=isNewbuild;',context);
+ const c=context.classify;
+ assert.equal(c({title:'Напрямую от застройщика. Рассрочка без переплат'}),true);
+ assert.equal(c({title:'Новая квартира с дизайнерским ремонтом и мебелью'}),false);
+ assert.equal(c({title:'Квартира Минск Мир, Савицкого 9'}),false);
+ assert.equal(c({realEstateDevUuid:'valid-id',title:'Новая квартира от застройщика'}),true);
+});
