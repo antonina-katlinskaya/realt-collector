@@ -154,26 +154,43 @@ def map_view_batch(batch, response_items):
 
 
 def fetch_views(session, uuids):
-    """Fetch views; reject ambiguous batches instead of assigning wrong UUIDs."""
+    """Fetch exact per-UUID counts through aliased singleton fields in one GraphQL request.
+
+    IMPORTANT: objectsViewsCountsByUuids(uuids:[...]) does not preserve the order of
+    the input identifiers. Positional zip() produced incorrect historical figures.
+    Explicit aliases keep batching efficient without guessing response order.
+    """
     out = {}
-    rejected = 0
+    unknown = 0
     for i in range(0, len(uuids), C.VIEWS_BATCH_SIZE):
         batch = uuids[i:i + C.VIEWS_BATCH_SIZE]
-        resp = gql(session, Q.VIEWS_QUERY, {"uuids": batch}, "v")
-        if resp.get("errors") or not isinstance(resp.get("data"), dict):
-            print(f"    просмотры: пачка {i} вернула ошибку; значения неизвестны")
-            mapped = {uuid: None for uuid in batch}
-        else:
-            arr = resp["data"].get("objectsViewsCountsByUuids")
-            if not isinstance(arr, list) or len(arr) != len(batch):
-                print(f"    просмотры: пачка {i} неоднозначна: ожидалось {len(batch)}, получено {len(arr) if isinstance(arr, list) else 'не список'}; значения неизвестны")
-                rejected += len(batch)
-            mapped = map_view_batch(batch, arr)
-        out.update(mapped)
+        fields = " ".join(
+            f"v{j}:objectsViewsCountsByUuids(uuids:{json.dumps([uuid])}){{views}}"
+            for j, uuid in enumerate(batch)
+        )
+        query = "query v{" + fields + "}"
+        try:
+            resp = gql(session, query, {}, "v")
+            data = resp.get("data")
+            if resp.get("errors") or not isinstance(data, dict):
+                raise ValueError("GraphQL errors or missing data")
+            for j, uuid in enumerate(batch):
+                item = data.get(f"v{j}")
+                if not isinstance(item, list) or len(item) != 1:
+                    out[uuid] = None
+                    unknown += 1
+                    continue
+                out[uuid] = map_view_batch([uuid], item)[uuid]
+                if out[uuid] is None:
+                    unknown += 1
+        except (RuntimeError, ValueError, TypeError) as exc:
+            print(f"    просмотры: пакет {i} не подтверждён ({exc}); значения неизвестны")
+            out.update({uuid: None for uuid in batch})
+            unknown += len(batch)
         if i + C.VIEWS_BATCH_SIZE < len(uuids):
             sleep_between(C.PAUSE_BETWEEN_VIEW_BATCHES)
-    if rejected:
-        print(f"    просмотры: отклонено {rejected} неоднозначных сопоставлений UUID")
+    if unknown:
+        print(f"    просмотры: {unknown} значений не определены, не подменяем их чужими")
     return out
 
 
