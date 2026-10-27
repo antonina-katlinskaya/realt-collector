@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'docs/dashboard.js'
+      - 'docs/index.html'
       - 'collector.py'
       - 'tests/test_collector_views.py'
       - 'tests/probe_views_order.py'
