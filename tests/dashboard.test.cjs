@@ -62,3 +62,10 @@ test('organic view renders gallery cards as well as table',()=>{
  const body=js.split('function renderWorks(m){')[1].split('\nfunction renderPlacements(m)')[0];
  assert.match(body,/renderGallery\(m\);/);
 });
+
+test('Kufar compact filter controls preserve every required wired id',()=>{
+ const html=fs.readFileSync(require('node:path').join(__dirname,'../docs/index.html'),'utf8');
+ for(const id of ['quick','weekdays','company','agent','rooms','search','reset','from','to','promo','quarter','house','areaMin','areaMax','multiAgents'])assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id);
+ assert.match(html,/<details class="filterbox" id="filterBox" open>/);
+ assert.match(html,/<input type="checkbox" checked disabled> Только новостройки/);
+});
