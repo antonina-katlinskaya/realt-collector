@@ -426,7 +426,12 @@ function renderPromotedGallery(m){
  `<p class="muted">За период замечено ${fmt(total)} объявлений с платным статусом. Пока нет достаточных проверенных интервалов для рейтинга по эффективности. Ниже — история рекламы, начиная с недавно замеченных; это НЕ рейтинг по просмотрам.</p>`:
  `<p class="muted">ТОП-${Math.min(30,total)} по достоверному приросту просмотров в платных интервалах. Открытия номера Realt не предоставляет.</p>`;
  $('promotedGallery').innerHTML=introduction+'<h3>По комнатности</h3>'+roomTable+'<h3>Объявления с продвижением</h3>'+
- items.map(v=>{const r=v.row;return `<article class="adcard-clickable" data-detail="${esc(r.uuid)}"><div class="photoStrip">${(photos.get(r.uuid)||[]).slice(0,4).map(u=>`<img loading="lazy" src="${esc(u)}" alt="Фото объявления ${esc(r.code)}">`).join('')}</div><div class="gbody">${adLink(r)}<p>${esc(agentName(r))} · ${price(r)}</p><p class="tiny">${v.first?'Реклама замечена с '+date(v.first)+' до '+date(v.last):'Наблюдаемая реклама'} · ${esc(v.kind||label(r))}</p><b>${v.delta===null?'Прирост ещё не подтверждён':'+'+fmt(v.delta)+' при платном статусе'}</b><p class="tiny">Открытия номера: нет данных · фото ${date(photoDate)}</p>${detailButton(r)}</div></article>`;}).join('')+(items.length?'':empty(photoLoaded?'В архиве обнаружено продвижение, но фотографий этих объявлений нет в текущем снимке.':'Фотографии загружаются.'));
+ '<div class="cgrid">'+items.map(v=>kufarStyleCard(v.row,
+  v.delta===null?'Прирост: —':'+'+fmt(v.delta)+' просм.',
+  v.delta===null?'Достоверного прироста ещё нет':'При продвижении',
+  (v.first?'Реклама с '+date(v.first)+' до '+date(v.last):'Наблюдаемая реклама')+' · '+esc(v.kind||label(v.row))
+ )).join('')+'</div>'+(items.length?'':empty('Не найдено подходящих объявлений с продвижением.'));
+
 }
 
 async function loadPhotos(){if(photoLoaded){if(activeView==='ads')renderTable(currentModel);else if(activeView==='leaders')renderPromotedGallery(currentModel);else renderGallery(currentModel);return;}$('photoStatus').textContent='Загружаем обложки объявлений…';try{
