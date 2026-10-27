@@ -383,9 +383,18 @@ function renderInterval(m){const times=[...new Set(m.events.map(e=>e.end))];if(!
  if(!times.includes(chosenInterval))chosenInterval=times.at(-1);$('intervalButtons').innerHTML=times.map(t=>{const es=m.events.filter(e=>e.end===t);return `<button class="intervalpick ${t===chosenInterval?'active':''}" data-interval="${esc(t)}">${date(es[0].start)} → ${date(t)}<br><b>+${fmt(totalEvents(es))} просмотров</b></button>`;}).join('');
  const ev=m.events.filter(e=>e.end===chosenInterval).sort((a,b)=>b.delta-a.delta);$('intervalDetail').innerHTML=makeTable(['Агент','Объявление','Начало → конец','Прирост','Статус интервала',''],ev.slice(0,100).map(e=>`<tr><td>${esc(agentName(e.row))}</td><td class="wrap">${adLink(e.row)}</td><td>${date(e.start)}<br>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td><td>${detailButton(e.row)}</td></tr>`));
 }
-function renderGallery(m){const organic=new Map();for(const e of m.events){if(e.category==='free')organic.set(e.id,(organic.get(e.id)||0)+e.delta);}const hasGrowth=organic.size>0;const items=(hasGrowth?m.observed.filter(r=>organic.has(r.uuid)):m.current.filter(free)).filter(r=>photos.has(r.uuid)).sort((a,b)=>hasGrowth?(organic.get(b.uuid)||0)-(organic.get(a.uuid)||0):(number(b.views)||0)-(number(a.views)||0)).slice(0,30);
- $('gallery').innerHTML=items.map(r=>`<article class="adcard-clickable" data-detail="${esc(r.uuid)}"><div class="photoStrip">${photos.get(r.uuid).slice(0,5).map(u=>`<img loading="lazy" src="${esc(u)}" alt="Фото объявления ${esc(r.code)}">`).join('')}</div><div class="gbody">${adLink(r)}<p>${esc(agentName(r))} · ${price(r)}</p><b>${hasGrowth?'+'+fmt(organic.get(r.uuid))+' при бесплатном статусе':fmt(number(r.views))+' общих просмотров'}</b><p class="tiny">Фотографии из снимка ${date(photoDate)}; могут отличаться от нынешних.</p>${detailButton(r)}</div></article>`).join('')||empty('В выбранной подборке нет фотографий из загруженного сырого снимка.');
+function renderGallery(m){
+ const organic=new Map();
+ for(const e of m.events){if(e.category==='free')organic.set(e.id,(organic.get(e.id)||0)+e.delta);}
+ const hasGrowth=organic.size>0;
+ const items=(hasGrowth?m.observed.filter(r=>organic.has(r.uuid)):m.current.filter(free)).sort((a,b)=>hasGrowth?(organic.get(b.uuid)||0)-(organic.get(a.uuid)||0):(number(b.views)||0)-(number(a.views)||0)).slice(0,30);
+ $('gallery').innerHTML=items.map(r=>kufarStyleCard(r,
+  hasGrowth?'+'+fmt(organic.get(r.uuid))+' просм.':fmt(number(r.views))+' просм. всего',
+  hasGrowth?'Прирост при бесплатном статусе':'Исторический прирост пока неизвестен',
+  'Бесплатно · '+(r.createdAt?'размещено '+date(r.createdAt):'дата неизвестна')
+ )).join('')||empty('Нет объявлений, удовлетворяющих условиям рейтинга.');
 }
+
 function renderPromotedGallery(m){
  const promoted=new Map();
  for(const e of m.events){
