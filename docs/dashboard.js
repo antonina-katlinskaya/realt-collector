@@ -86,7 +86,7 @@ async function restoreArchiveRange(){
  if(!index)return;
  const seq=++archiveRequestSeq,from=$('from').value,to=$('to').value,last=day(index.times.at(-1));
  if(!from||!to||from>to)return;
- const dates=[];for(let t=Date.parse(Math.max(from,ARCHIVE_START)+'T12:00:00Z'),end=Date.parse(Math.min(to,last)+'T12:00:00Z');t<=end;t+=86400000){const d=new Date(t).toISOString().slice(0,10);if(!archiveRows.has(d)&&!archiveMissing.has(d))dates.push(d);}
+ const dates=[];for(let t=Date.parse((from>ARCHIVE_START?from:ARCHIVE_START)+'T12:00:00Z'),end=Date.parse((to<last?to:last)+'T12:00:00Z');t<=end;t+=86400000){const d=new Date(t).toISOString().slice(0,10);if(!archiveRows.has(d)&&!archiveMissing.has(d))dates.push(d);}
  if(!dates.length){if(seq===archiveRequestSeq){rows=baseRows.concat(...archiveRows.values());index=buildIndex(rows);render();}return;}
  $('status').textContent='Загружаю сохранённую историю за '+dates.length+' дн. Без неё рейтинг за период неполный…';
  const failures=[];let next=0;
