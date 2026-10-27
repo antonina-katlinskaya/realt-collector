@@ -5,7 +5,7 @@ const zlib=require('node:zlib');
 const {parseCSV,buildIndex,intervals}=require('../docs/dashboard.js');
 const raw=fs.readFileSync(process.argv[2]||'data/snapshots.csv','utf8');
 const rows=parseCSV(raw);
-if(process.argv.includes('--archive')){for(const filename of fs.readdirSync('data/snapshots').filter(n=>n.endsWith('.csv.gz')&&n>='2026-10-20').sort()){const csv=zlib.gunzipSync(fs.readFileSync(path.join('data/snapshots',filename))).toString('utf8');rows.push(...parseCSV(csv));}}
+if(process.argv.includes('--archive')){for(const filename of fs.readdirSync(process.env.ARCHIVE_DIR||'data/snapshots').filter(n=>n.endsWith('.csv.gz')&&n>='2026-10-20').sort()){const csv=zlib.gunzipSync(fs.readFileSync(path.join(process.env.ARCHIVE_DIR||'data/snapshots',filename))).toString('utf8');rows.push(...parseCSV(csv));}}
 const idx=buildIndex(rows);
 const from=idx.times.length?idx.times[0].slice(0,10):'2000-01-01';
 const to=idx.times.length?idx.times.at(-1).slice(0,10):'2000-01-01';
