@@ -28,3 +28,6 @@ test('unchanged promotion status starts at first available observation',()=>{
   assert.equal(st.time,t1);
   assert.equal(st.open,true);
 });
+
+const fs=require('node:fs');
+test('five priority tabs exist and selected default is promotion',()=>{const html=fs.readFileSync(require('node:path').join(__dirname,'../docs/index.html'),'utf8');for(const label of ['Продвижение','Объявления за период','Сотрудники','Топ органика','Топ продвижение'])assert.ok(html.includes('>'+label+'</button>'),label);assert.match(html,/data-view="promotion" class="active"/);assert.match(html,/data-section="promotion"/);});
