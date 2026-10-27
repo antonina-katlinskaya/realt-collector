@@ -300,7 +300,21 @@ function renderPromotions(m){
  }
  spans.sort((x,y)=>String(y.start).localeCompare(String(x.start)));
  const allPromoted=new Set(spans.map(x=>x.id));
- $('promoOverviewKpi').querySelector('.card strong').textContent=fmt(allPromoted.size);
+  $('promoOverviewKpi').querySelector('.card strong').textContent=fmt(allPromoted.size);
+ const perAgent=new Map();
+ for(const span of spans){
+  const id=span.row.userUuid||'';
+  if(!perAgent.has(id))perAgent.set(id,{row:span.row,ids:new Set(),starts:0,views:0,intervals:0});
+  const entry=perAgent.get(id);
+  entry.ids.add(span.id);entry.starts++;
+ }
+ for(const e of paidEvents){
+  const id=e.row.userUuid||'';
+  const entry=perAgent.get(id);
+  if(entry){entry.views+=e.delta;entry.intervals++;}
+ }
+ $('promoResults').innerHTML=makeTable(['Сотрудник','Объявлений с продвижением','Периодов','Прирост просмотров','Открытия номера'],[...perAgent.values()].sort((a,b)=>b.ids.size-a.ids.size).map(x=>`<tr><td>${esc(agentName(x.row))}</td><td>${x.ids.size}</td><td>${x.starts}</td><td>${x.intervals?'+'+fmt(x.views):'—'}</td><td>Нет данных</td></tr>`))+'<p class="muted tiny">Исторические периоды показаны даже тогда, когда на последнем обходе реклама уже выключена. Число просмотров выводится только при достоверных последовательных замерах.</p>';
+
 
  const rows=spans.slice(0,150).map(x=>{
   const ev=paidEvents.filter(e=>e.id===x.id&&e.start>=x.start&&(!x.end||e.end<=x.end));
