@@ -135,24 +135,45 @@ def fetch_agency_listings(session, agency_uuid):
 
 # --------------------------- просмотры -------------------------------------
 
+def map_view_batch(batch, response_items):
+    """Do not attribute views when positional correspondence is unverified."""
+    if not isinstance(response_items, list) or len(response_items) != len(batch):
+        return {uuid: None for uuid in batch}
+    output = {}
+    for uuid, item in zip(batch, response_items):
+        if not isinstance(item, dict):
+            output[uuid] = None
+            continue
+        value = item.get("views")
+        try:
+            count = int(value) if value is not None else None
+            output[uuid] = count if count is not None and count >= 0 else None
+        except (TypeError, ValueError):
+            output[uuid] = None
+    return output
+
+
 def fetch_views(session, uuids):
-    """Текущие просмотры пачками. Возвращает dict uuid -> int(views)."""
+    """Fetch views; reject ambiguous batches instead of assigning wrong UUIDs."""
     out = {}
+    rejected = 0
     for i in range(0, len(uuids), C.VIEWS_BATCH_SIZE):
         batch = uuids[i:i + C.VIEWS_BATCH_SIZE]
         resp = gql(session, Q.VIEWS_QUERY, {"uuids": batch}, "v")
-        if resp.get("errors"):
-            print(f"    просмотры: пачка {i} ошибка, пропускаю")
+        if resp.get("errors") or not isinstance(resp.get("data"), dict):
+            print(f"    просмотры: пачка {i} вернула ошибку; значения неизвестны")
+            mapped = {uuid: None for uuid in batch}
         else:
-            arr = resp["data"]["objectsViewsCountsByUuids"]
-            # ответ в том же порядке, что batch
-            for u, item in zip(batch, arr):
-                try:
-                    out[u] = int(item["views"])
-                except (TypeError, ValueError, KeyError):
-                    out[u] = None
+            arr = resp["data"].get("objectsViewsCountsByUuids")
+            if not isinstance(arr, list) or len(arr) != len(batch):
+                print(f"    просмотры: пачка {i} неоднозначна: ожидалось {len(batch)}, получено {len(arr) if isinstance(arr, list) else 'не список'}; значения неизвестны")
+                rejected += len(batch)
+            mapped = map_view_batch(batch, arr)
+        out.update(mapped)
         if i + C.VIEWS_BATCH_SIZE < len(uuids):
             sleep_between(C.PAUSE_BETWEEN_VIEW_BATCHES)
+    if rejected:
+        print(f"    просмотры: отклонено {rejected} неоднозначных сопоставлений UUID")
     return out
 
 
