@@ -33,3 +33,5 @@ const fs=require('node:fs');
 test('five priority tabs exist and selected default is promotion',()=>{const html=fs.readFileSync(require('node:path').join(__dirname,'../docs/index.html'),'utf8');for(const label of ['Продвижение','Объявления за период','Сотрудники','Топ органика','Топ продвижение'])assert.ok(html.includes('>'+label+'</button>'),label);assert.match(html,/data-view="promotion" class="active"/);assert.match(html,/data-section="promotion"/);});
 
 test('freshness uses the current Minsk hourly schedule',()=>{const {collectionFreshness}=require('../docs/dashboard.js');const now=Date.parse('2026-10-27T09:00:00Z');assert.equal(collectionFreshness('2026-10-27T08:30:00Z',now).stale,false);assert.equal(collectionFreshness('2026-10-26T16:32:00Z',now).stale,true);});
+
+test('recovered counter values are not counted as new views',()=>{const idx=buildIndex([row('a',t1,100),row('a',t2,5),row('a',t3,101)]);const ev=intervals(idx,'2026-10-25','2026-10-25');assert.equal(ev.length,1);assert.equal(ev[0].delta,1);});
