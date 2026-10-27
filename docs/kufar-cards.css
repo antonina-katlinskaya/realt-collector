@@ -22,3 +22,14 @@
 :root{--surface:#fcfcfb;--surface-2:#f0efeb;--ink-2:#52514e;--ink-3:#86847d;--accent:#1f5f4a}
 main{max-width:1240px;padding:20px 16px 60px}
 .cgrid{margin:12px 0}.cgrid .acard:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}
+
+/* Kufar employee table hierarchy. */
+.tbl-wrap.emp{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.kufar-employee-table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.kufar-employee-table th,.kufar-employee-table td{padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+.kufar-employee-table th{font-size:12px;color:var(--ink-2);font-weight:600;background:var(--surface);text-align:left}
+.kufar-employee-table tr.grp th{font-size:11px;text-align:center;color:var(--ink-3);padding-bottom:2px;border-bottom:none}
+.kufar-employee-table td.num{text-align:right}
+.kufar-employee-table tbody tr:hover td{background:var(--surface-2)}
+.kufar-employee-table button[data-select-agent]{border:0;background:none;color:var(--ink);padding:3px 0;text-align:left;font-weight:600;text-decoration:underline;text-decoration-color:transparent}
+.kufar-employee-table button[data-select-agent]:hover{text-decoration-color:var(--accent)}
