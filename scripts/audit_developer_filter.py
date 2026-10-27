@@ -11,3 +11,5 @@ with zipfile.ZipFile(io.BytesIO(resp.content)) as archive:
 positive=[x for x in rows if classification(x)=='developer']
 negative=[x for x in rows if classification(x)!='developer']
 print(json.dumps({'source':len(rows),'developer':len(positive),'excluded':len(negative),'developer_examples':[{'code':x.get('code'),'title':x.get('title')} for x in positive[:20]],'excluded_examples':[{'code':x.get('code'),'title':x.get('title'),'dev':x.get('realEstateDevUuid'),'description':str(x.get('description'))[:120]} for x in negative[:15]],'suspect_positives':[{'code':x.get('code'),'title':x.get('title'),'dev':x.get('realEstateDevUuid'),'description':str(x.get('description'))[:160]} for x in positive if any(word in str(x.get('title','')).lower() for word in ['ремонт','мебел','готовая','дизайнер'])][:15]},ensure_ascii=False,indent=2))
+
+print('PAID_QUALIFIED',json.dumps([{'code':x.get('code'),'title':x.get('title'),'description':str(x.get('description') or '')[:1100],'status':x.get('paymentStatus')} for x in positive if str(x.get('paymentStatus')) in ('2','3','4')],ensure_ascii=False))
