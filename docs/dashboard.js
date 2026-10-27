@@ -212,11 +212,11 @@ function renderUnified(m){
  }
  if(activeView==='employees'){
  $('employeeChanges').innerHTML=changesHTML(m.changes);
- const agents=agentsFor(m);$('employeeTable').innerHTML=makeTable(['Агент','На конец периода','В продвижении','Замечено за период','Прирост','Новые после базового снимка','Изменений'],agents.map(a=>`<tr><td><button data-select-agent="${esc(a.row.userUuid)}">${esc(agentName(a.row))}</button><br><small>${esc(a.row.contactPhone)}</small></td><td>${a.current}</td><td>${a.paid}</td><td>${a.observed.size}</td><td>${m.events.length?fmt(a.delta):'—'}</td><td>${a.newly}</td><td>${a.changes}</td></tr>`));
+ const agents=agentsFor(m);const maxDelta=Math.max(1,...agents.map(a=>a.delta));$('employeeHighlights').innerHTML=agents.slice(0,18).map(a=>`<article class="employee-highlight"><button data-select-agent="${esc(a.row.userUuid)}">${esc(agentName(a.row))}</button><div class="big">${m.events.length?'+'+fmt(a.delta):'—'}</div><div class="track"><span style="width:${Math.max(0,a.delta)/maxDelta*100}%"></span></div><small>${fmt(a.current)} активных · ${fmt(a.paid)} с продвижением</small></article>`).join('');$('employeeTable').innerHTML=makeTable(['Агент','На конец периода','В продвижении','Замечено за период','Прирост','Новые после базового снимка','Изменений'],agents.map(a=>`<tr><td><button data-select-agent="${esc(a.row.userUuid)}">${esc(agentName(a.row))}</button><br><small>${esc(a.row.contactPhone)}</small></td><td>${a.current}</td><td>${a.paid}</td><td>${a.observed.size}</td><td>${m.events.length?fmt(a.delta):'—'}</td><td>${a.newly}</td><td>${a.changes}</td></tr>`));
  }
  if(activeView==='promotion')renderPromotions(m);
  if(activeView==='works')renderWorks(m);
- if(activeView==='placements'){renderPlacements(m);if(photoLoaded)renderGallery(m);}
+ if(activeView==='placements')renderPlacements(m);
  if(activeView==='hours')renderInterval(m);
  const baseline=m.newly.length===0&&index.times.length===1?' Базовый снимок содержит уже существовавшие объявления; он не считается массовой новой публикацией.':'';
  if(activeView==='overview')$('coverage').textContent+=baseline;
@@ -278,7 +278,7 @@ for(const id of ['multiAgents','weekdays'])$(id).onchange=()=>{if(id==='multiAge
 $('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','rooms','house','areaMin','areaMax','search'])$(id).value='';for(const x of document.querySelectorAll('#multiAgents input,#weekdays input'))x.checked=false;page=0;render();};
 $('agentLegend').onclick=e=>{const b=e.target.closest('[data-line]');if(!b)return;const id=b.dataset.line;if(hiddenAgents.has(id))hiddenAgents.delete(id);else hiddenAgents.add(id);renderTrend(currentModel);};
 $('intervalButtons').onclick=e=>{const b=e.target.closest('[data-interval]');if(b){chosenInterval=b.dataset.interval;renderInterval(currentModel);}};
-$('loadPhotos').onclick=loadPhotos;
+
 for(const id of ['areaMin','areaMax'])$(id).addEventListener('input',()=>{page=0;render();});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b&&!b.closest('#listings')&&!b.closest('#drawer'))showDetail(b.dataset.detail);const a=e.target.closest('[data-select-agent]');if(a){$('agent').value=a.dataset.selectAgent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();activateView('ads');}});
 
