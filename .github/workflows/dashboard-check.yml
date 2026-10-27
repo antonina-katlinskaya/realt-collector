@@ -5,6 +5,7 @@ on:
     paths:
       - 'docs/dashboard.js'
       - 'tests/dashboard.test.cjs'
+      - 'tests/dashboard-diagnostics.cjs'
       - '.github/workflows/dashboard-check.yml'
   workflow_dispatch: {}
 
@@ -23,3 +24,5 @@ jobs:
         run: node --check docs/dashboard.js
       - name: Run dashboard regression tests
         run: node --test tests/dashboard.test.cjs
+      - name: Diagnose extreme view deltas (read only)
+        run: node tests/dashboard-diagnostics.cjs
