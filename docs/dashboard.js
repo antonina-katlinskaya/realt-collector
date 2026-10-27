@@ -117,13 +117,27 @@ function updateFreshness(){
 const checks=id=>new Set([...$(id).querySelectorAll('input:checked')].map(x=>x.value));
 function matches(r,t=r.snapshot_at,ignorePromo=false){const multi=checks('multiAgents'),week=checks('weekdays'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
 return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(ignorePromo||!week.size||week.has(String(weekday(t))))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agencyName===$('company').value)&&(!$('rooms').value||r.rooms===$('rooms').value)&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
+function createMatcher(){
+ const multi=checks('multiAgents'),week=checks('weekdays');
+ const agent=$('agent').value,quarter=$('quarter').value,company=$('company').value,rooms=$('rooms').value,house=$('house').value;
+ const lo=number($('areaMin').value),hi=number($('areaMax').value),search=$('search').value.toLowerCase(),promo=$('promo').value;
+ return (r,t=r.snapshot_at,ignorePromo=false)=>{
+  const area=number(r.areaTotal);
+  if(agent&&r.userUuid!==agent||multi.size&&!multi.has(r.userUuid))return false;
+  if(!ignorePromo&&week.size&&!week.has(String(weekday(t))))return false;
+  if(quarter&&(r.quarter||'(не определён)')!==quarter||company&&r.agencyName!==company||rooms&&r.rooms!==rooms||house&&r.address!==house)return false;
+  if(lo!==null&&(area===null||area<lo)||hi!==null&&(area===null||area>hi))return false;
+  if(search&&![r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes(search))return false;
+  return ignorePromo||!promo||(promo==='paid'?paid(r):promo==='other'?![0,2,3,4].includes(number(r.paymentStatus)):r.paymentStatus===promo);
+ };
+}
 function promoMatch(r){const p=$('promo').value;return !p||(p==='paid'?paid(r):p==='other'?![0,2,3,4].includes(number(r.paymentStatus)):r.paymentStatus===p);}
 let cachedModelIndex=null,cachedModelKey='',cachedModelValue=null;
 function model(){
  const fields=['from','to','agent','promo','quarter','company','rooms','house','areaMin','areaMax','search','sort'];
  const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),[...checks('weekdays')].sort(),selectedTab,preciseBounds]);
  if(cachedModelIndex===index&&cachedModelKey===key&&cachedModelValue)return cachedModelValue;
- const m=periodData(index,$('from').value,$('to').value,matches,preciseBounds);
+ const m=periodData(index,$('from').value,$('to').value,createMatcher(),preciseBounds);
  let listing=selectedTab==='paid'?m.current.filter(paid):selectedTab==='new'?m.newly:selectedTab==='gone'?m.gone:selectedTab==='period'?m.observed:m.current;
  const sort=$('sort').value;listing=listing.slice().sort((a,b)=>sort==='growth'?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):sort==='views'?(number(b.views)||0)-(number(a.views)||0):sort==='price'?String(a.priceCurrency).localeCompare(String(b.priceCurrency))||(number(a.price)||0)-(number(b.price)||0):String(b.createdAt).localeCompare(String(a.createdAt)));
  cachedModelIndex=index;cachedModelKey=key;cachedModelValue={...m,listing};return cachedModelValue;
