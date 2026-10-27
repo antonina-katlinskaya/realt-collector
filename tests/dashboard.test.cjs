@@ -1,9 +1,46 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const {parseCSV,buildIndex,intervals,periodData,statusStart} = require('../docs/dashboard.js');
+const {parseCSV,buildIndex,intervals,periodData,statusStart,promotionPeriods} = require('../docs/dashboard.js');
 const t1='2026-10-25T09:00:00Z', t2='2026-10-25T10:00:00Z', t3='2026-10-25T11:00:00Z';
 const row=(uuid,snapshot_at,views,paymentStatus='0')=>({uuid,snapshot_at,views:String(views),paymentStatus,userUuid:'agent',title:'Квартира',price:'50000'});
+test('promotion history splits when the listing is absent from an intervening snapshot',()=>{
+ const idx=buildIndex([row('a',t1,10,'2'),row('other',t2,1),row('a',t3,15,'2')]);
+ const spans=promotionPeriods(idx,'2026-10-25','2026-10-25');
+ assert.equal(spans.length,2);
+ assert.equal(spans[1].reason,'missing');
+ assert.equal(spans[1].last,t1);
+ assert.equal(spans[1].next,t2);
+ assert.equal(spans[0].reason,'latest');
+});
+test('selected dates retain the original promotion start and last confirmed paid snapshot',()=>{
+ const before='2026-10-24T09:00:00Z';
+ const idx=buildIndex([row('a',before,5,'2'),row('a',t1,10,'2'),row('a',t2,11,'0')]);
+ const [span]=promotionPeriods(idx,'2026-10-25','2026-10-25');
+ assert.equal(span.start,before);
+ assert.equal(span.last,t1);
+ assert.equal(span.next,t2);
+ assert.equal(span.reason,'changed');
+});
+test('promotion history obeys exact bounds and promotion filters without joining different statuses',()=>{
+ const idx=buildIndex([row('a',t1,10,'2'),row('a',t2,13,'3'),row('a',t3,15,'2')]);
+ const spans=promotionPeriods(idx,'2026-10-25','2026-10-25',r=>r.paymentStatus==='2',{start:Date.parse(t2),end:Date.parse(t3)});
+ assert.equal(spans.length,1);
+ assert.equal(spans[0].start,t3);
+});
+test('a paid period missing from the latest snapshot is not marked currently promoted',()=>{
+ const idx=buildIndex([row('a',t1,10,'2'),row('a',t2,13,'2'),row('other',t3,1)]);
+ const [span]=promotionPeriods(idx,'2026-10-25','2026-10-25');
+ assert.equal(span.reason,'missing');
+ assert.equal(span.last,t2);
+});
+test('a change of employee splits promotion attribution',()=>{
+ const idx=buildIndex([row('a',t1,10,'2'),{...row('a',t2,13,'2'),userUuid:'second'}]);
+ const spans=promotionPeriods(idx,'2026-10-25','2026-10-25');
+ assert.equal(spans.length,2);
+ assert.equal(spans[0].row.userUuid,'second');
+ assert.equal(spans[1].row.userUuid,'agent');
+});
 test('CSV supports quoted commas and newlines',()=>{
   assert.deepEqual(parseCSV('a,b\n"hello, there","one\ntwo"\n'),[{a:'hello, there',b:'one\ntwo'}]);
 });
@@ -62,3 +99,4 @@ test('organic view renders gallery cards as well as table',()=>{
  const body=js.split('function renderWorks(m){')[1].split('\nfunction renderPlacements(m)')[0];
  assert.match(body,/renderGallery\(m\);/);
 });
+

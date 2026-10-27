@@ -54,7 +54,16 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
-<script src="dashboard.js?v=20261027-kufar-parity-full-rebuild-r1" defer></script>
+<script src="dashboard.js?v=20261027-promotion-history-r2" defer></script>
+<style>
+#promoPeriods table{white-space:normal;min-width:1000px;table-layout:fixed}
+#promoPeriods th,#promoPeriods td{padding:12px 8px;overflow-wrap:anywhere}
+#promoPeriods th:nth-child(1){width:14%}#promoPeriods th:nth-child(2){width:20%}
+#promoPeriods th:nth-child(3){width:12%}#promoPeriods th:nth-child(4){width:12%}
+#promoPeriods th:nth-child(5){width:21%}#promoPeriods th:nth-child(6){width:13%}
+#promoPeriods th:nth-child(7){width:8%}#promoPeriods td.wrap{min-width:0}
+#promoPeriods button{max-width:100%;white-space:normal;padding:7px}
+</style>
 </head>
 <body><main>
 <header><div><h1>Радар Realt</h1><div class="muted">Минск Мир · объявления сотрудников, просмотры и наблюдаемое продвижение</div></div><div class="meta"><div id="freshness">Загружаем данные…</div><div>Сбор: 07:10–21:10 по Минску (часовые интервалы; возможен переход на получасовые)</div><div class="headerlinks"><button id="refresh" title="Перечитать сохранённые снимки; новый сбор запускается по расписанию">Обновить данные</button></div></div></header>
@@ -88,7 +97,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 <section class="panel"><h2>Сейчас в продвижении</h2><p class="muted">Проверяется по последнему обходу независимо от выбранного периода. Указаны сотрудники и объявления, находившиеся в рекламе на момент сбора.</p><div id="livePromo" class="agentcards"></div></section>
 <section class="panel"><h2>Результат рекламы</h2><p class="muted">Отдельно показываются наблюдаемые просмотры при платном статусе. Открытия номера, переходы и стоимость рекламы Realt в доступных данных не подтверждает.</p><div id="promoResults"></div></section>
 <section class="panel"><h2>Динамика рекламы по дням</h2><p class="muted">Прирост просмотров только по достоверным последовательным замерам при платном статусе.</p><div id="promoDailyChart"></div></section>
-<section class="panel"><h2>Все объявления в продвижении</h2><p class="muted">Вид продвижения, начало и конец наблюдения, прирост просмотров. Точные моменты оплаты и выключения рекламы неизвестны.</p><div id="promoPeriods"></div></section>
+<section class="panel"><h2>Все объявления в продвижении</h2><p class="muted">Вид продвижения, первое и последнее подтверждение, прирост просмотров за выбранный период. Пропуски наблюдений показаны отдельно.</p><div id="promoPeriods"></div></section>
 </section>
 <section data-section="works" hidden>
 <section class="panel"><h2>Топ органика</h2><p class="muted">Новостройки без платного продвижения. Рейтинг прироста появится после двух достоверных обходов; до этого показываются общие просмотры с пометкой.</p><div id="photoStatus" role="status"></div><div id="gallery" class="cgrid"></div></section>
@@ -101,4 +110,5 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 </main>
 <div class="drawer" id="drawer" hidden><div class="drawerbody" role="dialog" aria-modal="true" aria-labelledby="detailtitle"><button class="close" id="close">Закрыть ✕</button><div id="detail"></div></div></div>
 </body></html>
+
 
