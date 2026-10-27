@@ -182,14 +182,22 @@ function renderRanking(m){const agents=new Map();for(const r of m.current){const
   const list=[...agents.values()].sort((a,b)=>b[key]-a[key]).slice(0,10),max=Math.max(1,...list.map(a=>a[key]));
   $('ranking').innerHTML=list.map(a=>`<div class="barrow"><button data-agent="${esc(a.id)}" title="${esc(a.phone)}">${esc(a.name)}</button><div class="bartrack"><div class="bar" style="width:${a[key]/max*100}%"></div></div><b>${fmt(a[key])}</b></div>`).join('')||'<div class="empty">Нет объявлений по выбранным фильтрам</div>';
 }
+function kufarStyleCard(r,primary,subline,secondary){
+ const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
+ return `<article class="acard" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
+  <div class="at">${esc(r.title||r.address||'Объявление')}</div>
+  <div class="am">${esc(r.address||'Адрес не указан')}</div>
+  <div class="aw">${esc(agentName(r))} · ${esc(r.rooms||'?')}-комн. · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
+  <div class="ad8">${secondary||''}</div>
+  <div class="amet"><span><b>${primary}</b></span><span>${subline||''}</span></div>
+ </div></article>`;
+}
 function renderTable(m){const size=40;page=Math.min(page,Math.max(0,Math.ceil(m.listing.length/size)-1));const part=m.listing.slice(page*size,(page+1)*size);
   $('listings').innerHTML=part.map(r=>{const st=statusStart(index,r),dv=m.growth.get(r.uuid);return `<tr><td>${esc(agentName(r))}<br><small>${esc(r.contactPhone)}</small></td><td class="title">${photos.has(r.uuid)?`<img loading="lazy" class="listing-thumb" src="${esc(photos.get(r.uuid)[0])}" alt="Фото объявления ${esc(r.code)}">`:''}<a href="https://realt.by/sale-flats/object/${encodeURIComponent(r.code)}/" target="_blank" rel="noopener">${esc(r.address||r.title)} ↗</a><br><small>${esc(r.code)} · ${esc(r.areaTotal)} м² · ${esc(r.storey)}/${esc(r.storeys)} эт. · ${esc(r.quarter||'дом не распознан')}</small>${r.goneAt?'<br><small>Отсутствует с '+date(r.goneAt)+'</small>':''}</td><td>${price(r)}</td><td><span class="badge ${paid(r)?'promo':''}">${esc(label(r))}</span></td><td>${date(st.time)}<br><small>${st.open?'Начало неизвестно':'Смена замечена между обходами'}</small></td><td>${fmt(number(r.views))}</td><td>${fmt(dv)}</td><td><button data-detail="${esc(r.uuid)}">История</button></td></tr>`;}).join('')||'<tr><td colspan="8" class="empty">Нет объявлений по выбранным фильтрам</td></tr>';
   $('adCards').innerHTML=part.map(r=>{
-    const imgs=photos.get(r.uuid)||[];
-    const photo=imgs.length?`<img loading="lazy" src="${esc(imgs[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="photo-fallback">Фото из снимка отсутствует</div>';
-    const dv=m.growth.get(r.uuid),growth=dv===undefined?'—':'+'+fmt(dv);
-    const posted=r.createdAt?date(r.createdAt):'дата неизвестна';
-    return `<article class="ad-tile" data-detail="${esc(r.uuid)}">${photo}<div class="tile-content"><div class="tile-title">${esc(r.title||r.address||'Объявление')}</div><div class="tile-address">${esc(r.address||'Адрес не указан')}</div><div class="tile-meta">${esc(agentName(r))} · ${esc(r.rooms||'?')}-комн. · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div><div class="tile-meta">Размещено: ${posted} · ${esc(label(r))}</div><div class="tile-stats"><span>${fmt(number(r.views))} просм. всего</span><span>${growth} за период</span></div></div></article>`;
+   const dv=m.growth.get(r.uuid);
+   const seen=r.createdAt?'Размещено '+date(r.createdAt):'Дата размещения неизвестна';
+   return kufarStyleCard(r,fmt(number(r.views))+' просм.','Прирост за период: '+(dv===undefined?'—':'+'+fmt(dv)),seen+' · '+esc(label(r)));
   }).join('')||empty('Объявления по выбранным фильтрам отсутствуют.');
   if($('publishedCount'))$('publishedCount').textContent='· '+fmt(m.listing.length);
   $('rowcount').textContent=`${m.listing.length? page*size+1:0}–${Math.min((page+1)*size,m.listing.length)} из ${fmt(m.listing.length)}`;$('prev').disabled=page===0;$('next').disabled=(page+1)*size>=m.listing.length;
@@ -375,9 +383,18 @@ function renderInterval(m){const times=[...new Set(m.events.map(e=>e.end))];if(!
  if(!times.includes(chosenInterval))chosenInterval=times.at(-1);$('intervalButtons').innerHTML=times.map(t=>{const es=m.events.filter(e=>e.end===t);return `<button class="intervalpick ${t===chosenInterval?'active':''}" data-interval="${esc(t)}">${date(es[0].start)} → ${date(t)}<br><b>+${fmt(totalEvents(es))} просмотров</b></button>`;}).join('');
  const ev=m.events.filter(e=>e.end===chosenInterval).sort((a,b)=>b.delta-a.delta);$('intervalDetail').innerHTML=makeTable(['Агент','Объявление','Начало → конец','Прирост','Статус интервала',''],ev.slice(0,100).map(e=>`<tr><td>${esc(agentName(e.row))}</td><td class="wrap">${adLink(e.row)}</td><td>${date(e.start)}<br>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td><td>${detailButton(e.row)}</td></tr>`));
 }
-function renderGallery(m){const organic=new Map();for(const e of m.events){if(e.category==='free')organic.set(e.id,(organic.get(e.id)||0)+e.delta);}const hasGrowth=organic.size>0;const items=(hasGrowth?m.observed.filter(r=>organic.has(r.uuid)):m.current.filter(free)).filter(r=>photos.has(r.uuid)).sort((a,b)=>hasGrowth?(organic.get(b.uuid)||0)-(organic.get(a.uuid)||0):(number(b.views)||0)-(number(a.views)||0)).slice(0,30);
- $('gallery').innerHTML=items.map(r=>`<article class="adcard-clickable" data-detail="${esc(r.uuid)}"><div class="photoStrip">${photos.get(r.uuid).slice(0,5).map(u=>`<img loading="lazy" src="${esc(u)}" alt="Фото объявления ${esc(r.code)}">`).join('')}</div><div class="gbody">${adLink(r)}<p>${esc(agentName(r))} · ${price(r)}</p><b>${hasGrowth?'+'+fmt(organic.get(r.uuid))+' при бесплатном статусе':fmt(number(r.views))+' общих просмотров'}</b><p class="tiny">Фотографии из снимка ${date(photoDate)}; могут отличаться от нынешних.</p>${detailButton(r)}</div></article>`).join('')||empty('В выбранной подборке нет фотографий из загруженного сырого снимка.');
+function renderGallery(m){
+ const organic=new Map();
+ for(const e of m.events){if(e.category==='free')organic.set(e.id,(organic.get(e.id)||0)+e.delta);}
+ const hasGrowth=organic.size>0;
+ const items=(hasGrowth?m.observed.filter(r=>organic.has(r.uuid)):m.current.filter(free)).sort((a,b)=>hasGrowth?(organic.get(b.uuid)||0)-(organic.get(a.uuid)||0):(number(b.views)||0)-(number(a.views)||0)).slice(0,30);
+ $('gallery').innerHTML=items.map(r=>kufarStyleCard(r,
+  hasGrowth?'+'+fmt(organic.get(r.uuid))+' просм.':fmt(number(r.views))+' просм. всего',
+  hasGrowth?'Прирост при бесплатном статусе':'Исторический прирост пока неизвестен',
+  'Бесплатно · '+(r.createdAt?'размещено '+date(r.createdAt):'дата неизвестна')
+ )).join('')||empty('Нет объявлений, удовлетворяющих условиям рейтинга.');
 }
+
 function renderPromotedGallery(m){
  const promoted=new Map();
  for(const e of m.events){
@@ -409,7 +426,12 @@ function renderPromotedGallery(m){
  `<p class="muted">За период замечено ${fmt(total)} объявлений с платным статусом. Пока нет достаточных проверенных интервалов для рейтинга по эффективности. Ниже — история рекламы, начиная с недавно замеченных; это НЕ рейтинг по просмотрам.</p>`:
  `<p class="muted">ТОП-${Math.min(30,total)} по достоверному приросту просмотров в платных интервалах. Открытия номера Realt не предоставляет.</p>`;
  $('promotedGallery').innerHTML=introduction+'<h3>По комнатности</h3>'+roomTable+'<h3>Объявления с продвижением</h3>'+
- items.map(v=>{const r=v.row;return `<article class="adcard-clickable" data-detail="${esc(r.uuid)}"><div class="photoStrip">${(photos.get(r.uuid)||[]).slice(0,4).map(u=>`<img loading="lazy" src="${esc(u)}" alt="Фото объявления ${esc(r.code)}">`).join('')}</div><div class="gbody">${adLink(r)}<p>${esc(agentName(r))} · ${price(r)}</p><p class="tiny">${v.first?'Реклама замечена с '+date(v.first)+' до '+date(v.last):'Наблюдаемая реклама'} · ${esc(v.kind||label(r))}</p><b>${v.delta===null?'Прирост ещё не подтверждён':'+'+fmt(v.delta)+' при платном статусе'}</b><p class="tiny">Открытия номера: нет данных · фото ${date(photoDate)}</p>${detailButton(r)}</div></article>`;}).join('')+(items.length?'':empty(photoLoaded?'В архиве обнаружено продвижение, но фотографий этих объявлений нет в текущем снимке.':'Фотографии загружаются.'));
+ '<div class="cgrid">'+items.map(v=>kufarStyleCard(v.row,
+  v.delta===null?'Прирост: —':'+'+fmt(v.delta)+' просм.',
+  v.delta===null?'Достоверного прироста ещё нет':'При продвижении',
+  (v.first?'Реклама с '+date(v.first)+' до '+date(v.last):'Наблюдаемая реклама')+' · '+esc(v.kind||label(v.row))
+ )).join('')+'</div>'+(items.length?'':empty('Не найдено подходящих объявлений с продвижением.'));
+
 }
 
 async function loadPhotos(){if(photoLoaded){if(activeView==='ads')renderTable(currentModel);else if(activeView==='leaders')renderPromotedGallery(currentModel);else renderGallery(currentModel);return;}$('photoStatus').textContent='Загружаем обложки объявлений…';try{

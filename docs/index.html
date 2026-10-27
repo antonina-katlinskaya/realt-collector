@@ -53,6 +53,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 #cards,#coverage{display:none}
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
 </style>
+<link rel="stylesheet" href="kufar-cards.css?v=20261027a">
 <script src="dashboard.js?v=20261027-kufar-parity-full-rebuild-r1" defer></script>
 </head>
 <body><main>
@@ -77,10 +78,10 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 <section class="panel" data-section="ads" hidden>
 <div class="tablehead"><div><h2>Объявления за период <span id="publishedCount"></span></h2><p class="muted">Размещены в выбранном периоде · только подтверждённые предложения новостроек Минск-Мира</p></div><select id="sort" aria-label="Сортировка"><option value="views">По просмотрам</option><option value="recent">Новые сверху</option><option value="price">По цене</option><option value="growth">По приросту просмотров</option></select></div>
 <div class="tabs" id="tabs" hidden><button data-tab="published" class="active">Размещены за период</button></div>
-<div id="adCards" class="adtiles"></div>
+<div id="adCards" class="cgrid"></div>
 <div class="pagination"><span id="rowcount"></span><div><button id="prev" class="pagebtn">← Назад</button><button id="next" class="pagebtn">Далее →</button></div></div>
 <details class="adTableDetails"><summary>Подробная таблица</summary><button id="export">Скачать выбранные строки CSV</button><div class="tablewrap"><table><thead><tr><th>Агент</th><th>Объявление</th><th>Цена</th><th>Продвижение</th><th>Наблюдается с</th><th>Просмотры всего</th><th>Прирост за период</th><th></th></tr></thead><tbody id="listings"></tbody></table></div></details></section>
-<section data-section="leaders" class="panel" hidden><h2>Топ продвижение</h2><p class="muted">Рейтинг по приросту просмотров только в сопоставимых интервалах с платным статусом на обоих обходах. Это не доказательство, что все просмотры получены благодаря рекламе.</p><div id="promotedGallery" class="gallery"></div><details><summary>Подробная таблица рейтинга</summary><div id="leadersTable"></div></details></section>
+<section data-section="leaders" class="panel" hidden><h2>Топ продвижение</h2><p class="muted">Рейтинг по приросту просмотров только в сопоставимых интервалах с платным статусом на обоих обходах. Это не доказательство, что все просмотры получены благодаря рекламе.</p><div id="promotedGallery" class="promo-layout"></div><details><summary>Подробная таблица рейтинга</summary><div id="leadersTable"></div></details></section>
 <section data-section="employees" class="panel" hidden><h2>Результаты сотрудников</h2><p class="muted">Сотрудники определяются по ID. По дате публикации отдельно показан наблюдаемый прирост по новым и ранее размещённым объявлениям; неизвестные даты не приравниваются к старым. Открытия телефона в Realt недоступны.</p><div id="employeeTable" style="overflow-x:auto"></div><details><summary>Карточки сотрудников</summary><div id="employeeHighlights" class="employee-highlights"></div></details><h3>Действия сотрудников</h3><div id="employeeChanges"></div></section>
 <section data-section="promotion">
 <div class="cards" id="promoOverviewKpi"></div>
@@ -90,7 +91,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 <section class="panel"><h2>Когда и что продвигалось</h2><p class="muted">Начало и конец — первые моменты, когда мы заметили изменение статуса. Точные минуты оплаты и выключения источником не подтверждены.</p><div id="promoPeriods"></div></section>
 </section>
 <section data-section="works" hidden>
-<section class="panel"><h2>Топ органика</h2><p class="muted">Новостройки без платного продвижения. Рейтинг прироста появится после двух достоверных обходов; до этого показываются общие просмотры с пометкой.</p><div id="photoStatus" role="status"></div><div id="gallery" class="gallery"></div></section>
+<section class="panel"><h2>Топ органика</h2><p class="muted">Новостройки без платного продвижения. Рейтинг прироста появится после двух достоверных обходов; до этого показываются общие просмотры с пометкой.</p><div id="photoStatus" role="status"></div><div id="gallery" class="cgrid"></div></section>
 <section class="panel"><h2>Рейтинг органических объявлений</h2><div id="organicTable"></div></section><div id="wordsTable" hidden></div>
 </section>
 <section data-section="placements" class="panel" hidden><h2>Какие площади и комнатность размещают</h2><p class="muted">Группы объявлений с датой createdAt внутри периода. Дата взята из карточки; первый снимок не считается новой публикацией.</p><div id="placementGroups"></div><h3>День недели × час публикации</h3><p class="muted">Это даты публикации из карточек, а не время посещений клиентов.</p><div id="publicationHeat"></div></section>
