@@ -29,4 +29,5 @@ jobs:
           curl -fsSL 'https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/snapshots.csv' -o /tmp/realt-current.csv
           mkdir -p /tmp/realt-archive
           for day in $(seq -w 20 26); do curl -fsSL "https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/snapshots/2026-10-${day}.csv.gz" -o "/tmp/realt-archive/2026-10-${day}.csv.gz"; done
-          ARCHIVE_DIR=/tmp/realt-archive node tests/dashboard-diagnostics.cjs /tmp/realt-current.csv --archive
+          curl -fsSL 'https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/listings_seen.json' -o /tmp/realt-seen.json
+          ARCHIVE_DIR=/tmp/realt-archive SEEN_FILE=/tmp/realt-seen.json node tests/dashboard-diagnostics.cjs /tmp/realt-current.csv --archive
