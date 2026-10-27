@@ -284,10 +284,11 @@ function renderPromotions(m){
  for(const e of paidEvents){const id=e.row.userUuid||'';if(!stats.has(id))stats.set(id,{row:e.row,ids:new Set(),views:0,intervals:0});const st=stats.get(id);st.ids.add(e.id);st.views+=e.delta;st.intervals++;}
  $('promoResults').innerHTML=makeTable(['Сотрудник','Объявлений в рекламе','Просмотры при рекламе','Открытия телефона'],[...stats.values()].sort((a,b)=>b.ids.size-a.ids.size).map(st=>`<tr><td>${esc(agentName(st.row))}</td><td>${st.ids.size}</td><td>${st.intervals?'+'+fmt(st.views):'—'}</td><td>—</td></tr>`))+'<p class="muted tiny">Просмотры — не уникальные клиенты и не доказанная отдача рекламы. Открытия телефона неизвестны.</p>';
  const spans=[];
+ const promoFilter=createMatcher();
  for(const [id,h] of index.histories){
   let first=null,previous=null;
   for(const row of h){
-   const t=row.snapshot_at;if(day(t)>m.to||day(t)<m.from)continue;
+   const t=row.snapshot_at;if(day(t)>m.to||day(t)<m.from||!promoFilter(row,t,true))continue;
    const isPaid=paid(row);
    if(isPaid){
     if(!first){first=row;previous=row;}
@@ -298,12 +299,27 @@ function renderPromotions(m){
   if(first){spans.push({id,row:first,start:first.snapshot_at,end:null,status:first.paymentStatus,open:true});}
  }
  spans.sort((x,y)=>String(y.start).localeCompare(String(x.start)));
+ const allPromoted=new Set(spans.map(x=>x.id));
+ $('promoOverviewKpi').querySelector('.card strong').textContent=fmt(allPromoted.size);
+
  const rows=spans.slice(0,150).map(x=>{
   const ev=paidEvents.filter(e=>e.id===x.id&&e.start>=x.start&&(!x.end||e.end<=x.end));
   const v=ev.length?'+'+fmt(totalEvents(ev)):'—';
   return `<tr><td>${esc(agentName(x.row))}</td><td class="wrap">${adLink(x.row)}</td><td>${esc(label({paymentStatus:x.status}))}</td><td>${date(x.start)}</td><td>${x.end?date(x.end):'На последнем наблюдении'}</td><td>${v}</td><td>${detailButton(x.row)}</td></tr>`;
  });
- $('promoPeriods').innerHTML=makeTable(['Сотрудник','Объявление','Продвижение','Замечено с','Замечено до','Прирост просмотров',''],rows)+(spans.length>150?'<p class="muted">Показаны первые 150 периодов, уточните даты или сотрудника для остальных.</p>':'');
+ const cards=spans.slice(0,150).map(x=>{
+  const ev=paidEvents.filter(e=>e.id===x.id&&e.start>=x.start&&(!x.end||e.end<=x.end));
+  const viewed=ev.length?'+'+fmt(totalEvents(ev)):'—';
+  return `<article class="promo-history-card" data-detail="${esc(x.id)}">
+    <div class="promo-history-title">${adLink(x.row)}</div>
+    <div class="muted">${esc(agentName(x.row))} · ${esc(x.row.areaTotal||'')} м² · ${price(x.row)}</div>
+    <div class="promo-history-stats"><div><small>Реклама</small><b>${esc(label({paymentStatus:x.status}))}</b></div><div><small>Зафиксирована с</small><b>${date(x.start)}</b></div><div><small>До</small><b>${x.end?date(x.end):'Конец неизвестен'}</b></div><div><small>Прирост просмотров</small><b>${viewed}</b></div><div><small>Открытия номера</small><b>Нет данных</b></div></div>
+    <div class="muted tiny">Показаны моменты наблюдения, не точные часы оплаты и выключения.</div>
+    ${detailButton(x.row)}
+   </article>`;
+ }).join('');
+ $('promoPeriods').innerHTML=cards||empty('В выбранном периоде продвижение не обнаружено.');
+ if(spans.length>150)$('promoPeriods').insertAdjacentHTML('beforeend','<p class="muted">Показаны первые 150 периодов, уточните даты или сотрудника для остальных.</p>');
 }
 
 const palette=['#396cc1','#d97558','#147b73','#885ac5','#b67b25','#ba4b86','#1a899e','#5e728a'];
