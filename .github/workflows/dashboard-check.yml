@@ -6,6 +6,7 @@ on:
       - 'docs/dashboard.js'
       - 'collector.py'
       - 'tests/test_collector_views.py'
+      - 'tests/probe_views_order.py'
       - 'tests/dashboard.test.cjs'
       - 'tests/dashboard-diagnostics.cjs'
       - '.github/workflows/dashboard-check.yml'
@@ -37,3 +38,7 @@ jobs:
           for day in $(seq -w 20 26); do curl -fsSL "https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/snapshots/2026-10-${day}.csv.gz" -o "/tmp/realt-archive/2026-10-${day}.csv.gz"; done
           curl -fsSL 'https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/listings_seen.json' -o /tmp/realt-seen.json
           ARCHIVE_DIR=/tmp/realt-archive SEEN_FILE=/tmp/realt-seen.json node tests/dashboard-diagnostics.cjs /tmp/realt-current.csv --archive
+      - name: Probe Realt batch/singleton view correspondence
+        run: |
+          python -m pip install requests
+          python tests/probe_views_order.py
