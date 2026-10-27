@@ -127,7 +127,7 @@ function svgBars(groups){
     if(groups.length<16||i%Math.ceil(groups.length/12)===0)s+=`<text x="${x+step*.3}" y="${bottom+20}" text-anchor="middle" font-size="10" fill="#62758a">${esc(g.label)}</text>`;
   });return s+'</svg>';
 }
-function render(){if(!index)return;const m=model();currentModel=m;
+function render(){if(!index)return;const m=model();currentModel=m;const quick=$('quick').querySelector('button.active');$('filtersSummaryPeriod').textContent=quick?quick.textContent.trim():'Свой период';
   if(m.from>m.to){$('status').textContent='Дата начала должна быть раньше даты окончания.';return;}
   const comparable=m.events.length>0,delta=m.events.reduce((s,e)=>s+e.delta,0),advertised=m.current.filter(paid).length;
   $('cards').innerHTML=[['Объявлений',m.current.length,'На последнем обходе выбранного периода'],['В продвижении',advertised,'По статусу на последнем обходе'],['Прирост просмотров',comparable?delta:null,'Только сопоставимые интервалы'],['Просмотры всего',m.current.reduce((s,r)=>s+(number(r.views)||0),0),'Общий счётчик выбранных объявлений']].map(([title,value,note])=>`<div class="card"><div class="kpi-label">${title}</div><strong>${fmt(value)}</strong><span>${note}</span></div>`).join('');
