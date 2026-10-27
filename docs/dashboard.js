@@ -264,7 +264,7 @@ function renderUnified(m){
  const agents=agentsFor(m);const maxDelta=Math.max(1,...agents.map(a=>a.delta));$('employeeHighlights').innerHTML=agents.slice(0,18).map(a=>`<article class="employee-highlight"><button data-select-agent="${esc(a.row.userUuid)}">${esc(agentName(a.row))}</button><div class="big">${m.events.length?'+'+fmt(a.delta):'—'}</div><div class="track"><span style="width:${Math.max(0,a.delta)/maxDelta*100}%"></span></div><small>${fmt(a.current)} активных · ${fmt(a.paid)} с продвижением</small></article>`).join('');const rankedAgents=agents.slice().sort((a,b)=>m.events.length?b.delta-a.delta||b.published.size-a.published.size:b.published.size-a.published.size||b.current-a.current);
  $('employeeTable').innerHTML='<div class="tbl-wrap emp"><table class="kufar-employee-table"><thead><tr class="grp"><th rowspan="2">Сотрудник</th><th rowspan="2">Сейчас</th><th colspan="2">Размещены в выбранном периоде</th><th colspan="2">Размещены раньше</th><th rowspan="2">В рекламе сейчас</th><th rowspan="2">Изменений</th></tr><tr><th>Объявлений</th><th>Прирост просмотров</th><th>Замечено</th><th>Прирост просмотров</th></tr></thead><tbody>'+
  rankedAgents.map(a=>`<tr><td><button data-select-agent="${esc(a.row.userUuid)}">${esc(agentName(a.row))}</button></td><td class="num">${a.current}</td><td class="num">${a.published.size}</td><td class="num">${m.events.length?fmt(a.deltaNew):'—'}</td><td class="num">${Math.max(0,a.observed.size-a.published.size)}</td><td class="num">${m.events.length?fmt(a.deltaOld):'—'}</td><td class="num">${a.paid}</td><td class="num">${a.changes}</td></tr>`).join('')+'</tbody></table></div>';
- $('employeeTable').insertAdjacentHTML('beforeend','<p class="muted tiny">Если дата публикации неизвестна, прирост не приравнивается к старым объявлениям. Открытия телефона Realt не предоставляет. Нажмите на сотрудника, чтобы открыть его объявления.</p>');
+ $('employeeTable').insertAdjacentHTML('beforeend','<p class="muted tiny">Если дата публикации неизвестна, прирост не приравнивается к старым объявлениям. Открытия телефона не обнаружены в публичных данных Realt. Нажмите на сотрудника, чтобы открыть его объявления.</p>');
  }
  if(activeView==='promotion')renderPromotions(m);
  if(activeView==='works')renderWorks(m);
@@ -291,7 +291,7 @@ function renderPromotions(m){
  const kpis=[
  ['Объявлений в продвижении',paidIds.size,'замечено за выбранный период'],
  ['Просмотры при продвижении',paidEvents.length?totalPaid:null,'только проверенные последовательные замеры'],
- ['Открытия телефона','—','Realt не предоставляет эти значения'],
+ ['Открытия телефона','—','Нет в публичных данных радара'],
  ['Сейчас в рекламе',active.length,'подтверждены последним обходом']
  ];
  $('promoOverviewKpi').innerHTML=kpis.map(([name,value,note])=>`<div class="card"><strong>${value===null?'—':typeof value==='number'?fmt(value):value}</strong><div class="kpi-label">${name}</div><span>${note}</span></div>`).join('');
