@@ -121,13 +121,24 @@ function updateFreshness(){
   warning.textContent=state.stale?'Данные не обновились по расписанию. Последний снимок: '+date(last)+'. Ожидался сбор от '+date(state.expected)+'. Показаны сохранённые данные.':'';
 }
 const checks=id=>new Set([...$(id).querySelectorAll('input:checked')].map(x=>x.value));
-function matches(r,t=r.snapshot_at,ignorePromo=false){const multi=checks('multiAgents'),week=checks('weekdays'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
+// Conservative scope filter: Minsk Mir location alone cannot identify a new-build listing.
+// Unknown or resale properties remain in source archives, but not in radar statistics.
+function isNewbuild(r){
+ const text=[r.title,r.description,r.headline].filter(Boolean).join(' ').toLowerCase().replace(/ё/g,'е');
+ const negative=/вторичк|вторичн|жил(ая|ой|ую) квартира|вторичный рынок|собственник продает|обжитая квартира|квартира с ремонтом|дизайнерским ремонтом|с мебелью и техникой|готова к проживанию|заезжай и живи|готова к заселению/.test(text);
+ if(negative)return false;
+ const development=String(r.realEstateDevUuid||'').trim();
+ if(development&&development!=='null'&&development!=='undefined')return true;
+ return /от застройщика|напрямую от застройщика|без посредников от застройщика|новостройк|рассрочк.{0,65}застройщик|застройщик.{0,65}рассрочк|прямая продажа от застройщика/.test(text);
+}
+function matches(r,t=r.snapshot_at,ignorePromo=false){if(!isNewbuild(r))return false;const multi=checks('multiAgents'),week=checks('weekdays'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
 return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(ignorePromo||!week.size||week.has(String(weekday(t))))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agencyName===$('company').value)&&(!$('rooms').value||r.rooms===$('rooms').value)&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
 function createMatcher(){
  const multi=checks('multiAgents'),week=checks('weekdays');
  const agent=$('agent').value,quarter=$('quarter').value,company=$('company').value,rooms=$('rooms').value,house=$('house').value;
  const lo=number($('areaMin').value),hi=number($('areaMax').value),search=$('search').value.toLowerCase(),promo=$('promo').value;
  return (r,t=r.snapshot_at,ignorePromo=false)=>{
+  if(!isNewbuild(r))return false;
   const area=number(r.areaTotal);
   if(agent&&r.userUuid!==agent||multi.size&&!multi.has(r.userUuid))return false;
   if(!ignorePromo&&week.size&&!week.has(String(weekday(t))))return false;
