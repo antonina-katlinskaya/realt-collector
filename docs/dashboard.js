@@ -28,14 +28,21 @@ function buildIndex(rows) {
   return {times,byTime,histories};
 }
 function intervals(index,from,to) {
-  const out=[];
+  const out=[],highs=new Map();
+  if(!index.times.length)return out;
+  for(const r of index.byTime.get(index.times[0]).values()){const v=number(r.views);if(v!==null)highs.set(r.uuid,v);}
   for(let i=1;i<index.times.length;i++){
-    const a=index.times[i-1],b=index.times[i];
-    if(day(a)<from||day(b)>to)continue;
+    const a=index.times[i-1],b=index.times[i],inside=day(a)>=from&&day(b)<=to;
     const prev=index.byTime.get(a),cur=index.byTime.get(b);
-    for(const [id,r]of cur){const p=prev.get(id);if(!p)continue;const va=number(p.views),vb=number(r.views);if(va===null||vb===null||vb<va)continue;
+    for(const [id,r] of cur){
+      const vb=number(r.views),priorHigh=highs.get(id);
+      if(vb!==null)highs.set(id,priorHigh===undefined?vb:Math.max(priorHigh,vb));
+      const p=prev.get(id);if(!p||!inside)continue;
+      const va=number(p.views);if(va===null||vb===null||vb<va)continue;
+      // Previously observed visits must not be counted again after a counter reset.
+      const delta=Math.max(0,vb-Math.max(va,priorHigh===undefined?va:priorHigh));
       const category=p.paymentStatus===r.paymentStatus&&paid(p)?'paid':free(p)&&free(r)?'free':'unknown';
-      out.push({id,row:r,start:a,end:b,delta:vb-va,category});
+      out.push({id,row:r,start:a,end:b,delta,category});
     }
   }
   return out;
@@ -47,25 +54,31 @@ function changesBetween(index,from,to,accept=()=>true){
  for(let i=1;i<index.times.length;i++){const a=index.times[i-1],b=index.times[i];if(day(b)<from||day(b)>to)continue;const prev=index.byTime.get(a),cur=index.byTime.get(b);for(const [id,r]of cur){const p=prev.get(id);if(!p||!accept(r,b))continue;const changes=Object.entries(fields).filter(([k])=>p[k]!==''&&p[k]!=null&&r[k]!==''&&r[k]!=null&&p[k]!==r[k]).map(([key,name])=>({key,name,old:p[key],new:r[key]}));if(changes.length)result.push({id,row:r,start:a,end:b,changes});}}
  return result;
 }
-function periodData(index,from,to,accept=()=>true,bounds=null){
+function periodData(index,from,to,accept=()=>true,bounds=null,trustedFrom=null){
  const inside=t=>day(t)>=from&&day(t)<=to&&(!bounds||(Date.parse(t)>=bounds.start&&Date.parse(t)<=bounds.end));
  const available=index.times.filter(inside),end=available.at(-1),current=end?[...index.byTime.get(end).values()].filter(r=>accept(r,end)):[];
  const observed=new Map();for(const t of available)for(const [id,r] of index.byTime.get(t))if(accept(r,t))observed.set(id,r);
- const events=intervals(index,from,to).filter(e=>inside(e.start)&&inside(e.end)&&accept(e.row,e.end));
+ const lastValues=new Map(),unstableIds=new Set();
+ for(const t of available.filter(t=>!trustedFrom||t>=trustedFrom))for(const [id,r] of index.byTime.get(t)){const v=number(r.views),prev=lastValues.get(id);if(v!==null){if(prev!==undefined&&v<prev)unstableIds.add(id);lastValues.set(id,v);}}
+ const allEvents=intervals(index,from,to).filter(e=>inside(e.start)&&inside(e.end)&&accept(e.row,e.end));
+ const rawEvents=allEvents.filter(e=>!trustedFrom||e.start>=trustedFrom);
+ const excludedLegacyEvents=allEvents.length-rawEvents.length;
+ const events=rawEvents.filter(e=>!unstableIds.has(e.id));
+ const excludedEvents=rawEvents.filter(e=>unstableIds.has(e.id));
  const growth=new Map();for(const e of events)growth.set(e.id,(growth.get(e.id)||0)+e.delta);
  const newly=[...observed.values()].filter(r=>{const h=index.histories.get(r.uuid);return h[0].snapshot_at!==index.times[0]&&inside(h[0].snapshot_at)&&accept(h[0],h[0].snapshot_at);});
  const currentIds=new Set(current.map(r=>r.uuid)),gone=new Map();
  for(let i=1;i<index.times.length;i++){const a=index.times[i-1],b=index.times[i];if(!inside(b))continue;for(const [id,r]of index.byTime.get(a))if(!index.byTime.get(b).has(id)&&!currentIds.has(id)&&accept(r,b))gone.set(id,{...r,goneAt:b});}
  for(const [id,r]of gone)if(!observed.has(id))observed.set(id,r);
  const changes=changesBetween(index,from,to,(r,t)=>inside(t)&&accept(r,t));
- return {from,to,end,current,observed:[...observed.values()],events,growth,newly,gone:[...gone.values()],changes};
+ return {from,to,end,current,observed:[...observed.values()],events,unstableIds,excludedEvents,excludedLegacyEvents,growth,newly,gone:[...gone.values()],changes};
 }
 
 function collectionFreshness(last,now=Date.now()){
-  const grace=45*60*1000,dayStart=new Date(now);dayStart.setUTCHours(0,17,0,0);
-  const slots=[6,9,12,15,18].map(h=>dayStart.getTime()+h*3600000);
-  const expected=Math.max(...slots.map(t=>t+grace<=now?t:t-86400000));
-  return {expected,stale:!Number.isFinite(Date.parse(last))||Date.parse(last)<expected};
+ const grace=45*60*1000,d=new Date(now),midnight=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
+ const slots=[];for(const base of [midnight-86400000,midnight])for(let hour=4;hour<=18;hour++)slots.push(base+(hour*60+10)*60000);
+ const due=slots.filter(t=>t+grace<=now),expected=due.length?Math.max(...due):midnight-86400000+18*3600000+10*60000;
+ return {expected,stale:!Number.isFinite(Date.parse(last))||Date.parse(last)<expected};
 }
 if(typeof module!=='undefined')module.exports={parseCSV,buildIndex,intervals,statusStart,day,weekday,changesBetween,periodData,collectionFreshness};
 if(typeof document!=='undefined'){
@@ -79,8 +92,28 @@ const label=r=>r.payment_label||({'0':'Бесплатно','2':'Выделени
 const known={'i.s.barashenko':'Ирина Барашенко','e.v.boriskina':'Елена Борискина','v.n.khatkovskaya':'Вероника Хатковская'};
 const knownById={'77ff7ab0-6e68-11ee-818e-0935d63487ea':'Ирина Барашенко','ff985560-a80d-11f0-bfef-45b6701187ce':'Елена Борискина','d6a0a26a-26a6-11ec-ae6c-dee111c4eff3':'Вероника Хатковская'};
 function agentName(r){const email=(r.contactEmail||'').split('@')[0];return knownById[r.userUuid]||known[email]||(r.contactName||'Без имени');}
-let index,rows=[],seen=null,seenPromise=null,selectedTab='current',page=0,currentModel=null,loadSeq=0;
-let preciseBounds=null,activeView='overview',hiddenAgents=new Set(),chosenInterval=null,photos=new Map(),photoLoaded=false,photoDate=null;
+let index,rows=[],baseRows=[],seen=null,seenPromise=null,selectedTab='current',page=0,currentModel=null,loadSeq=0;
+const ARCHIVE_START='2026-10-05',archiveRows=new Map(),archiveMissing=new Set();let archiveRequestSeq=0;
+let preciseBounds=null,activeView='promotion',hiddenAgents=new Set(),chosenInterval=null,photos=new Map(),photoLoaded=false,photoDate=null;
+async function restoreArchiveRange(){
+ if(!index)return;
+ const seq=++archiveRequestSeq,from=$('from').value,to=$('to').value,last=day(index.times.at(-1));
+ if(!from||!to||from>to)return;
+ const dates=[];for(let t=Date.parse((from>ARCHIVE_START?from:ARCHIVE_START)+'T12:00:00Z'),end=Date.parse((to<last?to:last)+'T12:00:00Z');t<=end;t+=86400000){const d=new Date(t).toISOString().slice(0,10);if(!archiveRows.has(d)&&!archiveMissing.has(d))dates.push(d);}
+ if(!dates.length){if(seq===archiveRequestSeq)render();return;}
+ $('status').textContent='Загружаю сохранённую историю за '+dates.length+' дн. Без неё рейтинг за период неполный…';
+ const failures=[];let next=0;
+ async function worker(){while(next<dates.length){const d=dates[next++];try{
+ const response=await fetch(ROOT+'snapshots/'+d+'.csv.gz',{cache:'force-cache'});
+ if(response.status===404){archiveMissing.add(d);continue;}if(!response.ok)throw Error('HTTP '+response.status);
+ if(typeof DecompressionStream==='undefined')throw Error('Нужен браузер с поддержкой gzip');
+ const content=await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).text();
+ archiveRows.set(d,parseCSV(content));
+ }catch(e){failures.push(d+': '+e.message);}}}
+ await Promise.all(Array.from({length:Math.min(3,dates.length)},()=>worker()));
+ rows=baseRows.concat(...archiveRows.values());index=buildIndex(rows);
+ if(seq===archiveRequestSeq){populateUnified(new Map([...index.histories.values()].filter(a=>a.length).map(a=>[a.at(-1).userUuid,a.at(-1)])));render();if(failures.length)$('status').textContent='Часть архива не загрузилась: '+failures.join('; ');}
+}
 function updateFreshness(){
   const last=index?.times.at(-1);if(!last)return;
   const state=collectionFreshness(last);$('freshness').textContent='Последний снимок: '+date(last);
@@ -90,12 +123,30 @@ function updateFreshness(){
 const checks=id=>new Set([...$(id).querySelectorAll('input:checked')].map(x=>x.value));
 function matches(r,t=r.snapshot_at,ignorePromo=false){const multi=checks('multiAgents'),week=checks('weekdays'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
 return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(ignorePromo||!week.size||week.has(String(weekday(t))))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agencyName===$('company').value)&&(!$('rooms').value||r.rooms===$('rooms').value)&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
+function createMatcher(){
+ const multi=checks('multiAgents'),week=checks('weekdays');
+ const agent=$('agent').value,quarter=$('quarter').value,company=$('company').value,rooms=$('rooms').value,house=$('house').value;
+ const lo=number($('areaMin').value),hi=number($('areaMax').value),search=$('search').value.toLowerCase(),promo=$('promo').value;
+ return (r,t=r.snapshot_at,ignorePromo=false)=>{
+  const area=number(r.areaTotal);
+  if(agent&&r.userUuid!==agent||multi.size&&!multi.has(r.userUuid))return false;
+  if(!ignorePromo&&week.size&&!week.has(String(weekday(t))))return false;
+  if(quarter&&(r.quarter||'(не определён)')!==quarter||company&&r.agencyName!==company||rooms&&r.rooms!==rooms||house&&r.address!==house)return false;
+  if(lo!==null&&(area===null||area<lo)||hi!==null&&(area===null||area>hi))return false;
+  if(search&&![r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes(search))return false;
+  return ignorePromo||!promo||(promo==='paid'?paid(r):promo==='other'?![0,2,3,4].includes(number(r.paymentStatus)):r.paymentStatus===promo);
+ };
+}
 function promoMatch(r){const p=$('promo').value;return !p||(p==='paid'?paid(r):p==='other'?![0,2,3,4].includes(number(r.paymentStatus)):r.paymentStatus===p);}
+let cachedModelIndex=null,cachedModelKey='',cachedModelValue=null;
 function model(){
- const m=periodData(index,$('from').value,$('to').value,matches,preciseBounds);
+ const fields=['from','to','agent','promo','quarter','company','rooms','house','areaMin','areaMax','search','sort'];
+ const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),[...checks('weekdays')].sort(),selectedTab,preciseBounds]);
+ if(cachedModelIndex===index&&cachedModelKey===key&&cachedModelValue)return cachedModelValue;
+ const m=periodData(index,$('from').value,$('to').value,createMatcher(),preciseBounds,'2026-10-27T11:41:00Z');
  let listing=selectedTab==='paid'?m.current.filter(paid):selectedTab==='new'?m.newly:selectedTab==='gone'?m.gone:selectedTab==='period'?m.observed:m.current;
  const sort=$('sort').value;listing=listing.slice().sort((a,b)=>sort==='growth'?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):sort==='views'?(number(b.views)||0)-(number(a.views)||0):sort==='price'?String(a.priceCurrency).localeCompare(String(b.priceCurrency))||(number(a.price)||0)-(number(b.price)||0):String(b.createdAt).localeCompare(String(a.createdAt)));
- return {...m,listing};
+ cachedModelIndex=index;cachedModelKey=key;cachedModelValue={...m,listing};return cachedModelValue;
 }
 function svgBars(groups){
   if(!groups.length)return '<div class="empty">Нужны хотя бы два обхода внутри выбранного периода.<br>Общий счётчик уже доступен в таблице.</div>';
@@ -107,15 +158,23 @@ function svgBars(groups){
     if(groups.length<16||i%Math.ceil(groups.length/12)===0)s+=`<text x="${x+step*.3}" y="${bottom+20}" text-anchor="middle" font-size="10" fill="#62758a">${esc(g.label)}</text>`;
   });return s+'</svg>';
 }
-function render(){if(!index)return;const m=model();currentModel=m;
+function render(){if(!index)return;const m=model();currentModel=m;const quick=$('quick').querySelector('button.active');$('filtersSummaryPeriod').textContent=quick?quick.textContent.trim():'Свой период';
   if(m.from>m.to){$('status').textContent='Дата начала должна быть раньше даты окончания.';return;}
   const comparable=m.events.length>0,delta=m.events.reduce((s,e)=>s+e.delta,0),advertised=m.current.filter(paid).length;
-  $('cards').innerHTML=[['Объявлений',m.current.length,'На последнем обходе выбранного периода'],['В продвижении',advertised,'По статусу на последнем обходе'],['Прирост просмотров',comparable?delta:null,'Только сопоставимые интервалы'],['Просмотры всего',m.current.reduce((s,r)=>s+(number(r.views)||0),0),'Общий счётчик выбранных объявлений']].map(([title,value,note])=>`<div class="card"><div class="kpi-label">${title}</div><strong>${fmt(value)}</strong><span>${note}</span></div>`).join('');
+  const activations=m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus'&&![2,3,4].includes(number(x.old))&&[2,3,4].includes(number(x.new)))).length;
+  const bumps=m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus'&&number(x.new)===3&&number(x.old)!==3)).length;
+  $('cards').innerHTML=[['Прирост просмотров',comparable?delta:null,'за сопоставимые интервалы'],['Объявлений сейчас',m.current.length,'на последнем снимке выбранного периода'],['В продвижении',advertised,'по последнему снимку периода'],['Новых замечено',m.newly.length,'с момента первого наблюдения'],['Включений продвижения',activations,'наблюдаемые смены статуса'],['Включений поднятия',bumps,'наблюдаемые переходы на статус'],['Открытия номера','—','Realt не предоставляет эти данные']].map(([title,value,note])=>`<div class="card"><strong>${value===null?'—':(typeof value==='number'?fmt(value):value)}</strong><div class="kpi-label">${title}</div><span>${note}</span></div>`).join('');
   $('status').textContent=m.end?'Состояние объявлений на '+date(m.end)+' · '+index.times.length+' снимков в истории':'Нет снимков до выбранной даты';
   const countTimes=index.times.filter(t=>day(t)>=m.from&&day(t)<=m.to).length;
   $('coverage').textContent=countTimes<2?'Пока в выбранном периоде меньше двух снимков. Прирост, длительность продвижения и время активности начнут уточняться с новыми обходами.':`${countTimes} снимков в выбранном периоде. Прирост за полностью покрытые интервалы: ${fmt(delta)}. При продвижении: ${fmt(m.events.filter(e=>e.category==='paid').reduce((s,e)=>s+e.delta,0))}; без продвижения: ${fmt(m.events.filter(e=>e.category==='free').reduce((s,e)=>s+e.delta,0))}; при смене / неизвестном статусе: ${fmt(m.events.filter(e=>e.category==='unknown').reduce((s,e)=>s+e.delta,0))}.`;
+  if(m.excludedLegacyEvents){$('coverage').textContent+=` До исправления привязки просмотров к UUID исключено ${fmt(m.excludedLegacyEvents)} исторических интервалов. Для рейтингов нужны два новых достоверных обхода после 27.10.2026, 14:41 Минск.`;}
+  if(m.unstableIds.size){const excludedTotal=m.excludedEvents.reduce((sum,e)=>sum+e.delta,0);$('coverage').textContent+=` ⚠ У ${fmt(m.unstableIds.size)} объявлений счётчик просмотров снижался между обходами; их положительные скачки (+${fmt(excludedTotal)}) исключены из рейтингов и итогового прироста. Исходные значения сохранены в истории.`;}
+  const currentTotal=m.current.reduce((sum,r)=>sum+(number(r.views)||0),0);
+  if(delta>currentTotal*2&&currentTotal>0){$('coverage').textContent+=' ⚠ Это сумма наблюдаемых приращений по историческим объявлениям, а не число уникальных покупателей. В архиве обнаружены аномально большие скачки счётчиков: источник и причина пока не подтверждены; нельзя трактовать их как доказанную эффективность рекламы.';}
   const groups=new Map();for(const e of m.events){const k=e.end;if(!groups.has(k))groups.set(k,{paid:0,free:0,unknown:0,title:date(e.start)+' → '+date(e.end),label:date(e.end).slice(0,5)+' '+date(e.end).slice(-5)});groups.get(k)[e.category]+=e.delta;}
-  $('traffic').innerHTML=svgBars([...groups.values()]);renderRanking(m);renderTable(m);renderUnified(m);
+  if(activeView==='overview'){$('traffic').innerHTML=svgBars([...groups.values()]);renderRanking(m);}
+  if(activeView==='ads')renderTable(m);
+  if(activeView!=='ads')renderUnified(m);
 }
 function renderRanking(m){const agents=new Map();for(const r of m.current){const id=r.userUuid;if(!agents.has(id))agents.set(id,{id,name:agentName(r),phone:r.contactPhone,count:0,paid:0,views:0,growth:0});const a=agents.get(id);a.count++;a.paid+=paid(r)?1:0;a.views+=number(r.views)||0;}
   for(const e of m.events){if(agents.has(e.row.userUuid))agents.get(e.row.userUuid).growth+=e.delta;}
@@ -124,15 +183,15 @@ function renderRanking(m){const agents=new Map();for(const r of m.current){const
   $('ranking').innerHTML=list.map(a=>`<div class="barrow"><button data-agent="${esc(a.id)}" title="${esc(a.phone)}">${esc(a.name)}</button><div class="bartrack"><div class="bar" style="width:${a[key]/max*100}%"></div></div><b>${fmt(a[key])}</b></div>`).join('')||'<div class="empty">Нет объявлений по выбранным фильтрам</div>';
 }
 function renderTable(m){const size=40;page=Math.min(page,Math.max(0,Math.ceil(m.listing.length/size)-1));const part=m.listing.slice(page*size,(page+1)*size);
-  $('listings').innerHTML=part.map(r=>{const st=statusStart(index,r),dv=m.growth.get(r.uuid);return `<tr><td>${esc(agentName(r))}<br><small>${esc(r.contactPhone)}</small></td><td class="title"><a href="https://realt.by/sale-flats/object/${encodeURIComponent(r.code)}/" target="_blank" rel="noopener">${esc(r.address||r.title)} ↗</a><br><small>${esc(r.code)} · ${esc(r.areaTotal)} м² · ${esc(r.storey)}/${esc(r.storeys)} эт. · ${esc(r.quarter||'дом не распознан')}</small>${r.goneAt?'<br><small>Отсутствует с '+date(r.goneAt)+'</small>':''}</td><td>${price(r)}</td><td><span class="badge ${paid(r)?'promo':''}">${esc(label(r))}</span></td><td>${date(st.time)}<br><small>${st.open?'Начало неизвестно':'Смена замечена между обходами'}</small></td><td>${fmt(number(r.views))}</td><td>${fmt(dv)}</td><td><button data-detail="${esc(r.uuid)}">История</button></td></tr>`;}).join('')||'<tr><td colspan="8" class="empty">Нет объявлений по выбранным фильтрам</td></tr>';
+  $('listings').innerHTML=part.map(r=>{const st=statusStart(index,r),dv=m.growth.get(r.uuid);return `<tr><td>${esc(agentName(r))}<br><small>${esc(r.contactPhone)}</small></td><td class="title">${photos.has(r.uuid)?`<img loading="lazy" class="listing-thumb" src="${esc(photos.get(r.uuid)[0])}" alt="Фото объявления ${esc(r.code)}">`:''}<a href="https://realt.by/sale-flats/object/${encodeURIComponent(r.code)}/" target="_blank" rel="noopener">${esc(r.address||r.title)} ↗</a><br><small>${esc(r.code)} · ${esc(r.areaTotal)} м² · ${esc(r.storey)}/${esc(r.storeys)} эт. · ${esc(r.quarter||'дом не распознан')}</small>${r.goneAt?'<br><small>Отсутствует с '+date(r.goneAt)+'</small>':''}</td><td>${price(r)}</td><td><span class="badge ${paid(r)?'promo':''}">${esc(label(r))}</span></td><td>${date(st.time)}<br><small>${st.open?'Начало неизвестно':'Смена замечена между обходами'}</small></td><td>${fmt(number(r.views))}</td><td>${fmt(dv)}</td><td><button data-detail="${esc(r.uuid)}">История</button></td></tr>`;}).join('')||'<tr><td colspan="8" class="empty">Нет объявлений по выбранным фильтрам</td></tr>';
   $('rowcount').textContent=`${m.listing.length? page*size+1:0}–${Math.min((page+1)*size,m.listing.length)} из ${fmt(m.listing.length)}`;$('prev').disabled=page===0;$('next').disabled=(page+1)*size>=m.listing.length;
 }
-async function load(){const seq=++loadSeq;$('refresh').disabled=true;$('status').textContent='Загружаем снимки…';try{const response=await fetch(ROOT+'snapshots.csv?refresh='+Date.now(),{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);const text=await response.text();if(seq!==loadSeq)return;rows=parseCSV(text);index=buildIndex(rows);if(!index.times.length)throw Error('Снимки пока отсутствуют');const last=index.times.at(-1);updateFreshness();
+async function load(){const seq=++loadSeq;$('refresh').disabled=true;$('status').textContent='Загружаем снимки…';try{const response=await fetch(ROOT+'snapshots.csv?refresh='+Date.now(),{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);const text=await response.text();if(seq!==loadSeq)return;baseRows=parseCSV(text);rows=baseRows.concat(...archiveRows.values());index=buildIndex(rows);if(!index.times.length)throw Error('Снимки пока отсутствуют');const last=index.times.at(-1);updateFreshness();
   const agents=new Map();for(const t of index.times)for(const r of index.byTime.get(t).values())agents.set(r.userUuid,r);
   const prevAgent=$('agent').value,prevQuarter=$('quarter').value;
   $('agent').innerHTML='<option value="">Все агенты</option>'+[...agents.values()].sort((a,b)=>agentName(a).localeCompare(agentName(b),'ru')).map(r=>`<option value="${esc(r.userUuid)}">${esc(agentName(r))} · ${esc(r.contactPhone||r.userUuid.slice(0,8))}</option>`).join('');$('agent').value=prevAgent;
   $('quarter').innerHTML='<option value="">Все</option>'+[...new Set(rows.map(r=>r.quarter||'(не определён)'))].sort().map(q=>`<option>${esc(q)}</option>`).join('');$('quarter').value=prevQuarter;
-  if(!$('from').value)$('from').value=day(index.times[0]);if(!$('to').value)$('to').value=day(last);const quick=$('quick').querySelector('button.active');if(quick)applyQuickPeriod(quick.dataset.days);seen=null;seenPromise=null;populateUnified(agents);render();
+  if(!$('from').value)$('from').value=day(index.times[0]);if(!$('to').value)$('to').value=day(last);const quick=$('quick').querySelector('button.active');if(quick)applyQuickPeriod(quick.dataset.days);seen=null;seenPromise=null;populateUnified(agents);await restoreArchiveRange();render();
 }catch(e){$('status').textContent='Не удалось загрузить данные: '+e.message+'. Нажми «Обновить данные», чтобы повторить.';}finally{$('refresh').disabled=false;}}
 function detailChart(h){if(!h.length)return '';const vals=h.filter(r=>number(r.views)!==null);if(!vals.length)return '<div class="empty">Счётчики не получены</div>';const W=740,H=210,min=0,max=Math.max(1,...vals.map(r=>Number(r.views)));const x=i=>48+(W-75)*i/Math.max(1,vals.length-1),y=v=>170-v/max*140;let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Общий счётчик просмотров объявления"><line x1="48" y1="170" x2="${W-15}" y2="170" stroke="#dce4ed"/><text x="40" y="30" text-anchor="end" font-size="11">${fmt(max)}</text><polyline points="${vals.map((r,i)=>x(i)+','+y(Number(r.views))).join(' ')}" fill="none" stroke="#396cc1" stroke-width="3"/>`;
   vals.forEach((r,i)=>{s+=`<circle cx="${x(i)}" cy="${y(Number(r.views))}" r="5" fill="${paid(r)?'#147b73':'#396cc1'}"><title>${date(r.snapshot_at)} · ${r.views} просмотров · ${esc(label(r))}</title></circle>`;if(vals.length<12||i%Math.ceil(vals.length/10)===0)s+=`<text x="${x(i)}" y="195" text-anchor="middle" font-size="10">${date(r.snapshot_at).slice(0,5)}</text>`;});return s+'</svg>';}
@@ -144,14 +203,15 @@ async function showDetail(id){const token=++detailSeq,h=index.histories.get(id)|
   try{if(!seenPromise)seenPromise=fetch(ROOT+'listings_seen.json?refresh='+Date.now(),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json();});seen=await seenPromise;if(token!==detailSeq||$('drawer').hidden)return;const hist=seen[id]?.history_views||{};$('historyraw').innerHTML=Object.keys(hist).length?'<table><thead><tr><th>Опорная дата</th><th>Значение API</th></tr></thead><tbody>'+Object.entries(hist).sort().map(([d,v])=>`<tr><td>${esc(d)}</td><td>${fmt(v)}</td></tr>`).join('')+'</tbody></table>':'Исторические значения отсутствуют';}catch(e){seenPromise=null;if(token===detailSeq)$('historyraw').textContent='История пока недоступна: '+e.message;}
 }
 function closeDetail(){$('drawer').hidden=true;detailSeq++;lastFocused?.focus();}
-for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){preciseBounds=null;for(const x of $('quick').querySelectorAll('button'))x.classList.remove('active');}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();});$('search').addEventListener('input',()=>{page=0;render();});
-function applyQuickPeriod(n){const today=day(new Date());preciseBounds=null;
-if(n==='all'){$('from').value=day(index.times[0]);$('to').value=day(index.times.at(-1));}
+for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){preciseBounds=null;if($('filterPeriodLabel'))$('filterPeriodLabel').textContent='Свой период';for(const x of $('quick').querySelectorAll('button'))x.classList.remove('active');}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;if(id==='from'||id==='to')restoreArchiveRange();else render();});let searchRenderTimer=null;
+$('search').addEventListener('input',()=>{page=0;clearTimeout(searchRenderTimer);searchRenderTimer=setTimeout(()=>render(),180);});
+function applyQuickPeriod(n){const today=day(new Date());preciseBounds=null;const labels={'1':'Сегодня','yesterday':'Вчера','24h':'24 часа','7':'7 дней','14':'14 дней','30':'30 дней','90':'90 дней','all':'Вся история'};if($('filterPeriodLabel'))$('filterPeriodLabel').textContent=labels[n]||'Свой период';
+if(n==='all'){$('from').value=ARCHIVE_START;$('to').value=day(index.times.at(-1));}
 else if(n==='24h'){preciseBounds={start:Date.now()-86400000,end:Date.now()};$('from').value=day(preciseBounds.start);$('to').value=day(preciseBounds.end);}
 else if(n==='yesterday'){const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);$('from').value=$('to').value=d.toISOString().slice(0,10);}
 else{const start=new Date(today+'T12:00:00Z');start.setUTCDate(start.getUTCDate()-Number(n)+1);$('from').value=start.toISOString().slice(0,10);$('to').value=today;}
 }
-$('quick').addEventListener('click',e=>{const b=e.target.closest('[data-days]');if(!b||!index)return;applyQuickPeriod(b.dataset.days);for(const x of $('quick').querySelectorAll('button'))x.classList.toggle('active',x===b);page=0;render();});
+$('quick').addEventListener('click',e=>{const b=e.target.closest('[data-days]');if(!b||!index)return;applyQuickPeriod(b.dataset.days);for(const x of $('quick').querySelectorAll('button'))x.classList.toggle('active',x===b);page=0;restoreArchiveRange();});
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;selectedTab=b.dataset.tab;for(const x of $('tabs').querySelectorAll('button'))x.classList.toggle('active',x===b);page=0;render();});
 $('ranking').addEventListener('click',e=>{const b=e.target.closest('[data-agent]');if(b){$('agent').value=b.dataset.agent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();}});
 $('listings').addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b)showDetail(b.dataset.detail);});$('close').onclick=closeDetail;$('drawer').onclick=e=>{if(e.target===$('drawer'))closeDetail();};document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail();if(e.key==='Tab'&&!$('drawer').hidden){const els=[...$('drawer').querySelectorAll('button,a[href],input,select,summary')];if(e.shiftKey&&document.activeElement===els[0]){e.preventDefault();els.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===els.at(-1)){e.preventDefault();els[0].focus();}}});
@@ -175,19 +235,40 @@ function renderDaily(m){
  for(const r of m.newly){const d=day(index.histories.get(r.uuid)[0].snapshot_at);if(groups.has(d))groups.get(d).newly++;}
  $('dailyTable').innerHTML=makeTable(['Дата конца замера','Снимков','Впервые замечены после базового','Прирост'],[...groups].map(([d,g])=>`<tr><td>${d}</td><td>${g.snapshots}</td><td>${g.newly}</td><td>${fmt(g.views)}</td></tr>`));
 }
-function agentsFor(m){const out=new Map();const ensure=r=>{if(!out.has(r.userUuid))out.set(r.userUuid,{row:r,current:0,paid:0,observed:new Set(),delta:0,changes:0,newly:0,total:0});return out.get(r.userUuid);};for(const r of m.current){const a=ensure(r);a.current++;a.paid+=paid(r)?1:0;a.total+=number(r.views)||0;}for(const r of m.observed)ensure(r).observed.add(r.uuid);for(const e of m.events)ensure(e.row).delta+=e.delta;for(const c of m.changes)ensure(c.row).changes++;for(const r of m.newly)ensure(r).newly++;return [...out.values()].sort((a,b)=>b.delta-a.delta||b.current-a.current);}
+function agentsFor(m){const out=new Map();const publication=r=>{if(!r.createdAt||Number.isNaN(Date.parse(r.createdAt)))return 'unknown';const d=day(r.createdAt);return d>=m.from&&d<=m.to?'new':'old';};const ensure=r=>{if(!out.has(r.userUuid))out.set(r.userUuid,{row:r,current:0,paid:0,observed:new Set(),delta:0,deltaNew:0,deltaOld:0,deltaUnknown:0,published:new Set(),changes:0,newly:0,total:0});return out.get(r.userUuid);};for(const r of m.current){const a=ensure(r);a.current++;a.paid+=paid(r)?1:0;a.total+=number(r.views)||0;}for(const r of m.observed){const a=ensure(r);a.observed.add(r.uuid);if(publication(r)==='new')a.published.add(r.uuid);}for(const e of m.events){const a=ensure(e.row);a.delta+=e.delta;const k=publication(e.row);if(k==='new')a.deltaNew+=e.delta;else if(k==='old')a.deltaOld+=e.delta;else a.deltaUnknown+=e.delta;}for(const c of m.changes)ensure(c.row).changes++;for(const r of m.newly)ensure(r).newly++;return [...out.values()].sort((a,b)=>b.delta-a.delta||b.current-a.current);}
 function renderUnified(m){
- renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);$('employeeChanges').innerHTML=changesHTML(m.changes);
- const list=m.observed.filter(r=>m.growth.has(r.uuid)).sort((a,b)=>m.growth.get(b.uuid)-m.growth.get(a.uuid));
- $('leadersTable').innerHTML=m.events.length?makeTable(['Место','Агент','Объявление','Прирост','Общий счётчик',''],list.slice(0,100).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(agentName(r))}</td><td class="wrap">${adLink(r)}</td><td>+${fmt(m.growth.get(r.uuid))}</td><td>${fmt(number(r.views))}</td><td>${detailButton(r)}</td></tr>`)):empty('Рейтинг прироста появится после второго подходящего снимка. Общие просмотры доступны в разделе «Объявления».');
- const agents=agentsFor(m);$('employeeTable').innerHTML=makeTable(['Агент','На конец периода','В продвижении','Замечено за период','Прирост','Новые после базового снимка','Изменений'],agents.map(a=>`<tr><td><button data-select-agent="${esc(a.row.userUuid)}">${esc(agentName(a.row))}</button><br><small>${esc(a.row.contactPhone)}</small></td><td>${a.current}</td><td>${a.paid}</td><td>${a.observed.size}</td><td>${m.events.length?fmt(a.delta):'—'}</td><td>${a.newly}</td><td>${a.changes}</td></tr>`));
- renderPromotions(m);renderWorks(m);renderPlacements(m);renderInterval(m);
- if(photoLoaded)renderGallery(m);
+ if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
+ if(activeView==='leaders'){
+ const promoted=new Map();for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}const list=[...promoted.values()].sort((a,b)=>b.delta-a.delta);
+ $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Общий счётчик',''],list.slice(0,100).map((v,i)=>`<tr><td>${i+1}</td><td>${esc(agentName(v.row))}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
+ if(photoLoaded)renderPromotedGallery(m);
+ }
+ if(activeView==='employees'){
+ $('employeeChanges').innerHTML=changesHTML(m.changes);
+ const agents=agentsFor(m);const maxDelta=Math.max(1,...agents.map(a=>a.delta));$('employeeHighlights').innerHTML=agents.slice(0,18).map(a=>`<article class="employee-highlight"><button data-select-agent="${esc(a.row.userUuid)}">${esc(agentName(a.row))}</button><div class="big">${m.events.length?'+'+fmt(a.delta):'—'}</div><div class="track"><span style="width:${Math.max(0,a.delta)/maxDelta*100}%"></span></div><small>${fmt(a.current)} активных · ${fmt(a.paid)} с продвижением</small></article>`).join('');$('employeeTable').innerHTML=makeTable(['Сотрудник','Активных','Опубликовано за период','Просмотры новых: прирост','Просмотры старых: прирост','Без даты: прирост','С продвижением','Изменений'],agents.map(a=>`<tr><td><button data-select-agent="${esc(a.row.userUuid)}">${esc(agentName(a.row))}</button><br><small>${esc(a.row.contactPhone)}</small></td><td>${a.current}</td><td>${a.published.size}</td><td>${m.events.length?fmt(a.deltaNew):'—'}</td><td>${m.events.length?fmt(a.deltaOld):'—'}</td><td>${m.events.length?fmt(a.deltaUnknown):'—'}</td><td>${a.paid}</td><td>${a.changes}</td></tr>`));
+ }
+ if(activeView==='promotion')renderPromotions(m);
+ if(activeView==='works')renderWorks(m);
+ if(activeView==='placements')renderPlacements(m);
+ if(activeView==='hours')renderInterval(m);
  const baseline=m.newly.length===0&&index.times.length===1?' Базовый снимок содержит уже существовавшие объявления; он не считается массовой новой публикацией.':'';
- $('coverage').textContent+=baseline;
+ if(activeView==='overview')$('coverage').textContent+=baseline;
 }
 function liveAgentCard(id,items){const r=items[0];return `<article class="agentcard"><h3>${esc(agentName(r))}</h3><span class="badge promo">${items.length} в продвижении</span>${items.map(r=>{const st=statusStart(index,r);return `<div class="adlink">${adLink(r)}<br><small>${price(r)} · ${esc(label(r))}<br>Наблюдается с ${date(st.time)}; ${st.open?'начало неизвестно':'смена между обходами'}</small> ${detailButton(r)}</div>`;}).join('')}</article>`;}
 function renderPromotions(m){
+ const paidEvents=m.events.filter(e=>e.category==='paid');
+ const promotedCount=new Set(paidEvents.map(e=>e.id)).size;
+ const paidGrowth=totalEvents(paidEvents);
+ const freeGrowth=totalEvents(m.events.filter(e=>e.category==='free'));
+ const currentlyPaid=m.current.filter(paid).length;
+ const promoKpis=[
+  ['Объявлений с продвижением',promotedCount,'с подтверждёнными платными интервалами'],
+  ['Прирост при продвижении',paidGrowth,'наблюдаемые интервалы, не эффект рекламы'],
+  ['Прирост без продвижения',freeGrowth,'наблюдаемые бесплатные интервалы'],
+  ['Сейчас в продвижении',currentlyPaid,'на конце выбранного периода'],
+  ['Открытия номера','—','Realt не предоставляет эти данные']
+ ];
+ $('promoOverviewKpi').innerHTML=promoKpis.map(([name,value,detail])=>`<div class="card"><strong>${value===null?'—':(typeof value==='number'?fmt(value):value)}</strong><div class="kpi-label">${name}</div><span>${detail}</span></div>`).join('');
  const live=[...index.byTime.get(index.times.at(-1)).values()].filter(r=>matches(r,r.snapshot_at,true)&&paid(r)),byAgent=new Map();
  for(const r of live){if(!byAgent.has(r.userUuid))byAgent.set(r.userUuid,[]);byAgent.get(r.userUuid).push(r);}
  const mainIds=new Set(Object.keys(knownById));$('livePromo').innerHTML=[...byAgent].filter(([id])=>mainIds.has(id)).map(([id,a])=>liveAgentCard(id,a)).join('')||empty('У основных агентов нет продвижения по последнему снимку и выбранным фильтрам.');
@@ -222,27 +303,41 @@ function renderInterval(m){const times=[...new Set(m.events.map(e=>e.end))];if(!
  if(!times.includes(chosenInterval))chosenInterval=times.at(-1);$('intervalButtons').innerHTML=times.map(t=>{const es=m.events.filter(e=>e.end===t);return `<button class="intervalpick ${t===chosenInterval?'active':''}" data-interval="${esc(t)}">${date(es[0].start)} → ${date(t)}<br><b>+${fmt(totalEvents(es))} просмотров</b></button>`;}).join('');
  const ev=m.events.filter(e=>e.end===chosenInterval).sort((a,b)=>b.delta-a.delta);$('intervalDetail').innerHTML=makeTable(['Агент','Объявление','Начало → конец','Прирост','Статус интервала',''],ev.slice(0,100).map(e=>`<tr><td>${esc(agentName(e.row))}</td><td class="wrap">${adLink(e.row)}</td><td>${date(e.start)}<br>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td><td>${detailButton(e.row)}</td></tr>`));
 }
-function renderGallery(m){const hasGrowth=m.events.length>0;const items=(hasGrowth?m.observed.filter(r=>m.growth.has(r.uuid)):m.current).filter(r=>photos.has(r.uuid)).sort((a,b)=>hasGrowth?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):(number(b.views)||0)-(number(a.views)||0)).slice(0,30);
- $('gallery').innerHTML=items.map(r=>`<article><div class="photoStrip">${photos.get(r.uuid).slice(0,5).map(u=>`<img loading="lazy" src="${esc(u)}" alt="Фото объявления ${esc(r.code)}">`).join('')}</div><div class="gbody">${adLink(r)}<p>${esc(agentName(r))} · ${price(r)}</p><b>${hasGrowth?'+'+fmt(m.growth.get(r.uuid))+' за период':fmt(number(r.views))+' общих просмотров'}</b><p class="tiny">Фотографии из снимка ${date(photoDate)}; могут отличаться от нынешних.</p>${detailButton(r)}</div></article>`).join('')||empty('В выбранной подборке нет фотографий из загруженного сырого снимка.');
+function renderGallery(m){const organic=new Map();for(const e of m.events){if(e.category==='free')organic.set(e.id,(organic.get(e.id)||0)+e.delta);}const hasGrowth=m.events.length>0;const items=(hasGrowth?m.observed.filter(r=>organic.has(r.uuid)):m.current.filter(free)).filter(r=>photos.has(r.uuid)).sort((a,b)=>hasGrowth?(organic.get(b.uuid)||0)-(organic.get(a.uuid)||0):(number(b.views)||0)-(number(a.views)||0)).slice(0,30);
+ $('gallery').innerHTML=items.map(r=>`<article class="adcard-clickable" data-detail="${esc(r.uuid)}"><div class="photoStrip">${photos.get(r.uuid).slice(0,5).map(u=>`<img loading="lazy" src="${esc(u)}" alt="Фото объявления ${esc(r.code)}">`).join('')}</div><div class="gbody">${adLink(r)}<p>${esc(agentName(r))} · ${price(r)}</p><b>${hasGrowth?'+'+fmt(organic.get(r.uuid))+' при бесплатном статусе':fmt(number(r.views))+' общих просмотров'}</b><p class="tiny">Фотографии из снимка ${date(photoDate)}; могут отличаться от нынешних.</p>${detailButton(r)}</div></article>`).join('')||empty('В выбранной подборке нет фотографий из загруженного сырого снимка.');
 }
-async function loadPhotos(){if(photoLoaded){renderGallery(currentModel);return;}$('loadPhotos').disabled=true;$('photoStatus').textContent='Загружаем существующий сырой снимок с фотографиями…';try{
- const listResponse=await fetch('https://api.github.com/repos/antonina-katlinskaya/realt-collector/contents/data/raw');if(!listResponse.ok)throw Error('Список снимков: HTTP '+listResponse.status);const files=await listResponse.json();const end=currentModel.end||index.times.at(-1),stamp=new Date(end).toISOString().slice(0,16).replace('T','_').replace(':','-');const candidates=files.filter(f=>f.type==='file'&&f.name.endsWith('.json')&&f.name.slice(0,16)<=stamp).sort((a,b)=>b.name.localeCompare(a.name));if(!candidates.length)throw Error('Нет сырого снимка в выбранном периоде');const file=candidates[0];const response=await fetch(file.download_url);if(!response.ok)throw Error('Сырой снимок: HTTP '+response.status);const raw=await response.json();photos=new Map((raw.minsk_mir_objects||[]).map(o=>[o.uuid,(o.images||[]).filter(u=>typeof u==='string'&&/^https:\/\//.test(u))]).filter(([,images])=>images.length));photoDate=raw.snapshot_at;photoLoaded=true;$('photoStatus').textContent='Фотографии загружены. При одном снимке порядок — по общему счётчику, а не по результату за период.';renderGallery(currentModel);
- }catch(e){$('photoStatus').textContent='Не удалось загрузить фотографии: '+e.message;}finally{$('loadPhotos').disabled=false;}}
+function renderPromotedGallery(m){const promoted=new Map();for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}const items=[...promoted.values()].filter(v=>photos.has(v.row.uuid)&&v.delta>0).sort((a,b)=>b.delta-a.delta).slice(0,30);
+ $('promotedGallery').innerHTML=items.map(v=>{const r=v.row;return `<article class="adcard-clickable" data-detail="${esc(r.uuid)}"><div class="photoStrip">${photos.get(r.uuid).slice(0,5).map(u=>`<img loading="lazy" src="${esc(u)}" alt="Фото объявления ${esc(r.code)}">`).join('')}</div><div class="gbody">${adLink(r)}<p>${esc(agentName(r))} · ${price(r)}</p><b>+${fmt(v.delta)} при платном статусе</b><p class="tiny">Фото из снимка ${date(photoDate)}. Источник просмотров не доказан.</p>${detailButton(r)}</div></article>`;}).join('')||empty(photoLoaded?'Нет фотографий у объявлений с положительным приростом при продвижении.':'Фотографии загружаются при открытии раздела.');
+}
+async function loadPhotos(){if(photoLoaded){if(activeView==='ads')renderTable(currentModel);else if(activeView==='leaders')renderPromotedGallery(currentModel);else renderGallery(currentModel);return;}$('photoStatus').textContent='Загружаем обложки объявлений…';try{
+ const manifestResponse=await fetch(ROOT+'photo_manifest.json',{cache:'no-store'});
+ if(manifestResponse.ok){
+  const manifest=await manifestResponse.json();
+  photos=new Map(Object.entries(manifest.images||{}).filter(([,images])=>Array.isArray(images)&&images.length&&images.every(u=>typeof u==='string'&&u.startsWith('https://'))));
+  photoDate=manifest.snapshot_at;photoLoaded=true;
+  if(activeView==='ads')renderTable(currentModel);
+  if(activeView==='leaders')renderPromotedGallery(currentModel);
+  if(activeView==='works')renderGallery(currentModel);
+  $('photoStatus').textContent='Фотографии получены из компактного снимка '+date(photoDate)+'.';
+  return;
+ }
+ const listResponse=await fetch('https://api.github.com/repos/antonina-katlinskaya/realt-collector/contents/data/raw');if(!listResponse.ok)throw Error('Список снимков: HTTP '+listResponse.status);const files=await listResponse.json();const end=currentModel.end||index.times.at(-1),stamp=new Date(end).toISOString().slice(0,16).replace('T','_').replace(':','-');const candidates=files.filter(f=>f.type==='file'&&/\.json(?:\.gz)?$/.test(f.name)&&f.name.slice(0,16)<=stamp).sort((a,b)=>b.name.localeCompare(a.name));if(!candidates.length)throw Error('Нет сырого снимка в выбранном периоде');const file=candidates[0];const response=await fetch(file.download_url);if(!response.ok)throw Error('Сырой снимок: HTTP '+response.status);let raw;if(file.name.endsWith('.gz')){if(typeof DecompressionStream==='undefined')throw Error('Браузер не поддерживает распаковку gzip');const decoded=response.body.pipeThrough(new DecompressionStream('gzip'));raw=await new Response(decoded).json();}else raw=await response.json();photos=new Map((raw.minsk_mir_objects||[]).map(o=>[o.uuid,(o.images||[]).filter(u=>typeof u==='string'&&/^https:\/\//.test(u))]).filter(([,images])=>images.length));photoDate=raw.snapshot_at;photoLoaded=true;if(activeView==='leaders')renderPromotedGallery(currentModel);if(activeView==='ads')renderTable(currentModel);$('photoStatus').textContent='Фотографии загружены из сохранённого снимка. В рейтинге учитываются только наблюдаемые бесплатные интервалы.';renderGallery(currentModel);
+ }catch(e){$('photoStatus').textContent='Не удалось загрузить фотографии: '+e.message;}finally{}}
 function detailExtras(id){
  const ev=currentModel.events.filter(e=>e.id===id),changes=currentModel.changes.filter(c=>c.id===id);
  const split=['paid','free','unknown'].map(cat=>{const es=ev.filter(e=>e.category===cat);return `<div class="card"><div>${categoryName[cat]}</div><strong>${es.length?'+'+fmt(totalEvents(es)):'—'}</strong><small>${es.length} сопоставимых интервалов</small></div>`;}).join('');
  const html=`<section class="panel"><h3>Прирост за выбранный период</h3><div class="detailgrid">${split}</div><p class="muted tiny">Пусто означает отсутствие сопоставимого интервала. Нули появляются только при двух полученных одинаковых счётчиках.</p>${makeTable(['Начало','Конец','Прирост','Статус'],ev.map(e=>`<tr><td>${date(e.start)}</td><td>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td></tr>`))}<h3>Изменения за период</h3>${changesHTML(changes).replace(/<button data-detail="[^"]+">История<\/button>/g,'')}</section>`;
  $('detail').insertAdjacentHTML('beforeend',html);
 }
-function activateView(view){activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);}
+function activateView(view){const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(['works','leaders','ads'].includes(view)&&!photoLoaded)loadPhotos();}}
 $('views').onclick=e=>{const b=e.target.closest('[data-view]');if(b)activateView(b.dataset.view);};
 for(const id of ['multiAgents','weekdays'])$(id).onchange=()=>{if(id==='multiAgents')$('agent').value='';page=0;render();};
 $('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','rooms','house','areaMin','areaMax','search'])$(id).value='';for(const x of document.querySelectorAll('#multiAgents input,#weekdays input'))x.checked=false;page=0;render();};
 $('agentLegend').onclick=e=>{const b=e.target.closest('[data-line]');if(!b)return;const id=b.dataset.line;if(hiddenAgents.has(id))hiddenAgents.delete(id);else hiddenAgents.add(id);renderTrend(currentModel);};
 $('intervalButtons').onclick=e=>{const b=e.target.closest('[data-interval]');if(b){chosenInterval=b.dataset.interval;renderInterval(currentModel);}};
-$('loadPhotos').onclick=loadPhotos;
+
 for(const id of ['areaMin','areaMax'])$(id).addEventListener('input',()=>{page=0;render();});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b&&!b.closest('#listings')&&!b.closest('#drawer'))showDetail(b.dataset.detail);const a=e.target.closest('[data-select-agent]');if(a){$('agent').value=a.dataset.selectAgent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();activateView('ads');}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b&&!b.closest('#listings')&&!b.closest('#drawer')&&!e.target.closest('a[href]'))showDetail(b.dataset.detail);const a=e.target.closest('[data-select-agent]');if(a){$('agent').value=a.dataset.selectAgent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();activateView('ads');}});
 
 load();
 setInterval(updateFreshness,60000);

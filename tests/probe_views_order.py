@@ -1,0 +1,50 @@
+"""Read-only bounded comparison of batch vs singleton Realt GraphQL view counts."""
+import json
+import csv
+import io
+import requests
+import collector
+import config as C
+import queries as Q
+
+url = 'https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/snapshots.csv'
+response = requests.get(url, timeout=30)
+response.raise_for_status()
+rows = list(csv.DictReader(io.StringIO(response.text)))
+uuids = list(dict.fromkeys(r.get('uuid') for r in rows if r.get('uuid')))[:6]
+assert len(uuids) == 6, 'Not enough objects for probe'
+session = requests.Session()
+session.headers.update({'content-type':'application/json','user-agent':C.USER_AGENT,'accept':'application/json'})
+
+def read(batch):
+    data = collector.gql(session,Q.VIEWS_QUERY,{'uuids':batch},'v')
+    if data.get('errors'):
+        raise RuntimeError('GraphQL returned errors')
+    result = data['data']['objectsViewsCountsByUuids']
+    return [item.get('views') if isinstance(item,dict) else None for item in result]
+
+forward=read(uuids)
+reverse=read(list(reversed(uuids)))
+singles=[read([u])[0] for u in uuids]
+print('sample_size',len(uuids))
+print('forward_length',len(forward),'reverse_length',len(reverse))
+print('forward_equals_singletons',forward==singles)
+print('reverse_equals_reversed_singletons',reverse==list(reversed(singles)))
+print('forward_values',forward)
+print('single_values',singles)
+aliases=' '.join(f'v{i}:objectsViewsCountsByUuids(uuids:{json.dumps([u])}){{views}}' for i,u in enumerate(uuids))
+alias_response=collector.gql(session,'query v{'+aliases+'}',{},'v')
+if alias_response.get('errors'):
+    raise RuntimeError('Aliases rejected: '+str(alias_response['errors']))
+alias_values=[alias_response['data'][f'v{i}'][0]['views'] for i in range(len(uuids))]
+print('aliased_values',alias_values)
+print('aliases_equal_singletons',alias_values==singles)
+if alias_values!=singles:
+    raise RuntimeError('Aliased response is not UUID-safe')
+large=list(dict.fromkeys(r.get('uuid') for r in rows if r.get('uuid')))[:50]
+large_aliases=' '.join(f'v{i}:objectsViewsCountsByUuids(uuids:{json.dumps([u])}){{views}}' for i,u in enumerate(large))
+large_response=collector.gql(session,'query v{'+large_aliases+'}',{},'v')
+if large_response.get('errors') or len(large_response['data']) != len(large):
+    raise RuntimeError('Fifty aliases were not accepted')
+print('alias_batch_50_accepted',True)
+
