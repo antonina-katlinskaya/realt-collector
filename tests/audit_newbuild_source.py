@@ -22,3 +22,10 @@ print('total',len(objects),'categories',Counter(map(classify,objects)))
 for group in ['developer_id','developer_text','newbuild_text','likely_resale','unverified']:
     sample=[o for o in objects if classify(o)==group][:8]
     print('\nGROUP',group,'examples:',json.dumps([{'code':o.get('code'),'title':o.get('title'),'realEstateDevUuid':o.get('realEstateDevUuid'),'objectType':o.get('objectType'),'buildingYear':o.get('buildingYear'),'availableYear':o.get('availableYear'),'availableAlready':o.get('availableAlready')} for o in sample],ensure_ascii=False))
+
+from pipeline.developer_filter import developer_offer
+selected=[o for o in objects if developer_offer(o)]
+print('selected',len(selected))
+for check,cond in [('old_building',lambda o:int(o.get('buildingYear') or 0) and int(o.get('buildingYear') or 0)<2022),('title_remont',lambda o:'ремонт' in str(o.get('title') or '').lower()),('title_resale',lambda o:'вторич' in str(o.get('title') or '').lower()),('realty_deal',lambda o:bool(o.get('isObjectInRealtyDeal'))),('not_newbuild_text',lambda o:not any(w in str(o.get('title') or '').lower() for w in ['застройщик','минск','дом','рассроч','новострой']))]:
+ cand=[o for o in selected if cond(o)]
+ print('accepted_'+check,len(cand),json.dumps([{'code':o.get('code'),'title':o.get('title'),'year':o.get('buildingYear')} for o in cand[:8]],ensure_ascii=False))
