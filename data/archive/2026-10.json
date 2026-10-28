@@ -144,6 +144,22 @@
         "2026-10-27_17-29_etazhi.json.gz"
       ],
       "csv_member": "rows.csv.gz"
+    },
+    {
+      "tag": "realt-data-2026-W44",
+      "asset_id": 684667593,
+      "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W44/snapshot-2026-10-28_10-32-39-7521dab171e6.zip",
+      "name": "snapshot-2026-10-28_10-32-39-7521dab171e6.zip",
+      "bytes": 833614,
+      "sha256": "7521dab171e66f7b95d9bb160b80c6665bf767c0e03722e42bd9814bbabb3854",
+      "verified": true,
+      "snapshot_at": "2026-10-28T10:32:39Z",
+      "completed_at": "2026-10-28T10:47:16.761337+00:00",
+      "rows": 1524,
+      "raw_members": [
+        "2026-10-28_10-32_etazhi.json.gz"
+      ],
+      "csv_member": "rows.csv.gz"
     }
   ]
 }
