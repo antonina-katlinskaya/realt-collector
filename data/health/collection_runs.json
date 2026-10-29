@@ -239,5 +239,17 @@
     "slot": "2026-10-29T13:10:00+03:00",
     "error": "RuntimeError: Suspicious source count drop exceeds 20%; requires review",
     "duration_seconds": 805.783
+  },
+  {
+    "started_at": "2026-10-29T17:25:12.426448+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 511,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-10-29T20:10:00+03:00",
+    "error": "RuntimeError: Suspicious source count drop exceeds 20%; requires review",
+    "duration_seconds": 1029.576
   }
 ]
