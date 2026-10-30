@@ -263,5 +263,17 @@
     "slot": "2026-10-30T13:10:00+03:00",
     "error": "RuntimeError: Empty or duplicate source UUIDs",
     "duration_seconds": 1305.3
+  },
+  {
+    "started_at": "2026-10-30T17:00:10.384995+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 794,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-10-30T19:10:00+03:00",
+    "error": "RuntimeError: Suspicious source count drop exceeds 20%; requires review",
+    "duration_seconds": 1526.291
   }
 ]
