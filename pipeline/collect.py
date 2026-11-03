@@ -17,6 +17,7 @@ import config as C
 from pipeline.storage import rotate, compress_raw
 from pipeline.developer_filter import developer_offer
 from pipeline.archive import archive_snapshot, tail
+from pipeline.source_quality import verify_pages, assess_drop
 
 ROOT = Path.cwd()
 DATA = ROOT / "data"
@@ -48,7 +49,16 @@ def run():
         raise RuntimeError("Retry budget exhausted for this collection slot")
     record["slot"] = slot
     received = {}
+    source_pages = []
+    deferred_history = []
     original_session = requests.Session
+    original_history = collector.fetch_view_history
+
+    def postpone_history(session, uuid):
+        # The original, unmodified query and pauses run in a bounded later batch.
+        deferred_history.append(uuid)
+        return {}
+
 
     class TrackedSession(original_session):
         def post(self, *args, **kwargs):
@@ -63,6 +73,19 @@ def run():
                     if entry.get("errors"):
                         raise SourceBlocked("Incomplete GraphQL response")
                     objects = ((entry.get("data") or {}).get("searchObjects") or {}).get("body") or {}
+                    if objects:
+                        req = (kwargs.get("json") or [{}])[0]
+                        variables = req.get("variables") or {}
+                        body_vars = variables.get("data") or {}
+                        agencies = (body_vars.get("where") or {}).get("agencyUuids") or []
+                        pg = body_vars.get("pagination") or {}
+                        pagination = objects.get("pagination") or {}
+                        if agencies and pg.get("page") is not None:
+                            source_pages.append({
+                                "agency": agencies[0], "page": int(pg["page"]),
+                                "total": int(pagination["totalCount"]),
+                                "returned": len(objects.get("results") or []),
+                            })
                     at = dt.datetime.now(dt.timezone.utc).isoformat()
                     for item in objects.get("results") or []:
                         received[str(item.get("uuid"))] = at
@@ -81,6 +104,7 @@ def run():
         C.REPORTS_DIR = str(staging / "reports")
         C.SNAPSHOTS_CSV, C.SEEN_JSON = str(staging / "snapshots.csv"), str(staging / "listings_seen.json")
         requests.Session = TrackedSession
+        collector.fetch_view_history = postpone_history
         collector.run()
         raw_files = list((staging / "raw").glob("*.json"))
         if len(raw_files) != len(C.AGENCIES):
@@ -89,6 +113,7 @@ def run():
         latest, objects_count = "", 0
         raw_paths = []
         photo_manifest = {}
+        all_source_ids = []
         known_developer_ids = set()
         if (DATA / 'developer_manifest.json').exists():
             existing = json.loads((DATA / 'developer_manifest.json').read_text(encoding='utf-8'))
@@ -101,6 +126,7 @@ def run():
             ids = [str(o.get("uuid") or "") for o in objects]
             if not ids or not all(ids) or len(ids) != len(set(ids)):
                 raise RuntimeError("Empty or duplicate source UUIDs")
+            all_source_ids.extend(ids)
             for obj in objects:
                 if developer_offer(obj):
                     current_developer_ids.add(str(obj['uuid']))
@@ -135,10 +161,51 @@ def run():
             if (DATA / "snapshots").exists():
                 shutil.copytree(DATA / "snapshots", staging / "snapshots")
             storage = rotate(staging)
-        # Reject an implausible listing collapse instead of committing a partial snapshot.
-        marker=DATA/'collection_state.json'
-        if marker.exists() and objects_count<json.loads(marker.read_text()).get('rows',0)*0.8:
-            raise RuntimeError('Suspicious source count drop exceeds 20%; requires review')
+        # A big change must be corroborated by another COMPLETE independent source scan.
+        source_quality = verify_pages(source_pages, C.AGENCIES.values(), C.PAGE_SIZE)
+        marker = DATA / 'collection_state.json'
+        previous = json.loads(marker.read_text(encoding='utf-8')) if marker.exists() else {}
+        candidate_path = HEALTH / 'source_drop_candidate.json'
+        candidate = json.loads(candidate_path.read_text(encoding='utf-8')) if candidate_path.exists() else None
+        accepted, new_candidate, quality_reason = assess_drop(
+            previous, objects_count, all_source_ids, started.isoformat(), candidate)
+        if not accepted:
+            atomic_json(candidate_path, new_candidate)
+            raise RuntimeError('Large Realt source drop quarantined pending a second complete agreeing scan')
+        # A fresh listing/price/photo snapshot is independent of the expensive
+        # one-time historical view backfill; never block freshness on its backlog.
+        queue_file = DATA / 'history_backfill_pending.json'
+        old_queue = json.loads(queue_file.read_text(encoding='utf-8')) if queue_file.exists() else []
+        pending = list(dict.fromkeys(old_queue + deferred_history))
+        done = []
+        if pending:
+            seen_path = staging / 'listings_seen.json'
+            seen = json.loads(seen_path.read_text(encoding='utf-8'))
+            session = requests.Session()
+            session.headers.update({
+                'content-type': 'application/json', 'user-agent': C.USER_AGENT,
+                'accept': 'application/json',
+            })
+            for uuid in pending[:12]:
+                if uuid not in seen:
+                    done.append(uuid)
+                    continue
+                try:
+                    history_views = original_history(session, uuid)
+                    if not history_views or all(value is None for value in history_views.values()):
+                        print('View history unavailable; keep pending:', uuid)
+                        break
+                    seen[uuid]['history_views'] = history_views
+                    done.append(uuid)
+                except SourceBlocked:
+                    raise
+                except Exception as error:
+                    print('Historical view backfill postponed:', type(error).__name__, str(error))
+                    break
+            if done:
+                atomic_json(seen_path, seen)
+        remaining = [uuid for uuid in pending if uuid not in set(done)]
+        atomic_json(staging / 'history_backfill_pending.json', remaining)
         compress_raw(staging / "raw")
         archive_entry = None
         if release_archive:
@@ -158,15 +225,22 @@ def run():
                 shutil.copy2(file, target)
         record.update(status="ok", completed_at=completed.isoformat(), snapshot_at=latest,
                       objects=objects_count, duration_seconds=round((completed-started).total_seconds(), 3),
-                      storage=storage)
+                      source_quality=source_quality, quality_reason=quality_reason,
+                      history_backfill_pending=len(remaining), storage=storage)
         atomic_json(DATA / "collection_state.json", {"schema": 1, "complete": True,
                     "snapshot_at": latest, "completed_at": completed.isoformat(), "rows": objects_count,
-                    "raw_paths": raw_paths, "archive_entry":archive_entry, "observed_at": "per-object in raw snapshots", "duration_seconds": record["duration_seconds"]})
+                    "raw_paths": raw_paths, "archive_entry":archive_entry,
+                    "source_quality": source_quality, "quality_reason": quality_reason,
+                    "history_backfill_pending": len(remaining),
+                    "observed_at": "per-object in raw snapshots", "duration_seconds": record["duration_seconds"]})
+        if candidate_path.exists():
+            candidate_path.unlink()
     except BaseException as error:
         record.update(error=type(error).__name__ + ": " + str(error), duration_seconds=round((dt.datetime.now(dt.timezone.utc)-started).total_seconds(),3))
         raise
     finally:
         requests.Session = original_session
+        collector.fetch_view_history = original_history
         for name,value in original_paths.items():setattr(C,name,value)
         shutil.rmtree(staging, ignore_errors=True)
         history.append(record)
