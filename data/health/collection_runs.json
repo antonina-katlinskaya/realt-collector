@@ -311,5 +311,35 @@
     "slot": "2026-11-03T15:10:00+03:00",
     "error": "RuntimeError: Large Realt source drop quarantined pending a second complete agreeing scan",
     "duration_seconds": 323.832
+  },
+  {
+    "started_at": "2026-11-03T13:37:41.586157+00:00",
+    "status": "ok",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 151,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-03T16:10:00+03:00",
+    "completed_at": "2026-11-03T13:42:57.001216+00:00",
+    "snapshot_at": "2026-11-03T13:37:41Z",
+    "objects": 1112,
+    "duration_seconds": 315.415,
+    "source_quality": {
+      "60fcf380-4e01-11f1-943e-89d1a667d5d7": {
+        "reported": 1318,
+        "retrieved": 1318,
+        "pages": 44
+      }
+    },
+    "quality_reason": "major drop independently corroborated",
+    "history_backfill_pending": 281,
+    "storage": {
+      "recent_snapshots": 2,
+      "recent_rows": 2536,
+      "recent_csv_bytes": 1639935,
+      "archive": "verified-github-release",
+      "packet_bytes": 666103
+    }
   }
 ]
