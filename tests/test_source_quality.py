@@ -18,7 +18,7 @@ class SourceQualityTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Incomplete"):
             verify_pages(pages[:2], ["a"], 30)
         with self.assertRaisesRegex(RuntimeError, "materially"):
-            verify_pages([{**pages[0], "total": 100}, *pages[1:]], ["a"], 30)
+            verify_pages([pages[0], {**pages[1], "returned": 18}, pages[2]], ["a"], 30)
 
     def test_never_accept_first_major_drop(self):
         ids = [f"uuid-{n}" for n in range(900)]
