@@ -1,0 +1,41 @@
+name: Realt collector fallback
+
+# Second GitHub scheduler chance if the main 10/40 UTC schedule is skipped.
+# Reuses all existing due/cooldown/retry/budget and collection checks.
+on:
+  schedule:
+    - cron: "25,55 4-18 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: realt-collector-fallback-trigger
+  cancel-in-progress: false
+
+jobs:
+  dispatch-if-due:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Reuse the production due/cooldown/retry/budget gate
+        id: freshness
+        run: python .github/scripts/collection_due.py
+      - name: Dispatch the existing protected collector only when due
+        if: steps.freshness.outputs.due == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/collect.yml/dispatches" -f ref=main
+          echo "Fallback dispatched the standard collector. Snapshot acceptance remains in collect.yml."
+      - name: Log a healthy or cooldown-protected no-op
+        if: steps.freshness.outputs.due != 'true'
+        run: echo "No fallback needed; production freshness/cooldown/retry guard said no."
