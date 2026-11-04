@@ -6,6 +6,15 @@ on:
   schedule:
     - cron: "25,55 4-18 * * *"
   workflow_dispatch: {}
+  # Register the backup on main and allow recovery after independent watchdog runs.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/collect-fallback.yml'
+  workflow_run:
+    workflows: ['Realt collection watchdog']
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -17,6 +26,8 @@ concurrency:
 
 jobs:
   dispatch-if-due:
+    # Avoid chaining collector -> watchdog -> fallback -> collector.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.event != 'workflow_run'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
