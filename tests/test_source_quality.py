@@ -1,7 +1,7 @@
 import datetime as dt
 import unittest
 
-from pipeline.source_quality import assess_drop, verify_pages
+from pipeline.source_quality import assess_drop, verify_pages, diagnose_uuid_integrity
 
 
 class SourceQualityTests(unittest.TestCase):
@@ -44,6 +44,35 @@ class SourceQualityTests(unittest.TestCase):
         self.assertFalse(assess_drop(self.baseline, 900, changed, self.second, candidate)[0])
         with self.assertRaisesRegex(RuntimeError, "duplicate"):
             assess_drop(self.baseline, 900, ids[:-1] + [ids[0]], self.second, candidate)
+
+    def test_uuid_anomaly_report_preserves_both_duplicate_pages(self):
+        objects = [
+            {"uuid": "same", "code": 11},
+            {"uuid": "other", "code": 12},
+            {"uuid": "same", "code": 11},
+            {"uuid": "", "code": 13},
+        ]
+        pages = [
+            {"agency": "x", "page": 1, "total": 4,
+             "identifiers": [{"uuid": "same", "code": "11"}, {"uuid": "other", "code": "12"}]},
+            {"agency": "x", "page": 2, "total": 4,
+             "identifiers": [{"uuid": "same", "code": "11"}, {"uuid": "", "code": "13"}]},
+        ]
+        report = diagnose_uuid_integrity(objects, pages, "source.json")
+        self.assertFalse(report["valid"])
+        self.assertEqual(report["missing_uuid_count"], 1)
+        self.assertEqual(report["duplicate_uuid_count"], 1)
+        self.assertEqual(report["duplicate_extra_rows"], 1)
+        self.assertEqual(report["duplicate_samples"], [{"uuid": "same", "occurrences": 2}])
+        self.assertEqual([p["page"] for p in report["affected_pages"]], [1, 2])
+        self.assertEqual(report["affected_pages"][1]["anomaly_count"], 2)
+
+    def test_uuid_anomaly_report_does_not_normalize_or_ignore_duplicates(self):
+        self.assertTrue(diagnose_uuid_integrity(
+            [{"uuid": "a"}, {"uuid": "b"}], [], "source.json")["valid"])
+        self.assertFalse(diagnose_uuid_integrity([], [], "source.json")["valid"])
+        self.assertFalse(diagnose_uuid_integrity(
+            [{"uuid": "x"}, {"uuid": "x"}], [], "source.json")["valid"])
 
     def test_normal_complete_count_does_not_need_corroboration(self):
         ids = [f"id-{i}" for i in range(1250)]
