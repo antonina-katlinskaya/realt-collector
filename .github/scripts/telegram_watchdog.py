@@ -48,8 +48,10 @@ def main():
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     chat = os.environ.get("TELEGRAM_CHAT_ID", "")
     if not token or chat != OWNER_ID:
-        print("::warning::Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID as GitHub Actions secrets to enable alerts.")
-        return
+        # A stale snapshot without a delivered warning is a FAILED monitoring check.
+        # Never leak token or recipient data into public Actions logs.
+        print("::error::Realt watchdog cannot alert owner: Telegram secrets missing or recipient mismatch.")
+        raise RuntimeError("Realt collection alert not delivered; Telegram watchdog configuration invalid")
     slot_local = (slot + dt.timedelta(hours=3)).strftime("%d.%m.%Y %H:%M")
     message = ("⚠️ Realt Collector: пропущено обновление!\n"
                f"Контрольная точка: {slot_local} (Минск).\n"
