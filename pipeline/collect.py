@@ -17,7 +17,7 @@ import config as C
 from pipeline.storage import rotate, compress_raw
 from pipeline.developer_filter import developer_offer
 from pipeline.archive import archive_snapshot, tail
-from pipeline.source_quality import verify_pages, assess_drop
+from pipeline.source_quality import verify_pages, assess_drop, diagnose_uuid_integrity
 
 ROOT = Path.cwd()
 DATA = ROOT / "data"
@@ -85,6 +85,12 @@ def run():
                                 "agency": agencies[0], "page": int(pg["page"]),
                                 "total": int(pagination["totalCount"]),
                                 "returned": len(objects.get("results") or []),
+                                # Read-only provenance for any later UUID rejection.
+                                "identifiers": [
+                                    {"uuid": str(item.get("uuid") or ""),
+                                     "code": str(item.get("code") or "")}
+                                    for item in objects.get("results") or []
+                                ],
                             })
                     at = dt.datetime.now(dt.timezone.utc).isoformat()
                     for item in objects.get("results") or []:
@@ -125,6 +131,18 @@ def run():
             objects = raw.get("minsk_mir_objects") or []
             ids = [str(o.get("uuid") or "") for o in objects]
             if not ids or not all(ids) or len(ids) != len(set(ids)):
+                report = diagnose_uuid_integrity(objects, source_pages, file.name)
+                report.update({
+                    "checked_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+                    "collection_started_at": started.isoformat(),
+                    "collection_slot": slot,
+                    "snapshot_at": raw.get("snapshot_at"),
+                })
+                atomic_json(HEALTH / "source_uuid_diagnostics.json", report)
+                print("SOURCE_UUID_INTEGRITY_REJECTED " + json.dumps(
+                    report, ensure_ascii=False, separators=(",", ":")
+                ), flush=True)
+                # Preserve the existing fail-closed rejection and the prior full snapshot.
                 raise RuntimeError("Empty or duplicate source UUIDs")
             all_source_ids.extend(ids)
             for obj in objects:
