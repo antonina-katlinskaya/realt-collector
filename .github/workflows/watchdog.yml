@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "7,37 4-19 * * *"
   workflow_dispatch: {}
+  # Also check after each collector attempt, including externally dispatched runs.
+  workflow_run:
+    workflows: ["Realt collector"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: write
