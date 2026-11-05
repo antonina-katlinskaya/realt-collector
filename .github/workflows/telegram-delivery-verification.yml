@@ -21,6 +21,7 @@ jobs:
           chat = os.environ.get("TELEGRAM_CHAT_ID", "")
           if not token or chat != "352252956":
               raise SystemExit("FAIL: Telegram configuration missing or recipient mismatch")
+          print(json.dumps({"token_has_surrounding_whitespace": token != token.strip(), "token_contains_colon": ":" in token}))
           def call(method, payload):
               try:
                   data = urllib.parse.urlencode(payload).encode()
@@ -30,6 +31,8 @@ jobs:
                   if not result.get("ok"):
                       raise ValueError()
                   return result["result"]
+              except urllib.error.HTTPError as exc:
+                  raise SystemExit("FAIL: Telegram " + method + " HTTP " + str(exc.code) + "; credentials suppressed") from None
               except Exception:
                   raise SystemExit("FAIL: Telegram " + method + " rejected or unavailable; credentials suppressed") from None
           bot = call("getMe", {})
