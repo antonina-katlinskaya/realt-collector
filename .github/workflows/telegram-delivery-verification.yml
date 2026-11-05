@@ -35,11 +35,8 @@ jobs:
           bot = call("getMe", {})
           if bot.get("username", "").lower() != "kufar_radarr_bot":
               raise SystemExit("FAIL: unexpected bot identity; nothing sent")
-          recipient = call("getChat", {"chat_id": chat})
-          if str(recipient.get("id")) != chat or recipient.get("type") != "private":
-              raise SystemExit("FAIL: recipient is not verified private owner chat; nothing sent")
           message = call("sendMessage", {"chat_id": chat, "text": "✅ ТЕСТ Realt Collector: уведомления настроены. Это проверка доставки, сбор данных не запускался."})
-          if str(message.get("chat", {}).get("id")) != chat or not message.get("message_id"):
+          if str(message.get("chat", {}).get("id")) != chat or message.get("chat", {}).get("type") != "private" or not message.get("message_id"):
               raise SystemExit("FAIL: unexpected delivery receipt")
           print(json.dumps({"telegram_api_ok": True, "bot_username": bot["username"], "private_owner_verified": True, "message_id": message["message_id"]}))
           PY
