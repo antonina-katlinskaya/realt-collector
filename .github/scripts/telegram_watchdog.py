@@ -64,8 +64,8 @@ def main():
     if STATE.exists() and STATE.read_text(encoding="utf-8").strip() == slot_text:
         print("Alert already sent for this slot.")
         return
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    chat = os.environ.get("TELEGRAM_CHAT_ID", "")
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not token or chat != OWNER_ID:
         if os.environ.get('REALT_ALERT_ROUTE')=='owner-health':
             link=verify_owner_health_monitor(now)
