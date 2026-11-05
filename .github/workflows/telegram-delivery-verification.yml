@@ -16,11 +16,13 @@ jobs:
         shell: bash
         run: |
           python3 - <<'PY'
-          import json, os, urllib.parse, urllib.request
+          import json, os, re, urllib.parse, urllib.request
           token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
           chat = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
           if not token or chat != "352252956":
               raise SystemExit("FAIL: Telegram configuration missing or recipient mismatch")
+          if not re.fullmatch(r"[0-9]+:[A-Za-z0-9_-]+", token):
+              raise SystemExit("FAIL: token format invalid (extra text, whitespace, or invalid characters); nothing sent")
           def call(method, payload):
               try:
                   data = urllib.parse.urlencode(payload).encode()
@@ -30,7 +32,10 @@ jobs:
                   if not result.get("ok"):
                       raise ValueError()
                   return result["result"]
-              except Exception:
+              except urllib.error.HTTPError as exc:
+                  raise SystemExit("FAIL: Telegram " + method + " HTTP " + str(exc.code) + "; credentials suppressed") from None
+              except Exception as exc:
+                  raise SystemExit("FAIL: Telegram " + method + " " + type(exc).__name__ + "; credentials suppressed") from None
                   raise SystemExit("FAIL: Telegram " + method + " rejected or unavailable; credentials suppressed") from None
           bot = call("getMe", {})
           if bot.get("username", "").lower() != "kufar_radarr_bot":
