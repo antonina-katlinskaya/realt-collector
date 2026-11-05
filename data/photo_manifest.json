@@ -1,6 +1,11 @@
 {
-  "snapshot_at": "2026-11-05T17:42:47Z",
+  "snapshot_at": "2026-11-05T18:37:19Z",
   "images": {
+    "18899f10-d941-11f1-9ae0-f995bd6c59c1": [
+      "https://cdn.realt.by/img/56/b4149bd4-d940-11f1-a657-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/b3ff510c-d940-11f1-91a3-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/b40e6c28-d940-11f1-9270-a6cfe75afd90"
+    ],
     "5c05a6b0-d93e-11f1-9ae0-f995bd6c59c1": [
       "https://cdn.realt.by/img/56/c30e4a34-d93d-11f1-a222-a6cfe75afd90",
       "https://cdn.realt.by/img/56/c1e64936-d93d-11f1-a9a9-a6cfe75afd90",
@@ -1611,7 +1616,7 @@
       "https://static.realt.by/thumb/c/580x350/e0618816fbc302390a88e878facd13db/ds/l/11071nrq6lds/346518247e.jpeg",
       "https://static.realt.by/thumb/c/580x350/339ed2d59cd1abdbc530da888a32d0eb/ds/l/11071nrq6lds/1346e73e98.jpeg",
       "https://static.realt.by/thumb/c/580x350/beb7e7a8662dc9471f9e37ecabf6db94/ds/l/11071nrq6lds/5a42ee4149.jpeg",
-      "https://static.realt.by/thumb/c/580x350/64db364ad891e5de9d77ee5f8e2de0e9/ds/l/11071nrq6lds/4b81b1ed98.jpeg"
+      "https://cdn.realt.by/img/56/dafd69ec-d8f5-11f1-828a-9ec992c48380"
     ],
     "15c25490-d516-11f1-afbe-b9db0c310dee": [
       "https://cdn.realt.by/img/56/d67d5668-d515-11f1-9a53-b6dc8e4f3ce9",
