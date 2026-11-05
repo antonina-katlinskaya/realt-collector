@@ -1,0 +1,45 @@
+name: Realt Telegram delivery verification
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/telegram-delivery-verification.yml']
+permissions: {}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify bot and private owner then send one test message
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.parse, urllib.request
+          token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+          chat = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+          if not token or chat != "352252956":
+              raise SystemExit("FAIL: Telegram configuration missing or recipient mismatch")
+          def call(method, payload):
+              try:
+                  data = urllib.parse.urlencode(payload).encode()
+                  req = urllib.request.Request("https://api.telegram.org/bot" + token + "/" + method, data=data)
+                  with urllib.request.urlopen(req, timeout=45) as response:
+                      result = json.load(response)
+                  if not result.get("ok"):
+                      raise ValueError()
+                  return result["result"]
+              except Exception:
+                  raise SystemExit("FAIL: Telegram " + method + " rejected or unavailable; credentials suppressed") from None
+          bot = call("getMe", {})
+          if bot.get("username", "").lower() != "kufar_radarr_bot":
+              raise SystemExit("FAIL: unexpected bot identity; nothing sent")
+          recipient = call("getChat", {"chat_id": chat})
+          if str(recipient.get("id")) != chat or recipient.get("type") != "private":
+              raise SystemExit("FAIL: recipient is not verified private owner chat; nothing sent")
+          message = call("sendMessage", {"chat_id": chat, "text": "✅ ТЕСТ Realt Collector: уведомления настроены. Это проверка доставки, сбор данных не запускался."})
+          if str(message.get("chat", {}).get("id")) != chat or not message.get("message_id"):
+              raise SystemExit("FAIL: unexpected delivery receipt")
+          print(json.dumps({"telegram_api_ok": True, "bot_username": bot["username"], "private_owner_verified": True, "message_id": message["message_id"]}))
+          PY
