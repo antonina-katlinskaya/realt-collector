@@ -59,6 +59,10 @@ def assess_drop(previous, count, uuids, observed_at, candidate=None):
         old_ids = set(candidate["uuids"])
         same_count = 0.85 <= count / int(candidate["rows"]) <= 1.15
         overlap = len(old_ids & unique) / min(len(old_ids), len(unique))
+        # Frequent scheduler/fallback runs must not move the first observation
+        # forward forever while waiting for the independent-scan interval.
+        if timedelta(0) <= delta < timedelta(minutes=20) and same_count and overlap >= 0.85:
+            return False, candidate, "waiting for independent drop confirmation"
         if (timedelta(minutes=20) <= delta <= timedelta(hours=48)
                 and same_count and overlap >= 0.85):
             return True, None, "major drop independently corroborated"
@@ -112,3 +116,4 @@ def diagnose_uuid_integrity(objects, source_pages, source_file):
         "affected_pages_truncated": len(affected) > 20,
         "valid": bool(identifiers) and not counts.get("", 0) and not duplicates,
     }
+

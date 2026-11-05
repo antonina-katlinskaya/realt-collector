@@ -30,6 +30,10 @@ jobs:
           python-version: "3.12"
       - name: Check slots and notify on missing data
         env:
+          # Canonical owner-only monitor has the verified bot and deduplication.
+          # This repository does not need a second copy of its credentials.
+          REALT_ALERT_ROUTE: owner-health
+          GITHUB_TOKEN: ${{ github.token }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python .github/scripts/telegram_watchdog.py
@@ -46,3 +50,4 @@ jobs:
           git commit -m "monitor: record notified collection slot"
           git pull --rebase origin main
           git push origin HEAD:main
+

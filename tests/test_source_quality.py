@@ -36,6 +36,15 @@ class SourceQualityTests(unittest.TestCase):
         self.assertIsNone(new_candidate)
         self.assertIn("corroborated", why)
 
+    def test_frequent_full_scans_do_not_postpone_confirmation_forever(self):
+        ids=[f'uuid-{n}' for n in range(900)]
+        _,candidate,_=assess_drop(self.baseline,900,ids,self.first)
+        for stamp in ['2026-11-03T11:10:00Z','2026-11-03T11:19:00Z']:
+            accepted,candidate,_=assess_drop(self.baseline,900,ids,stamp,candidate)
+            self.assertFalse(accepted)
+            self.assertEqual(candidate['observed_at'],self.first)
+        self.assertTrue(assess_drop(self.baseline,900,ids,'2026-11-03T11:21:00Z',candidate)[0])
+
     def test_inconsistent_or_repeated_snapshot_not_accepted(self):
         ids = [f"uuid-{n}" for n in range(900)]
         _, candidate, _ = assess_drop(self.baseline, 900, ids, self.first)
@@ -81,3 +90,4 @@ class SourceQualityTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
