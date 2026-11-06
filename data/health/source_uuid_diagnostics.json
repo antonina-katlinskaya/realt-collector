@@ -1,50 +1,50 @@
 {
   "status": "rejected",
   "reason": "Empty or duplicate source UUIDs",
-  "source_file": "2026-11-06_10-37_etazhi.json",
-  "filtered_rows": 893,
+  "source_file": "2026-11-06_12-19_etazhi.json",
+  "filtered_rows": 918,
   "missing_uuid_count": 0,
   "duplicate_uuid_count": 1,
   "duplicate_extra_rows": 1,
   "duplicate_samples": [
     {
-      "uuid": "71d76b40-d43e-11f1-a46c-87fe997ab043",
+      "uuid": "cf75e170-d3b0-11f1-9f25-cd6b2db0521a",
       "occurrences": 2
     }
   ],
-  "source_pages_checked": 37,
+  "source_pages_checked": 38,
   "affected_pages": [
     {
       "agency": "60fcf380-4e01-11f1-943e-89d1a667d5d7",
-      "page": 11,
-      "source_total": 1105,
+      "page": 13,
+      "source_total": 1131,
       "anomaly_count": 1,
       "examples": [
         {
           "position": 30,
-          "uuid": "71d76b40-d43e-11f1-a46c-87fe997ab043",
-          "code": "4267062"
+          "uuid": "cf75e170-d3b0-11f1-9f25-cd6b2db0521a",
+          "code": "4266856"
         }
       ]
     },
     {
       "agency": "60fcf380-4e01-11f1-943e-89d1a667d5d7",
-      "page": 12,
-      "source_total": 1106,
+      "page": 14,
+      "source_total": 1132,
       "anomaly_count": 1,
       "examples": [
         {
           "position": 1,
-          "uuid": "71d76b40-d43e-11f1-a46c-87fe997ab043",
-          "code": "4267062"
+          "uuid": "cf75e170-d3b0-11f1-9f25-cd6b2db0521a",
+          "code": "4266856"
         }
       ]
     }
   ],
   "affected_pages_truncated": false,
   "valid": false,
-  "checked_at": "2026-11-06T10:41:29.358057+00:00",
-  "collection_started_at": "2026-11-06T10:37:13.880096+00:00",
-  "collection_slot": "2026-11-06T13:10:00+03:00",
-  "snapshot_at": "2026-11-06T10:37:13Z"
+  "checked_at": "2026-11-06T12:24:39.438745+00:00",
+  "collection_started_at": "2026-11-06T12:19:54.711183+00:00",
+  "collection_slot": "2026-11-06T15:10:00+03:00",
+  "snapshot_at": "2026-11-06T12:19:54Z"
 }
