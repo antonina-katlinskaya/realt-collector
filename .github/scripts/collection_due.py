@@ -31,7 +31,7 @@ def main():
     attempts=[r for r in history if r.get("slot")==target.isoformat()]
     needed=due(last,now,interval) and len(attempts)<2
     if attempts:
-        cooldown=60 if attempts[-1].get("http_403") or attempts[-1].get("http_429") else 30
+        cooldown=60 if attempts[-1].get("http_403") or attempts[-1].get("http_429") else (5 if attempts[-1].get("retryable_pagination") else 30)
         if now-dt.datetime.fromisoformat(attempts[-1]["started_at"])<dt.timedelta(minutes=cooldown):needed=False
     blocked=[r for r in history if r.get('http_403') or r.get('http_429')]
     if blocked and now-dt.datetime.fromisoformat(blocked[-1]['started_at'])<dt.timedelta(minutes=60):needed=False
@@ -44,3 +44,4 @@ def main():
     print(json.dumps({**policy,"due":needed,"last_snapshot":last},ensure_ascii=False))
 
 if __name__=="__main__":main()
+

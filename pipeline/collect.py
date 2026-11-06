@@ -61,6 +61,10 @@ def run():
 
 
     class TrackedSession(original_session):
+        def begin_source_scan(self, agency):
+            # Failed passes remain in logs, never in the accepted-page evidence.
+            source_pages[:] = [p for p in source_pages if p["agency"] != agency]
+
         def post(self, *args, **kwargs):
             record["requests"] += 1
             response = super().post(*args, **kwargs)
@@ -80,7 +84,7 @@ def run():
                         agencies = (body_vars.get("where") or {}).get("agencyUuids") or []
                         pg = body_vars.get("pagination") or {}
                         pagination = objects.get("pagination") or {}
-                        if agencies and pg.get("page") is not None:
+                        if agencies and pg.get("page") is not None and not getattr(self, "source_pagination_probe", False):
                             source_pages.append({
                                 "agency": agencies[0], "page": int(pg["page"]),
                                 "total": int(pagination["totalCount"]),
@@ -254,6 +258,7 @@ def run():
         if candidate_path.exists():
             candidate_path.unlink()
     except BaseException as error:
+        record["retryable_pagination"] = isinstance(error, collector.SourcePaginationChanged)
         record.update(error=type(error).__name__ + ": " + str(error), duration_seconds=round((dt.datetime.now(dt.timezone.utc)-started).total_seconds(),3))
         raise
     finally:
@@ -267,3 +272,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+

@@ -95,42 +95,72 @@ def detect_quarter(title):
 
 # --------------------------- сбор списка агентства -------------------------
 
+class SourcePaginationChanged(RuntimeError):
+    """The live result set moved; a partial pass must never reach storage."""
+
+
 def fetch_agency_listings(session, agency_uuid):
-    """Проходит все страницы searchObjects для агентства, возвращает список объявлений."""
-    variables = {
-        "data": {
-            "where": {
-                "agencyUuids": [agency_uuid],
-                "addressV2": [{"townUuid": C.TOWN_UUID}],
-                "category": C.CATEGORY,
-            },
-            "pagination": {"page": 1, "pageSize": C.PAGE_SIZE},
-            "sort": [{"by": "newAgainDate", "order": "DESC"}],
-            "extraFields": None,
-            "isReactAdaptiveUA": True,
-        }
-    }
+    """Accept one complete consistent pass, restarting at most twice on drift."""
+    variables = {"data": {
+        "where": {"agencyUuids": [agency_uuid],
+                  "addressV2": [{"townUuid": C.TOWN_UUID}], "category": C.CATEGORY},
+        "pagination": {"page": 1, "pageSize": C.PAGE_SIZE},
+        "sort": [{"by": "newAgainDate", "order": "DESC"}],
+        "extraFields": None, "isReactAdaptiveUA": True,
+    }}
 
-    first = gql(session, Q.SEARCH_OBJECTS_QUERY, variables, "searchObjects")
-    if first.get("errors"):
-        raise RuntimeError(f"searchObjects вернул ошибку: {first['errors']}")
-    body = first["data"]["searchObjects"]["body"]
-    total = body["pagination"]["totalCount"]
-    pages = (total + C.PAGE_SIZE - 1) // C.PAGE_SIZE
-    results = list(body["results"])
-    print(f"    всего по Минску: {total}, страниц: {pages}")
+    def page(number, probe=False):
+        variables["data"]["pagination"]["page"] = number
+        # Probe responses are observations, not extra pages in the accepted pass.
+        session.source_pagination_probe = probe
+        try:
+            response = gql(session, Q.SEARCH_OBJECTS_QUERY, variables, "searchObjects")
+        finally:
+            session.source_pagination_probe = False
+        if response.get("errors"):
+            raise RuntimeError("searchObjects returned GraphQL errors")
+        body = response["data"]["searchObjects"]["body"]
+        total = body["pagination"]["totalCount"]
+        if not isinstance(total, int) or total <= 0:
+            raise SourcePaginationChanged("Empty or invalid agency total")
+        return total, list(body["results"])
 
-    for page in range(2, pages + 1):
-        sleep_between(C.PAUSE_BETWEEN_PAGES)
-        variables["data"]["pagination"]["page"] = page
-        resp = gql(session, Q.SEARCH_OBJECTS_QUERY, variables, "searchObjects")
-        if resp.get("errors"):
-            print(f"    стр.{page}: ошибка, пропускаю")
-            continue
-        results.extend(resp["data"]["searchObjects"]["body"]["results"])
-        print(f"    стр.{page}/{pages} готово, собрано {len(results)}")
-
-    return results
+    for attempt in range(1, 4):
+        if attempt > 1:
+            sleep_between(15)
+        begin = getattr(session, "begin_source_scan", None)
+        if begin:
+            begin(agency_uuid)
+        try:
+            total, first = page(1)
+            pages = (total + C.PAGE_SIZE - 1) // C.PAGE_SIZE
+            results, seen = [], set()
+            for number in range(1, pages + 1):
+                if number == 1:
+                    count, items = total, first
+                else:
+                    sleep_between(C.PAUSE_BETWEEN_PAGES)
+                    count, items = page(number)
+                expected = min(C.PAGE_SIZE, total - (number - 1) * C.PAGE_SIZE)
+                ids = [str(item.get("uuid") or "") for item in items]
+                if count != total or len(items) != expected:
+                    raise SourcePaginationChanged("Source total or page size changed")
+                if not all(ids) or len(set(ids)) != len(ids) or seen.intersection(ids):
+                    raise SourcePaginationChanged("Missing or repeated UUID across source pages")
+                seen.update(ids)
+                results.extend(items)
+                print(f"    pass {attempt}: page {number}/{pages}, unique {len(seen)}/{total}", flush=True)
+            sleep_between(C.PAUSE_BETWEEN_PAGES)
+            final_total, head = page(1, probe=True)
+            if final_total != total or [item.get("uuid") for item in head] != [item.get("uuid") for item in first]:
+                raise SourcePaginationChanged("Source head changed during pagination")
+            if len(results) != total:
+                raise SourcePaginationChanged("Source pass count mismatch")
+            return results
+        except SourcePaginationChanged as error:
+            print(f"SOURCE_PAGINATION_RESTART {attempt}/3: {error}", flush=True)
+            if attempt == 3:
+                raise
 
 
 # --------------------------- просмотры -------------------------------------
@@ -416,3 +446,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+
