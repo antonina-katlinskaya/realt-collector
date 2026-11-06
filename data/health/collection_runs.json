@@ -707,5 +707,35 @@
     "slot": "2026-11-06T13:10:00+03:00",
     "error": "RuntimeError: Empty or duplicate source UUIDs",
     "duration_seconds": 255.478
+  },
+  {
+    "started_at": "2026-11-06T11:37:16.185897+00:00",
+    "status": "ok",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 142,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-06T14:10:00+03:00",
+    "completed_at": "2026-11-06T11:41:44.934585+00:00",
+    "snapshot_at": "2026-11-06T11:37:16Z",
+    "objects": 905,
+    "duration_seconds": 268.749,
+    "source_quality": {
+      "60fcf380-4e01-11f1-943e-89d1a667d5d7": {
+        "reported": 1119,
+        "retrieved": 1119,
+        "pages": 38
+      }
+    },
+    "quality_reason": "normal",
+    "history_backfill_pending": 265,
+    "storage": {
+      "recent_snapshots": 2,
+      "recent_rows": 1794,
+      "recent_csv_bytes": 1160411,
+      "archive": "verified-github-release",
+      "packet_bytes": 566608
+    }
   }
 ]
