@@ -1,6 +1,13 @@
 {
-  "snapshot_at": "2026-11-06T06:37:14Z",
+  "snapshot_at": "2026-11-06T07:37:14Z",
   "images": {
+    "7ea0af3b-d9af-11f1-b55d-b295db31e5cb": [
+      "https://static.realt.by/thumb/c/580x350/eaf69d972487632ee3a4e2f9bbccf461/np/r/11071o2jdrnp/95d4bb604f.jpeg",
+      "https://static.realt.by/thumb/c/580x350/dab21f543e2ea3cbc97ddbf58e4e5225/np/r/11071o2jdrnp/2105a2bbb3.jpeg",
+      "https://static.realt.by/thumb/c/580x350/423b856fef76157cb5334f4cb73eea6e/np/r/11071o2jdrnp/916a02a96f.jpeg",
+      "https://static.realt.by/thumb/c/580x350/a9ab3a8e0b31d211785a30b4959a1589/np/r/11071o2jdrnp/d3b3c4f392.jpeg",
+      "https://static.realt.by/thumb/c/580x350/10f9655f284df2a914d5578bbf92f82a/np/r/11071o2jdrnp/93739ff1fc.jpeg"
+    ],
     "0eb74490-d9ac-11f1-8bb3-e31d3ea1504f": [
       "https://cdn.realt.by/img/56/dbffa3da-d9ab-11f1-96f5-3a5ec57fc6ad",
       "https://cdn.realt.by/img/56/d08017ec-d9ab-11f1-a222-3a5ec57fc6ad",
@@ -2198,13 +2205,6 @@
       "https://cdn.realt.by/img/56/a4be1a4a-d376-11f1-9d95-a6cfe75afd90",
       "https://cdn.realt.by/img/56/a738f2ea-d376-11f1-a452-a6cfe75afd90",
       "https://cdn.realt.by/img/56/a9403044-d376-11f1-9e91-a6cfe75afd90"
-    ],
-    "7ed8afeb-d376-11f1-b55d-b295db31e5cb": [
-      "https://cdn.realt.by/img/56/3ed73544-d430-11f1-9dbe-b6dc8e4f3ce9",
-      "https://static.realt.by/thumb/c/580x350/b008397d29fb936df5485b5a7f2698b3/97/j/11071nnvgj97/b04b32d98a.jpeg",
-      "https://static.realt.by/thumb/c/580x350/8786c5b73dd01dbec565ce449eec9b55/97/j/11071nnvgj97/91a9639428.jpeg",
-      "https://static.realt.by/thumb/c/580x350/4a21b5fc130eb34ada929e5befbe50ee/97/j/11071nnvgj97/147049b3c7.jpeg",
-      "https://static.realt.by/thumb/c/580x350/c48daa4f34fa4f0b157857d2e933f5cd/97/j/11071nnvgj97/0f842116b9.jpeg"
     ],
     "98cd45e0-d375-11f1-a46c-87fe997ab043": [
       "https://cdn.realt.by/img/56/36bf703a-d375-11f1-97ca-9ec992c48380",
