@@ -1,0 +1,50 @@
+{
+  "status": "rejected",
+  "reason": "Empty or duplicate source UUIDs",
+  "source_file": "2026-11-06_10-37_etazhi.json",
+  "filtered_rows": 893,
+  "missing_uuid_count": 0,
+  "duplicate_uuid_count": 1,
+  "duplicate_extra_rows": 1,
+  "duplicate_samples": [
+    {
+      "uuid": "71d76b40-d43e-11f1-a46c-87fe997ab043",
+      "occurrences": 2
+    }
+  ],
+  "source_pages_checked": 37,
+  "affected_pages": [
+    {
+      "agency": "60fcf380-4e01-11f1-943e-89d1a667d5d7",
+      "page": 11,
+      "source_total": 1105,
+      "anomaly_count": 1,
+      "examples": [
+        {
+          "position": 30,
+          "uuid": "71d76b40-d43e-11f1-a46c-87fe997ab043",
+          "code": "4267062"
+        }
+      ]
+    },
+    {
+      "agency": "60fcf380-4e01-11f1-943e-89d1a667d5d7",
+      "page": 12,
+      "source_total": 1106,
+      "anomaly_count": 1,
+      "examples": [
+        {
+          "position": 1,
+          "uuid": "71d76b40-d43e-11f1-a46c-87fe997ab043",
+          "code": "4267062"
+        }
+      ]
+    }
+  ],
+  "affected_pages_truncated": false,
+  "valid": false,
+  "checked_at": "2026-11-06T10:41:29.358057+00:00",
+  "collection_started_at": "2026-11-06T10:37:13.880096+00:00",
+  "collection_slot": "2026-11-06T13:10:00+03:00",
+  "snapshot_at": "2026-11-06T10:37:13Z"
+}
