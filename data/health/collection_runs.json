@@ -779,5 +779,17 @@
       "archive": "verified-github-release",
       "packet_bytes": 575244
     }
+  },
+  {
+    "started_at": "2026-11-06T13:37:13.852885+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 54,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-06T16:10:00+03:00",
+    "error": "RuntimeError: Empty or duplicate source UUIDs",
+    "duration_seconds": 249.899
   }
 ]

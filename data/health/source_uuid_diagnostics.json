@@ -1,50 +1,216 @@
 {
   "status": "rejected",
   "reason": "Empty or duplicate source UUIDs",
-  "source_file": "2026-11-06_12-19_etazhi.json",
-  "filtered_rows": 918,
+  "source_file": "2026-11-06_13-37_etazhi.json",
+  "filtered_rows": 859,
   "missing_uuid_count": 0,
-  "duplicate_uuid_count": 1,
-  "duplicate_extra_rows": 1,
+  "duplicate_uuid_count": 29,
+  "duplicate_extra_rows": 29,
   "duplicate_samples": [
     {
-      "uuid": "cf75e170-d3b0-11f1-9f25-cd6b2db0521a",
+      "uuid": "00b82460-d9d7-11f1-8bb3-e31d3ea1504f",
+      "occurrences": 2
+    },
+    {
+      "uuid": "00f70fe0-d9dc-11f1-afb0-431d8804ce48",
+      "occurrences": 2
+    },
+    {
+      "uuid": "06589590-d9db-11f1-afb0-431d8804ce48",
+      "occurrences": 2
+    },
+    {
+      "uuid": "08ba85f0-d9d1-11f1-afb0-431d8804ce48",
+      "occurrences": 2
+    },
+    {
+      "uuid": "1148f5b0-d9dd-11f1-afb0-431d8804ce48",
+      "occurrences": 2
+    },
+    {
+      "uuid": "1404d7d0-d9d1-11f1-b5aa-b5e26b717a51",
+      "occurrences": 2
+    },
+    {
+      "uuid": "168ac9f0-d9d2-11f1-afb0-431d8804ce48",
+      "occurrences": 2
+    },
+    {
+      "uuid": "19bcec80-d9d1-11f1-afb0-431d8804ce48",
+      "occurrences": 2
+    },
+    {
+      "uuid": "27821350-d9da-11f1-afb0-431d8804ce48",
+      "occurrences": 2
+    },
+    {
+      "uuid": "2ec09a90-d9d2-11f1-afb0-431d8804ce48",
+      "occurrences": 2
+    },
+    {
+      "uuid": "64506960-d9dc-11f1-8bb3-e31d3ea1504f",
+      "occurrences": 2
+    },
+    {
+      "uuid": "67594720-d9dd-11f1-8bb3-e31d3ea1504f",
+      "occurrences": 2
+    },
+    {
+      "uuid": "7c140220-d9da-11f1-afb0-431d8804ce48",
+      "occurrences": 2
+    },
+    {
+      "uuid": "7c900560-d9d9-11f1-b5aa-b5e26b717a51",
+      "occurrences": 2
+    },
+    {
+      "uuid": "8c509c20-d9e4-11f1-b5aa-b5e26b717a51",
       "occurrences": 2
     }
   ],
-  "source_pages_checked": 38,
+  "source_pages_checked": 36,
   "affected_pages": [
     {
       "agency": "60fcf380-4e01-11f1-943e-89d1a667d5d7",
-      "page": 13,
-      "source_total": 1131,
-      "anomaly_count": 1,
+      "page": 1,
+      "source_total": 1071,
+      "anomaly_count": 29,
       "examples": [
         {
-          "position": 30,
-          "uuid": "cf75e170-d3b0-11f1-9f25-cd6b2db0521a",
-          "code": "4266856"
+          "position": 1,
+          "uuid": "8c509c20-d9e4-11f1-b5aa-b5e26b717a51",
+          "code": "4271557"
+        },
+        {
+          "position": 3,
+          "uuid": "cc189940-d9dd-11f1-afb0-431d8804ce48",
+          "code": "4271513"
+        },
+        {
+          "position": 4,
+          "uuid": "67594720-d9dd-11f1-8bb3-e31d3ea1504f",
+          "code": "4271506"
+        },
+        {
+          "position": 5,
+          "uuid": "1148f5b0-d9dd-11f1-afb0-431d8804ce48",
+          "code": "4271495"
+        },
+        {
+          "position": 6,
+          "uuid": "ba82c1c0-d9dc-11f1-b5aa-b5e26b717a51",
+          "code": "4271494"
+        },
+        {
+          "position": 7,
+          "uuid": "64506960-d9dc-11f1-8bb3-e31d3ea1504f",
+          "code": "4271490"
+        },
+        {
+          "position": 8,
+          "uuid": "00f70fe0-d9dc-11f1-afb0-431d8804ce48",
+          "code": "4271482"
+        },
+        {
+          "position": 9,
+          "uuid": "9cea1dd0-d9db-11f1-8bb3-e31d3ea1504f",
+          "code": "4271480"
+        },
+        {
+          "position": 10,
+          "uuid": "06589590-d9db-11f1-afb0-431d8804ce48",
+          "code": "4271479"
+        },
+        {
+          "position": 11,
+          "uuid": "7c140220-d9da-11f1-afb0-431d8804ce48",
+          "code": "4271475"
+        },
+        {
+          "position": 12,
+          "uuid": "27821350-d9da-11f1-afb0-431d8804ce48",
+          "code": "4271472"
+        },
+        {
+          "position": 13,
+          "uuid": "fda6be50-d9d9-11f1-8bb3-e31d3ea1504f",
+          "code": "4271470"
         }
       ]
     },
     {
       "agency": "60fcf380-4e01-11f1-943e-89d1a667d5d7",
-      "page": 14,
-      "source_total": 1132,
-      "anomaly_count": 1,
+      "page": 36,
+      "source_total": 1043,
+      "anomaly_count": 29,
       "examples": [
         {
           "position": 1,
-          "uuid": "cf75e170-d3b0-11f1-9f25-cd6b2db0521a",
-          "code": "4266856"
+          "uuid": "8c509c20-d9e4-11f1-b5aa-b5e26b717a51",
+          "code": "4271557"
+        },
+        {
+          "position": 3,
+          "uuid": "cc189940-d9dd-11f1-afb0-431d8804ce48",
+          "code": "4271513"
+        },
+        {
+          "position": 4,
+          "uuid": "67594720-d9dd-11f1-8bb3-e31d3ea1504f",
+          "code": "4271506"
+        },
+        {
+          "position": 5,
+          "uuid": "1148f5b0-d9dd-11f1-afb0-431d8804ce48",
+          "code": "4271495"
+        },
+        {
+          "position": 6,
+          "uuid": "ba82c1c0-d9dc-11f1-b5aa-b5e26b717a51",
+          "code": "4271494"
+        },
+        {
+          "position": 7,
+          "uuid": "64506960-d9dc-11f1-8bb3-e31d3ea1504f",
+          "code": "4271490"
+        },
+        {
+          "position": 8,
+          "uuid": "00f70fe0-d9dc-11f1-afb0-431d8804ce48",
+          "code": "4271482"
+        },
+        {
+          "position": 9,
+          "uuid": "9cea1dd0-d9db-11f1-8bb3-e31d3ea1504f",
+          "code": "4271480"
+        },
+        {
+          "position": 10,
+          "uuid": "06589590-d9db-11f1-afb0-431d8804ce48",
+          "code": "4271479"
+        },
+        {
+          "position": 11,
+          "uuid": "7c140220-d9da-11f1-afb0-431d8804ce48",
+          "code": "4271475"
+        },
+        {
+          "position": 12,
+          "uuid": "27821350-d9da-11f1-afb0-431d8804ce48",
+          "code": "4271472"
+        },
+        {
+          "position": 13,
+          "uuid": "fda6be50-d9d9-11f1-8bb3-e31d3ea1504f",
+          "code": "4271470"
         }
       ]
     }
   ],
   "affected_pages_truncated": false,
   "valid": false,
-  "checked_at": "2026-11-06T12:24:39.438745+00:00",
-  "collection_started_at": "2026-11-06T12:19:54.711183+00:00",
-  "collection_slot": "2026-11-06T15:10:00+03:00",
-  "snapshot_at": "2026-11-06T12:19:54Z"
+  "checked_at": "2026-11-06T13:41:23.751540+00:00",
+  "collection_started_at": "2026-11-06T13:37:13.852885+00:00",
+  "collection_slot": "2026-11-06T16:10:00+03:00",
+  "snapshot_at": "2026-11-06T13:37:13Z"
 }
