@@ -1,6 +1,13 @@
 {
-  "snapshot_at": "2026-11-07T07:37:12Z",
+  "snapshot_at": "2026-11-07T08:37:12Z",
   "images": {
+    "3fc06070-da7f-11f1-afb0-431d8804ce48": [
+      "https://cdn.realt.by/img/56/128ec632-da7f-11f1-914e-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/1562113e-da7f-11f1-b1f9-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/201b38bc-da7f-11f1-acff-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/24cce91e-da7f-11f1-b4e7-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/252f552c-da7f-11f1-a1b2-a6cfe75afd90"
+    ],
     "89ed22b0-da7e-11f1-afb0-431d8804ce48": [
       "https://cdn.realt.by/img/56/5edbcfe0-da7e-11f1-8517-0242ac120003",
       "https://cdn.realt.by/img/56/6160141a-da7e-11f1-b118-0242ac120003",
