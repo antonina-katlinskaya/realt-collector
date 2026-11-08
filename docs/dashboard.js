@@ -54,8 +54,8 @@ function changesBetween(index,from,to,accept=()=>true){
  for(let i=1;i<index.times.length;i++){const a=index.times[i-1],b=index.times[i];if(day(b)<from||day(b)>to)continue;const prev=index.byTime.get(a),cur=index.byTime.get(b);for(const [id,r]of cur){const p=prev.get(id);if(!p||!accept(r,b))continue;const changes=Object.entries(fields).filter(([k])=>p[k]!==''&&p[k]!=null&&r[k]!==''&&r[k]!=null&&p[k]!==r[k]).map(([key,name])=>({key,name,old:p[key],new:r[key]}));if(changes.length)result.push({id,row:r,start:a,end:b,changes});}}
  return result;
 }
-function periodData(index,from,to,accept=()=>true,bounds=null,trustedFrom=null){
- const inside=t=>day(t)>=from&&day(t)<=to&&(!bounds||(Date.parse(t)>=bounds.start&&Date.parse(t)<=bounds.end));
+function periodData(index,from,to,accept=()=>true,bounds=null,trustedFrom=null,selectDate=()=>true){
+ const inside=t=>selectDate(t)&&day(t)>=from&&day(t)<=to&&(!bounds||(Date.parse(t)>=bounds.start&&Date.parse(t)<=bounds.end));
  const available=index.times.filter(inside),end=available.at(-1),current=end?[...index.byTime.get(end).values()].filter(r=>accept(r,end)):[];
  const observed=new Map();for(const t of available)for(const [id,r] of index.byTime.get(t))if(accept(r,t))observed.set(id,r);
  const lastValues=new Map(),unstableIds=new Set();
@@ -71,7 +71,7 @@ function periodData(index,from,to,accept=()=>true,bounds=null,trustedFrom=null){
  for(let i=1;i<index.times.length;i++){const a=index.times[i-1],b=index.times[i];if(!inside(b))continue;for(const [id,r]of index.byTime.get(a))if(!index.byTime.get(b).has(id)&&!currentIds.has(id)&&accept(r,b))gone.set(id,{...r,goneAt:b});}
  for(const [id,r]of gone)if(!observed.has(id))observed.set(id,r);
  const changes=changesBetween(index,from,to,(r,t)=>inside(t)&&accept(r,t));
- return {from,to,end,current,observed:[...observed.values()],events,unstableIds,excludedEvents,excludedLegacyEvents,growth,newly,gone:[...gone.values()],changes};
+ return {from,to,end,selectDate,snapshotCount:available.length,current,observed:[...observed.values()],events,unstableIds,excludedEvents,excludedLegacyEvents,growth,newly,gone:[...gone.values()],changes};
 }
 
 function promotionPeriods(index,from,to,accept=()=>true,bounds=null){
@@ -166,13 +166,13 @@ const checks=id=>new Set([...$(id).querySelectorAll('input:checked')].map(x=>x.v
 function matches(r,t=r.snapshot_at,ignorePromo=false){const multi=checks('multiAgents'),week=checks('weekdays'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
 return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(ignorePromo||!week.size||week.has(String(weekday(t))))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agencyName===$('company').value)&&(!$('rooms').value||($('rooms').value==='4+'?Number(r.rooms)>=4:r.rooms===$('rooms').value))&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
 function createMatcher(){
- const multi=checks('multiAgents'),week=checks('weekdays');
+ const multi=checks('multiAgents'),selectedDate=selectedDates();
  const agent=$('agent').value,quarter=$('quarter').value,company=$('company').value,rooms=$('rooms').value,house=$('house').value;
  const lo=number($('areaMin').value),hi=number($('areaMax').value),search=$('search').value.toLowerCase(),promo=$('promo').value;
  return (r,t=r.snapshot_at,ignorePromo=false)=>{
   const area=number(r.areaTotal);
   if(agent&&r.userUuid!==agent||multi.size&&!multi.has(r.userUuid))return false;
-  if(!ignorePromo&&week.size&&!week.has(String(weekday(t))))return false;
+  if(!selectedDate(t))return false;
   if(quarter&&(r.quarter||'(не определён)')!==quarter||company&&r.agencyName!==company||rooms&&(rooms==='4+'?Number(r.rooms)<4:r.rooms!==rooms)||house&&r.address!==house)return false;
   if(lo!==null&&(area===null||area<lo)||hi!==null&&(area===null||area>hi))return false;
   if(search&&![r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes(search))return false;
@@ -183,10 +183,10 @@ function promoMatch(r){const p=$('promo').value;return !p||(p==='paid'?paid(r):p
 let cachedModelIndex=null,cachedModelKey='',cachedModelValue=null;
 function model(){
  const fields=['from','to','agent','promo','quarter','company','rooms','house','areaMin','areaMax','search','sort'];
- const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),[...checks('weekdays')].sort(),selectedTab,preciseBounds]);
+ const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),[...checks('weekdays')].sort(),selectedTab,preciseBounds,[...recentDays].sort()]);
  if(cachedModelIndex===index&&cachedModelKey===key&&cachedModelValue)return cachedModelValue;
- const m=periodData(index,$('from').value,$('to').value,createMatcher(),preciseBounds,'2026-10-27T11:41:00Z');
- let listing=selectedTab==='published'?m.observed.filter(r=>r.createdAt&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to):selectedTab==='paid'?m.current.filter(paid):selectedTab==='new'?m.newly:selectedTab==='gone'?m.gone:selectedTab==='period'?m.observed:m.current;
+ const m=periodData(index,$('from').value,$('to').value,createMatcher(),preciseBounds,'2026-10-27T11:41:00Z',selectedDates());
+ let listing=selectedTab==='published'?m.observed.filter(r=>r.createdAt&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to&&m.selectDate(r.createdAt)):selectedTab==='paid'?m.current.filter(paid):selectedTab==='new'?m.newly:selectedTab==='gone'?m.gone:selectedTab==='period'?m.observed:m.current;
  const sort=$('sort').value;listing=listing.slice().sort((a,b)=>sort==='growth'?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):sort==='views'?(number(b.views)||0)-(number(a.views)||0):sort==='price'?String(a.priceCurrency).localeCompare(String(b.priceCurrency))||(number(a.price)||0)-(number(b.price)||0):String(b.createdAt).localeCompare(String(a.createdAt)));
  cachedModelIndex=index;cachedModelKey=key;cachedModelValue={...m,listing};return cachedModelValue;
 }
@@ -206,8 +206,8 @@ function render(){if(!index)return;$('status').hidden=activeView==='promotion';u
   const activations=m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus'&&![2,3,4].includes(number(x.old))&&[2,3,4].includes(number(x.new)))).length;
   const bumps=m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus'&&number(x.new)===3&&number(x.old)!==3)).length;
   $('cards').innerHTML=[['Прирост просмотров',comparable?delta:null,'за сопоставимые интервалы'],['Объявлений сейчас',m.current.length,'на последнем снимке выбранного периода'],['В продвижении',advertised,'по последнему снимку периода'],['Новых замечено',m.newly.length,'с момента первого наблюдения'],['Включений продвижения',activations,'наблюдаемые смены статуса'],['Включений поднятия',bumps,'наблюдаемые переходы на статус'],['Открытия номера','—','Realt не предоставляет эти данные']].map(([title,value,note])=>`<div class="card"><strong>${value===null?'—':(typeof value==='number'?fmt(value):value)}</strong><div class="kpi-label">${title}</div><span>${note}</span></div>`).join('');
-  $('status').textContent=m.end?'Состояние объявлений на '+date(m.end)+' · '+index.times.length+' снимков в истории':'Нет снимков до выбранной даты';
-  const countTimes=index.times.filter(t=>day(t)>=m.from&&day(t)<=m.to).length;
+  $('status').textContent=m.end?'Состояние объявлений на '+date(m.end)+' · '+m.snapshotCount+' снимков в выбранных днях · доступная история с '+date(index.times[0]):'Нет снимков за выбранные дни · доступная история с '+date(index.times[0]);
+  const countTimes=m.snapshotCount;
   $('coverage').textContent=countTimes<2?'Пока в выбранном периоде меньше двух снимков. Прирост, длительность продвижения и время активности начнут уточняться с новыми обходами.':`${countTimes} снимков в выбранном периоде. Прирост за полностью покрытые интервалы: ${fmt(delta)}. При продвижении: ${fmt(m.events.filter(e=>e.category==='paid').reduce((s,e)=>s+e.delta,0))}; без продвижения: ${fmt(m.events.filter(e=>e.category==='free').reduce((s,e)=>s+e.delta,0))}; при смене / неизвестном статусе: ${fmt(m.events.filter(e=>e.category==='unknown').reduce((s,e)=>s+e.delta,0))}.`;
   if(m.excludedLegacyEvents){$('coverage').textContent+=` До исправления привязки просмотров к UUID исключено ${fmt(m.excludedLegacyEvents)} исторических интервалов. Для рейтингов нужны два новых достоверных обхода после 27.10.2026, 14:41 Минск.`;}
   if(m.unstableIds.size){const excludedTotal=m.excludedEvents.reduce((sum,e)=>sum+e.delta,0);$('coverage').textContent+=` ⚠ У ${fmt(m.unstableIds.size)} объявлений счётчик просмотров снижался между обходами; их положительные скачки (+${fmt(excludedTotal)}) исключены из рейтингов и итогового прироста. Исходные значения сохранены в истории.`;}
@@ -249,7 +249,7 @@ async function load(){const seq=++loadSeq;$('refresh').disabled=true;$('status')
   const prevAgent=$('agent').value,prevQuarter=$('quarter').value;
   $('agent').innerHTML='<option value="">Все агенты</option>'+[...agents.values()].sort((a,b)=>agentName(a).localeCompare(agentName(b),'ru')).map(r=>`<option value="${esc(r.userUuid)}">${esc(agentName(r))} · ${esc(r.contactPhone||r.userUuid.slice(0,8))}</option>`).join('');$('agent').value=prevAgent;
   $('quarter').innerHTML='<option value="">Все</option>'+[...new Set(rows.map(r=>r.quarter||'(не определён)'))].sort().map(q=>`<option>${esc(q)}</option>`).join('');$('quarter').value=prevQuarter;
-  if(!$('from').value)$('from').value=day(index.times[0]);if(!$('to').value)$('to').value=day(last);const quick=$('quick').querySelector('button.active');if(quick&&quick.dataset.days!=='custom')applyQuickPeriod(quick.dataset.days);seen=null;seenPromise=null;populateUnified(agents);await restoreArchiveRange();render();
+  if(!$('from').value)$('from').value=day(index.times[0]);if(!$('to').value)$('to').value=day(last);applyQuickPeriod();seen=null;seenPromise=null;populateUnified(agents);await restoreArchiveRange();render();
 }catch(e){$('status').hidden=false;$('status').textContent='Не удалось загрузить данные: '+e.message+'. Нажми «Обновить данные», чтобы повторить.';}finally{$('refresh').disabled=false;}}
 function detailChart(h){if(!h.length)return '';const vals=h.filter(r=>number(r.views)!==null);if(!vals.length)return '<div class="empty">Счётчики не получены</div>';const W=740,H=210,min=0,max=Math.max(1,...vals.map(r=>Number(r.views)));const x=i=>48+(W-75)*i/Math.max(1,vals.length-1),y=v=>170-v/max*140;let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Общий счётчик просмотров объявления"><line x1="48" y1="170" x2="${W-15}" y2="170" stroke="#dce4ed"/><text x="40" y="30" text-anchor="end" font-size="11">${fmt(max)}</text><polyline points="${vals.map((r,i)=>x(i)+','+y(Number(r.views))).join(' ')}" fill="none" stroke="#396cc1" stroke-width="3"/>`;
   vals.forEach((r,i)=>{s+=`<circle cx="${x(i)}" cy="${y(Number(r.views))}" r="5" fill="${paid(r)?'#147b73':'#396cc1'}"><title>${date(r.snapshot_at)} · ${r.views} просмотров · ${esc(label(r))}</title></circle>`;if(vals.length<12||i%Math.ceil(vals.length/10)===0)s+=`<text x="${x(i)}" y="195" text-anchor="middle" font-size="10">${date(r.snapshot_at).slice(0,5)}</text>`;});return s+'</svg>';}
@@ -261,15 +261,39 @@ async function showDetail(id){const token=++detailSeq,h=index.histories.get(id)|
   try{if(!seenPromise)seenPromise=fetch(ROOT+'listings_seen.json?refresh='+Date.now(),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json();});seen=await seenPromise;if(token!==detailSeq||$('drawer').hidden)return;const hist=seen[id]?.history_views||{};$('historyraw').innerHTML=Object.keys(hist).length?'<table><thead><tr><th>Опорная дата</th><th>Значение API</th></tr></thead><tbody>'+Object.entries(hist).sort().map(([d,v])=>`<tr><td>${esc(d)}</td><td>${fmt(v)}</td></tr>`).join('')+'</tbody></table>':'Исторические значения отсутствуют';}catch(e){seenPromise=null;if(token===detailSeq)$('historyraw').textContent='История пока недоступна: '+e.message;}
 }
 function closeDetail(){$('drawer').hidden=true;detailSeq++;lastFocused?.focus();}
-for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){preciseBounds=null;if($('filterPeriodLabel'))$('filterPeriodLabel').textContent='Свой период';for(const x of $('quick').querySelectorAll('button'))x.classList.remove('active');}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;if(id==='from'||id==='to')restoreArchiveRange();else render();});let searchRenderTimer=null;
+for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){recentDays.clear();quickPeriod='custom';applyQuickPeriod();}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;if(id==='from'||id==='to')restoreArchiveRange();else render();});let searchRenderTimer=null;
 $('search').addEventListener('input',()=>{page=0;clearTimeout(searchRenderTimer);searchRenderTimer=setTimeout(()=>render(),180);});
-function applyQuickPeriod(n){const today=day(new Date());preciseBounds=null;const labels={'1':'Сегодня','yesterday':'Вчера','24h':'24 часа','7':'7 дней','14':'14 дней','30':'30 дней','90':'90 дней','all':'Вся история'};if($('filterPeriodLabel'))$('filterPeriodLabel').textContent=labels[n]||'Свой период';
-if(n==='all'){$('from').value=ARCHIVE_START;$('to').value=day(index.times.at(-1));}
-else if(n==='24h'){preciseBounds={start:Date.now()-86400000,end:Date.now()};$('from').value=day(preciseBounds.start);$('to').value=day(preciseBounds.end);}
-else if(n==='yesterday'){const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);$('from').value=$('to').value=d.toISOString().slice(0,10);}
-else{const start=new Date(today+'T12:00:00Z');start.setUTCDate(start.getUTCDate()-Number(n)+1);$('from').value=start.toISOString().slice(0,10);$('to').value=today;}
+const recentOffsets={'1':0,yesterday:1,dayBefore:2};
+let recentDays=new Set(),quickPeriod='7';
+function shiftedDay(offset){return new Date(Date.parse(day(new Date())+'T12:00:00Z')-offset*86400000).toISOString().slice(0,10);}
+function applyQuickPeriod(){
+ const buttons=[...$('quick').querySelectorAll('[data-days]')];
+ const active=buttons.filter(b=>recentDays.size?recentDays.has(b.dataset.days):b.dataset.days===quickPeriod);
+ for(const b of buttons){b.classList.toggle('active',active.includes(b));b.setAttribute('aria-pressed',String(active.includes(b)));}
+ $('filterPeriodLabel').textContent=active.map(b=>b.textContent).join(' + ');
+ $('customDates').hidden=quickPeriod!=='custom'||recentDays.size>0;
+ preciseBounds=null;
+ if(recentDays.size){
+   const offsets=[...recentDays].map(key=>recentOffsets[key]);
+   $('from').value=shiftedDay(Math.max(...offsets));$('to').value=shiftedDay(Math.min(...offsets));
+ }else if(quickPeriod!=='custom'){
+   $('from').value=shiftedDay(Number(quickPeriod)-1);$('to').value=shiftedDay(0);
+ }
 }
-$('quick').addEventListener('click',e=>{const b=e.target.closest('[data-days]');if(!b||!index)return;$('customDates').hidden=b.dataset.days!=='custom';if(b.dataset.days!=='custom')applyQuickPeriod(b.dataset.days);for(const x of $('quick').querySelectorAll('button'))x.classList.toggle('active',x===b);page=0;restoreArchiveRange();});
+function selectedDates(){
+ const dates=new Set([...recentDays].map(key=>shiftedDay(recentOffsets[key])));
+ const weekdays=checks('weekdays');
+ return t=>(!dates.size||dates.has(day(t)))&&(!weekdays.size||weekdays.has(String(weekday(t))));
+}
+$('quick').addEventListener('click',e=>{
+ const b=e.target.closest('[data-days]');if(!b||!index)return;
+ const key=b.dataset.days;
+ if(Object.hasOwn(recentOffsets,key)){
+   if(recentDays.has(key)&&recentDays.size>1)recentDays.delete(key);
+   else recentDays.add(key);
+ }else{recentDays.clear();quickPeriod=key;}
+ applyQuickPeriod();page=0;restoreArchiveRange();
+});
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;selectedTab=b.dataset.tab;for(const x of $('tabs').querySelectorAll('button'))x.classList.toggle('active',x===b);page=0;render();});
 $('ranking').addEventListener('click',e=>{const b=e.target.closest('[data-agent]');if(b){$('agent').value=b.dataset.agent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();}});
 $('listings').addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b)showDetail(b.dataset.detail);});$('close').onclick=closeDetail;$('drawer').onclick=e=>{if(e.target===$('drawer'))closeDetail();};document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail();if(e.key==='Tab'&&!$('drawer').hidden){const els=[...$('drawer').querySelectorAll('button,a[href],input,select,summary')];if(e.shiftKey&&document.activeElement===els[0]){e.preventDefault();els.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===els.at(-1)){e.preventDefault();els[0].focus();}}});
@@ -295,7 +319,7 @@ function renderDaily(m){
  for(const r of m.newly){const d=day(index.histories.get(r.uuid)[0].snapshot_at);if(groups.has(d))groups.get(d).newly++;}
  $('dailyTable').innerHTML=makeTable(['Дата конца замера','Снимков','Впервые замечены после базового','Прирост'],[...groups].map(([d,g])=>`<tr><td>${d}</td><td>${g.snapshots}</td><td>${g.newly}</td><td>${fmt(g.views)}</td></tr>`));
 }
-function agentsFor(m){const out=new Map();const publication=r=>{if(!r.createdAt||Number.isNaN(Date.parse(r.createdAt)))return 'unknown';const d=day(r.createdAt);return d<m.from?'old':d<=m.to?'new':'unknown';};const ensure=r=>{if(!out.has(r.userUuid))out.set(r.userUuid,{row:r,current:0,paid:0,observed:new Set(),delta:0,deltaNew:0,deltaOld:0,deltaUnknown:0,published:new Set(),changes:0,newly:0,total:0});return out.get(r.userUuid);};for(const r of m.current){const a=ensure(r);a.current++;a.paid+=paid(r)?1:0;a.total+=number(r.views)||0;}for(const r of m.observed){const a=ensure(r);a.observed.add(r.uuid);if(publication(r)==='new')a.published.add(r.uuid);}for(const e of m.events){const a=ensure(e.row);a.delta+=e.delta;const k=publication(e.row);if(k==='new')a.deltaNew+=e.delta;else if(k==='old')a.deltaOld+=e.delta;else a.deltaUnknown+=e.delta;}for(const c of m.changes)ensure(c.row).changes++;for(const r of m.newly)ensure(r).newly++;return [...out.values()].sort((a,b)=>b.delta-a.delta||b.current-a.current);}
+function agentsFor(m){const out=new Map();const publication=r=>{if(!r.createdAt||Number.isNaN(Date.parse(r.createdAt)))return 'unknown';const d=day(r.createdAt);return d<m.from?'old':d<=m.to&&m.selectDate(r.createdAt)?'new':'unknown';};const ensure=r=>{if(!out.has(r.userUuid))out.set(r.userUuid,{row:r,current:0,paid:0,observed:new Set(),delta:0,deltaNew:0,deltaOld:0,deltaUnknown:0,published:new Set(),changes:0,newly:0,total:0});return out.get(r.userUuid);};for(const r of m.current){const a=ensure(r);a.current++;a.paid+=paid(r)?1:0;a.total+=number(r.views)||0;}for(const r of m.observed){const a=ensure(r);a.observed.add(r.uuid);if(publication(r)==='new')a.published.add(r.uuid);}for(const e of m.events){const a=ensure(e.row);a.delta+=e.delta;const k=publication(e.row);if(k==='new')a.deltaNew+=e.delta;else if(k==='old')a.deltaOld+=e.delta;else a.deltaUnknown+=e.delta;}for(const c of m.changes)ensure(c.row).changes++;for(const r of m.newly)ensure(r).newly++;return [...out.values()].sort((a,b)=>b.delta-a.delta||b.current-a.current);}
 function renderUnified(m){
  if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
  if(activeView==='leaders'){
@@ -406,7 +430,7 @@ function renderWorks(m){
  renderGallery(m);
 }
 
-function renderPlacements(m){const items=m.observed.filter(r=>r.createdAt&&!Number.isNaN(Date.parse(r.createdAt))&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to&&(!preciseBounds||(Date.parse(r.createdAt)>=preciseBounds.start&&Date.parse(r.createdAt)<=preciseBounds.end))&&(!checks('weekdays').size||checks('weekdays').has(String(weekday(r.createdAt))))),groups=new Map();for(const r of items){const key=r.rooms+'|'+r.areaTotal;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
+function renderPlacements(m){const items=m.observed.filter(r=>r.createdAt&&!Number.isNaN(Date.parse(r.createdAt))&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to&&m.selectDate(r.createdAt)&&(!preciseBounds||(Date.parse(r.createdAt)>=preciseBounds.start&&Date.parse(r.createdAt)<=preciseBounds.end))&&(!checks('weekdays').size||checks('weekdays').has(String(weekday(r.createdAt))))),groups=new Map();for(const r of items){const key=r.rooms+'|'+r.areaTotal;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
  $('placementGroups').innerHTML=[...groups.values()].sort((a,b)=>b.length-a.length).map(a=>`<details class="notice"><summary><b>${esc(a[0].rooms)} комн. · ${esc(a[0].areaTotal)} м²</b> — ${a.length} объявлений</summary><div class="placeitems">${a.map(r=>`<div class="placeitem">${adLink(r)}<br>${esc(agentName(r))}<br><small>Размещено ${date(r.createdAt)} · ${price(r)}</small><br>${detailButton(r)}</div>`).join('')}</div></details>`).join('')||empty('В наблюдавшихся объявлениях нет дат публикации внутри этого периода.');
  const heat=Array.from({length:7},()=>Array(24).fill(0));for(const r of items){const h=Number(HOUR_FMT.format(new Date(r.createdAt)));heat[weekday(r.createdAt)][h]++;}const max=Math.max(1,...heat.flat());$('publicationHeat').innerHTML='<div class="tablewrap"><table class="heat"><thead><tr><th></th>'+Array.from({length:24},(_,h)=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((d,i)=>'<tr><th>'+d+'</th>'+heat[i].map(v=>`<td style="background:rgba(20,123,115,${.04+.5*v/max})">${v||'·'}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';
 }
