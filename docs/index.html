@@ -102,7 +102,7 @@ main{max-width:1408px}
 #employeeTable .employee-row-link{cursor:pointer}
 #employeeTable .employee-row-link:hover>*,#employeeTable .employee-row-link:focus-within>*{background:#edf3fa}
 #employeeTable .employee-row-link:hover>.employee-best,#employeeTable .employee-row-link:focus-within>.employee-best{background:#cfe5fa}
-#employeeTable .employee-row-link a{display:block;font-size:21px;line-height:1.25;color:inherit;white-space:normal}
+#employeeTable .employee-row-link a{display:block;font-size:16.8px;line-height:1.25;color:inherit;white-space:nowrap}
 .employee-ads-view #adCards,.employee-ads-view .pagination,.employee-ads-view .adTableDetails,.employee-ads-view .tablehead p,.employee-ads-view #sort{display:none}
 #employeeAds[hidden],#employeeAdsTitle[hidden]{display:none}
 .employee-ads-view #employeeAds>section{margin:24px 0}
@@ -112,6 +112,13 @@ main{max-width:1408px}
 .combined-filters .filter-caption{flex:0 0 auto}
 .combined-filters .filter-group:first-child .filter-caption{min-width:98px}
 .combined-filters .rooms-caption{margin:0}
+</style><style>
+#employeeTable thead .grp th:nth-child(1){width:23%}
+#employeeTable thead .grp th:nth-child(2){width:10%}
+#employeeTable thead th{white-space:normal;overflow-wrap:anywhere}
+@media(max-width:850px){
+  #employeeTable .employee-row-link a{white-space:normal}
+}
 </style></head>
 <body><main>
 <header><div><h1>Радар Realt</h1><div class="muted">Минск Мир · объявления и продвижение</div></div><div class="meta"><div id="freshness">Загружаем данные…</div><div class="headerlinks"><button id="refresh" title="Перечитать сохранённые снимки; новый сбор запускается по расписанию">Обновить данные</button></div></div></header>
