@@ -603,7 +603,10 @@ if(employeeLink){
  $('employeeAds').hidden=false;$('employeeAdsTitle').hidden=false;
  activateView('ads');
  load().then(()=>{if(index&&!photoLoaded)loadPhotos();});
-}else load();
+}else{
+ activateView('employees');
+ load();
+}
 setInterval(updateFreshness,60000);
 setInterval(()=>{if(!document.hidden&&!$('refresh').disabled)load();},300000);
 }
