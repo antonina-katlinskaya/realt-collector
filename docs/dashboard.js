@@ -298,7 +298,7 @@ function closeDetail(){$('drawer').hidden=true;detailSeq++;lastFocused?.focus();
 for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){recentDays.clear();linkedDays.clear();quickPeriod='custom';applyQuickPeriod();}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;if(id==='from'||id==='to')restoreArchiveRange();else render();});let searchRenderTimer=null;
 $('search').addEventListener('input',()=>{page=0;clearTimeout(searchRenderTimer);searchRenderTimer=setTimeout(()=>render(),180);});
 const recentOffsets={'1':0,yesterday:1,dayBefore:2};
-let recentDays=new Set(),quickPeriod='7';
+let recentDays=new Set(),quickPeriod='1';
 const linkedParams=new URLSearchParams(location.search);
 const employeeLink=linkedParams.get('employee');
 let linkedDays=new Set();
