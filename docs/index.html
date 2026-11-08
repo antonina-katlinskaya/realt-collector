@@ -87,13 +87,13 @@ main{max-width:1408px}
 [data-section="employees"]{padding:0;border:0;background:transparent}
 .employee-legend{font-size:14px;color:#414b55;margin:8px 0}
 .employee-swatch{display:inline-block;width:12px;height:12px;border:1px solid #7299bd;border-radius:3px;background:#e1effc;vertical-align:middle;margin-left:8px}
-#employeeTable .emp{border:1px solid var(--line);border-radius:12px;overflow:auto;background:#fcfcfb}
-#employeeTable table{width:100%;min-width:920px;font-size:15px;white-space:normal}
-#employeeTable th,#employeeTable td{padding:11px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+#employeeTable .emp{border:1px solid var(--line);border-radius:12px;background:#fcfcfb}
+#employeeTable table{width:100%;min-width:0;table-layout:fixed;font-size:15px;white-space:normal}
+#employeeTable th,#employeeTable td{padding:11px clamp(2px,0.65vw,10px);overflow-wrap:anywhere;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
 #employeeTable th:last-child,#employeeTable td:last-child{border-right:0}
 #employeeTable tbody tr:last-child>*{border-bottom:0}
 #employeeTable thead th{position:static;background:#f6f5f2;text-align:center;font-size:14px;vertical-align:bottom}
-#employeeTable tbody th{position:static;background:transparent;text-align:left;min-width:175px}
+#employeeTable tbody th{position:static;background:transparent;text-align:left}
 #employeeTable button{padding:0;border:0;background:none;text-align:left;font:inherit}
 #employeeTable .num{text-align:right;font-variant-numeric:tabular-nums}
 #employeeTable .employee-best{background:#e1effc;font-weight:700}
@@ -102,7 +102,7 @@ main{max-width:1408px}
 #employeeTable .employee-row-link{cursor:pointer}
 #employeeTable .employee-row-link:hover>*,#employeeTable .employee-row-link:focus-within>*{background:#edf3fa}
 #employeeTable .employee-row-link:hover>.employee-best,#employeeTable .employee-row-link:focus-within>.employee-best{background:#cfe5fa}
-#employeeTable .employee-row-link a{display:block;font-size:30px;line-height:1.25;color:inherit}
+#employeeTable .employee-row-link a{display:block;font-size:21px;line-height:1.25;color:inherit;white-space:normal}
 .employee-ads-view #adCards,.employee-ads-view .pagination,.employee-ads-view .adTableDetails,.employee-ads-view .tablehead p,.employee-ads-view #sort{display:none}
 #employeeAds[hidden],#employeeAdsTitle[hidden]{display:none}
 .employee-ads-view #employeeAds>section{margin:24px 0}
@@ -138,7 +138,7 @@ main{max-width:1408px}
 <div class="pagination"><span id="rowcount"></span><div><button id="prev" class="pagebtn">← Назад</button><button id="next" class="pagebtn">Далее →</button></div></div>
 <details class="adTableDetails"><summary>Подробная таблица</summary><button id="export">Скачать выбранные строки CSV</button><div class="tablewrap"><table><thead><tr><th>Агент</th><th>Объявление</th><th>Цена</th><th>Продвижение</th><th>Наблюдается с</th><th>Просмотры всего</th><th>Прирост за период</th><th></th></tr></thead><tbody id="listings"></tbody></table></div></details></section>
 <section data-section="leaders" class="panel" hidden><h2>Топ продвижение</h2><p class="muted">Рейтинг по приросту просмотров только в сопоставимых интервалах с платным статусом на обоих обходах. Это не доказательство, что все просмотры получены благодаря рекламе.</p><div id="promotedGallery" class="promo-layout"></div><details><summary>Подробная таблица рейтинга</summary><div id="leadersTable"></div></details></section>
-<section data-section="employees" class="panel" hidden><h2>Результаты сотрудников</h2><p class="employee-legend">🥇🥈🥉 — больше всего просмотров по объявлениям, размещённым в выбранном периоде. <span class="employee-swatch"></span> — лучшее значение в столбце.</p><p class="employee-legend">Просмотры — прирост по сопоставимым снимкам за выбранный период. Объявления без даты публикации не входят в блоки просмотров. «—» — нет данных.</p><div id="employeeTable" style="overflow-x:auto"></div><details><summary>Карточки сотрудников</summary><div id="employeeHighlights" class="employee-highlights"></div></details><h3>Действия сотрудников</h3><div id="employeeChanges"></div></section>
+<section data-section="employees" class="panel" hidden><h2>Результаты сотрудников</h2><p class="employee-legend">🥇🥈🥉 — больше всего просмотров по объявлениям, размещённым в выбранном периоде. <span class="employee-swatch"></span> — лучшее значение в столбце.</p><p class="employee-legend">Просмотры — прирост по сопоставимым снимкам за выбранный период. Объявления без даты публикации не входят в блоки просмотров. «—» — нет данных.</p><div id="employeeTable"></div><details><summary>Карточки сотрудников</summary><div id="employeeHighlights" class="employee-highlights"></div></details><h3>Действия сотрудников</h3><div id="employeeChanges"></div></section>
 <section data-section="promotion">
 <div class="cards" id="promoOverviewKpi"></div>
 <section class="panel promo-panel"><div class="promo-heading"><h2>Сейчас в рекламе</h2><span id="promoLastSeen" class="update-badge"></span></div><div id="livePromo" class="promo-live-grid"></div></section>
