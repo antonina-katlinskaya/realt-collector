@@ -11,10 +11,10 @@ GRAPHQL_URL = "https://realt.by/bff/graphql"
 TOWN_UUID = "4cb07174-7b00-11eb-8943-0cc47adabd66"
 
 # Агентства, за которыми следим.
-# Сейчас только Этажи. Чтобы добавить Твою столицу — раскомментируй строку.
 AGENCIES = {
     "etazhi": "60fcf380-4e01-11f1-943e-89d1a667d5d7",
-    # "tvoya_stolitsa": "46e0245a-7b00-11eb-8943-0cc47adabd66",
+    "tvoya_stolitsa": "46e1035d-7b00-11eb-8943-0cc47adabd66",
+    "bir_bay": "c10dd786-d272-11eb-b00f-dee111c4eff3",
 }
 
 CATEGORY = 5          # квартиры
