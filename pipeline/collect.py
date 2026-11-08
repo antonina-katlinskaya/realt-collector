@@ -122,7 +122,26 @@ def run():
         completed = dt.datetime.now(dt.timezone.utc)
         latest, objects_count = "", 0
         raw_paths = []
-        photo_manifest = {}
+        photo_manifest, photo_dates = {}, {}
+        previous_photos = DATA / 'photo_manifest.json'
+        if previous_photos.exists():
+            previous = json.loads(previous_photos.read_text(encoding='utf-8'))
+            photo_manifest.update(previous.get('images', {}))
+            photo_dates.update(previous.get('dates') or dict.fromkeys(photo_manifest, previous['snapshot_at']))
+        if not previous_photos.exists() or not previous.get('legacy_indexed'):
+            for file in sorted((DATA / 'raw').glob('*.json*')):
+                if file.suffix not in ('.json', '.gz'):
+                    continue
+                opener = gzip.open if file.suffix == '.gz' else open
+                with opener(file, 'rt', encoding='utf-8') as stream:
+                    snapshot = json.load(stream)
+                stamp = snapshot.get('snapshot_at', '')
+                for obj in snapshot.get('minsk_mir_objects', []):
+                    key = str(obj.get('uuid') or '')
+                    urls = [url for url in obj.get('images') or [] if isinstance(url, str) and url.startswith('https://')]
+                    if key and urls and stamp > photo_dates.get(key, ''):
+                        photo_manifest[key] = urls[:5]
+                        photo_dates[key] = stamp
         all_source_ids = []
         known_developer_ids = set()
         if (DATA / 'developer_manifest.json').exists():
@@ -155,7 +174,10 @@ def run():
                     known_developer_ids.add(str(obj['uuid']))
                 images = obj.get('images') or []
                 image_urls = [value for value in images if isinstance(value,str) and value.startswith('https://')]
-                if image_urls: photo_manifest[str(obj['uuid'])] = image_urls[:5]
+                if image_urls:
+                    key = str(obj['uuid'])
+                    photo_manifest[key] = list(dict.fromkeys(image_urls + photo_manifest.get(key, [])))[:8]
+                    photo_dates[key] = raw['snapshot_at']
                 obj["observed_at"] = received.get(str(obj["uuid"]))
                 if not obj["observed_at"]:
                     raise RuntimeError("Missing actual observation time")
@@ -164,7 +186,7 @@ def run():
             latest = max(latest, raw["snapshot_at"])
             objects_count += len(objects)
             raw_paths.append("data/raw/" + file.name + ".gz")
-        atomic_json(staging / 'photo_manifest.json', {'snapshot_at': latest, 'images': photo_manifest})
+        atomic_json(staging / 'photo_manifest.json', {'snapshot_at': latest, 'images': photo_manifest, 'dates': photo_dates, 'legacy_indexed': True})
         atomic_json(staging / 'developer_manifest.json', {'snapshot_at': latest, 'rule_version': 2, 'ids': sorted(known_developer_ids), 'current_ids': sorted(current_developer_ids), 'current_total': objects_count})
         with (staging / "snapshots.csv").open(encoding="utf-8-sig", newline="") as f:
             rows = list(csv.DictReader(f))
