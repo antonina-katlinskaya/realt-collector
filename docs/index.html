@@ -54,7 +54,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
-<script src="dashboard.js?v=20261027-promotion-kufar-r3" defer></script>
+<script src="dashboard.js?v=20261108-employee-table" defer></script>
 
 <style>
 
@@ -83,6 +83,22 @@ main{max-width:1180px;padding:22px 24px;margin:auto}header{align-items:flex-star
 @media(max-width:450px){.filter-caption{flex-basis:100%;color:#7c8797}.employee-row .filter-caption{flex-basis:100%}.rooms-caption{margin-left:0}.filter-row{gap:7px}.employee-picker>summary{min-width:135px}.promo-panel{padding:12px}.promo-panel table{min-width:620px}header{flex-direction:column;gap:8px}.meta{text-align:left}.headerlinks{justify-content:flex-start}}
 
 </style>
+<style>
+main{max-width:1408px}
+[data-section="employees"]{padding:0;border:0;background:transparent}
+.employee-legend{font-size:14px;color:#414b55;margin:8px 0}
+.employee-swatch{display:inline-block;width:12px;height:12px;border:1px solid #7299bd;border-radius:3px;background:#e1effc;vertical-align:middle;margin-left:8px}
+#employeeTable .emp{border:1px solid var(--line);border-radius:12px;overflow:auto;background:#fcfcfb}
+#employeeTable table{width:100%;min-width:920px;font-size:15px;white-space:normal}
+#employeeTable th,#employeeTable td{padding:11px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+#employeeTable th:last-child,#employeeTable td:last-child{border-right:0}
+#employeeTable tbody tr:last-child>*{border-bottom:0}
+#employeeTable thead th{position:static;background:#f6f5f2;text-align:center;font-size:14px;vertical-align:bottom}
+#employeeTable tbody th{position:static;background:transparent;text-align:left;min-width:175px}
+#employeeTable button{padding:0;border:0;background:none;text-align:left;font:inherit}
+#employeeTable .num{text-align:right;font-variant-numeric:tabular-nums}
+#employeeTable .employee-best{background:#e1effc;font-weight:700}
+</style>
 </head>
 <body><main>
 <header><div><h1>Радар Realt</h1><div class="muted">Минск Мир · объявления и продвижение</div></div><div class="meta"><div id="freshness">Загружаем данные…</div><div class="headerlinks"><button id="refresh" title="Перечитать сохранённые снимки; новый сбор запускается по расписанию">Обновить данные</button></div></div></header>
@@ -110,7 +126,7 @@ main{max-width:1180px;padding:22px 24px;margin:auto}header{align-items:flex-star
 <div class="pagination"><span id="rowcount"></span><div><button id="prev" class="pagebtn">← Назад</button><button id="next" class="pagebtn">Далее →</button></div></div>
 <details class="adTableDetails"><summary>Подробная таблица</summary><button id="export">Скачать выбранные строки CSV</button><div class="tablewrap"><table><thead><tr><th>Агент</th><th>Объявление</th><th>Цена</th><th>Продвижение</th><th>Наблюдается с</th><th>Просмотры всего</th><th>Прирост за период</th><th></th></tr></thead><tbody id="listings"></tbody></table></div></details></section>
 <section data-section="leaders" class="panel" hidden><h2>Топ продвижение</h2><p class="muted">Рейтинг по приросту просмотров только в сопоставимых интервалах с платным статусом на обоих обходах. Это не доказательство, что все просмотры получены благодаря рекламе.</p><div id="promotedGallery" class="promo-layout"></div><details><summary>Подробная таблица рейтинга</summary><div id="leadersTable"></div></details></section>
-<section data-section="employees" class="panel" hidden><h2>Результаты сотрудников</h2><p class="muted">Сотрудники определяются по ID. По дате публикации отдельно показан наблюдаемый прирост по новым и ранее размещённым объявлениям; неизвестные даты не приравниваются к старым. Открытия телефона в Realt недоступны.</p><div id="employeeTable" style="overflow-x:auto"></div><details><summary>Карточки сотрудников</summary><div id="employeeHighlights" class="employee-highlights"></div></details><h3>Действия сотрудников</h3><div id="employeeChanges"></div></section>
+<section data-section="employees" class="panel" hidden><h2>Результаты сотрудников</h2><p class="employee-legend">🥇🥈🥉 — больше всего просмотров по объявлениям, размещённым в выбранном периоде. <span class="employee-swatch"></span> — лучшее значение в столбце.</p><p class="employee-legend">Просмотры — прирост по сопоставимым снимкам за выбранный период. Объявления без даты публикации не входят в блоки просмотров. «—» — нет данных. Realt не показывает открытия номера в публичных данных.</p><div id="employeeTable" style="overflow-x:auto"></div><details><summary>Карточки сотрудников</summary><div id="employeeHighlights" class="employee-highlights"></div></details><h3>Действия сотрудников</h3><div id="employeeChanges"></div></section>
 <section data-section="promotion">
 <div class="cards" id="promoOverviewKpi"></div>
 <section class="panel promo-panel"><div class="promo-heading"><h2>Сейчас в рекламе</h2><span id="promoLastSeen" class="update-badge"></span></div><div id="livePromo" class="promo-live-grid"></div></section>
