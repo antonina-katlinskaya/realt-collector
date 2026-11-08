@@ -1,6 +1,167 @@
 {
-  "snapshot_at": "2026-11-07T18:37:13Z",
+  "snapshot_at": "2026-11-08T04:37:10Z",
   "images": {
+    "94aa3d60-dafa-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/fbee9076-daf9-11f1-b6db-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/fc34926a-daf9-11f1-92b5-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/fce9e048-daf9-11f1-8268-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/fd713cd2-daf9-11f1-9f0b-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/fe1cc926-daf9-11f1-a1b5-a6cfe75afd90"
+    ],
+    "9ad04b90-daf9-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/04eaff12-daf9-11f1-b970-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/052baab2-daf9-11f1-bd11-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/05be9a7a-daf9-11f1-95a7-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/06292840-daf9-11f1-90bd-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/069a9c28-daf9-11f1-a6e2-b6dc8e4f3ce9"
+    ],
+    "c7a25d40-daf7-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/806fbd28-daf7-11f1-a062-9ec992c48380",
+      "https://cdn.realt.by/img/56/8664acb6-daf7-11f1-a183-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/92f75276-daf7-11f1-942a-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/93007e82-daf7-11f1-8809-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/8c992f62-daf7-11f1-842b-3a5ec57fc6ad"
+    ],
+    "ad8da560-daf5-11f1-b1cd-e7bafa737498": [
+      "https://cdn.realt.by/img/56/16dd87ac-daf5-11f1-ac49-0242ac120003",
+      "https://cdn.realt.by/img/56/17184676-daf5-11f1-9283-0242ac120003",
+      "https://cdn.realt.by/img/56/17ca93bc-daf5-11f1-89d0-0242ac120003",
+      "https://cdn.realt.by/img/56/18681092-daf5-11f1-8af8-0242ac120003",
+      "https://cdn.realt.by/img/56/18dd3a02-daf5-11f1-8ea7-0242ac120003"
+    ],
+    "a5a0d660-daf5-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/67e35244-daf5-11f1-8f26-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/67e211c2-daf5-11f1-8355-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/6ef6fd4c-daf5-11f1-b552-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/67ea58f0-daf5-11f1-a7b4-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/67d89552-daf5-11f1-8f7c-a6cfe75afd90"
+    ],
+    "edc7dd90-daf4-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/8c7e3872-daf4-11f1-9570-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/721a8efe-daf4-11f1-b626-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/919549fe-daf4-11f1-87e3-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/72c2b9bc-daf4-11f1-b8f0-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/720484a6-daf4-11f1-aab3-b6dc8e4f3ce9"
+    ],
+    "b52e6cb0-daf4-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/1db2eca8-daf4-11f1-8661-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/1e210580-daf4-11f1-84ac-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/1ec5dea2-daf4-11f1-9e1d-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/1f6df6b4-daf4-11f1-b225-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/1fd40148-daf4-11f1-a41e-b6dc8e4f3ce9"
+    ],
+    "bc7db8a0-daf3-11f1-83af-83f23cc7a39b": [
+      "https://cdn.realt.by/img/56/254f4f48-daf3-11f1-b4dc-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/25917134-daf3-11f1-b0cb-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/2629ca56-daf3-11f1-bffc-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/26809de0-daf3-11f1-880b-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/26ff09aa-daf3-11f1-b8ee-b6dc8e4f3ce9"
+    ],
+    "7e73ea70-daf3-11f1-b1cd-e7bafa737498": [
+      "https://cdn.realt.by/img/56/ff10cd2e-dae4-11f1-b81a-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/feffd668-dae4-11f1-a064-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/fed45a06-dae4-11f1-9478-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/feaa6cfa-dae4-11f1-938b-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/fec62418-dae4-11f1-9e85-3a5ec57fc6ad"
+    ],
+    "49d8f760-daf3-11f1-83af-83f23cc7a39b": [
+      "https://cdn.realt.by/img/56/453d9b34-daf3-11f1-b102-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/08bf15fc-dae4-11f1-bf04-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/0900de56-dae4-11f1-af76-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/0907a786-dae4-11f1-bd66-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/453d9ed6-daf3-11f1-9f24-a6cfe75afd90"
+    ],
+    "2c8a1130-daf3-11f1-b1cd-e7bafa737498": [
+      "https://cdn.realt.by/img/56/d7d6924e-dae3-11f1-b66d-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/d7d116e8-dae3-11f1-8089-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/d7e0711a-dae3-11f1-8756-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/d7eceba2-dae3-11f1-b1f4-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/d7f0ce98-dae3-11f1-b172-a6cfe75afd90"
+    ],
+    "14d5cca0-daf3-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/db08a09c-dae8-11f1-b4c2-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/db2f9dd2-dae8-11f1-9c63-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/db2bf4a2-dae8-11f1-a6f9-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/db28944c-dae8-11f1-b9c3-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/db2abd9e-dae8-11f1-9f01-a6cfe75afd90"
+    ],
+    "a0f0c330-daf2-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/0a59a176-daf2-11f1-b229-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/0aa1a1e2-daf2-11f1-8fc0-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/0b6c17ec-daf2-11f1-a581-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/0bed6aa4-daf2-11f1-94ea-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/0c61ef00-daf2-11f1-9e03-a6cfe75afd90"
+    ],
+    "a78b1700-daf1-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/116a1e10-daf1-11f1-9838-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/11a442de-daf1-11f1-957f-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/1245e0d0-daf1-11f1-955d-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/129afad4-daf1-11f1-b5bd-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/13233ec6-daf1-11f1-ad80-b6dc8e4f3ce9"
+    ],
+    "ac9fdc40-daf0-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/15f70e12-daf0-11f1-9f09-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/163742f2-daf0-11f1-a730-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/16e25e76-daf0-11f1-8b08-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/1776e050-daf0-11f1-ab74-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/17eec9c6-daf0-11f1-8eef-3a5ec57fc6ad"
+    ],
+    "b4210da0-daef-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/1d8e4718-daef-11f1-aad6-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/1dccbd86-daef-11f1-8267-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/1e69d3b4-daef-11f1-aa0a-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/1f04296e-daef-11f1-9610-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/1f80f778-daef-11f1-beb7-3a5ec57fc6ad"
+    ],
+    "4a290570-daee-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/b19b16b8-daed-11f1-be67-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/b1d9ab08-daed-11f1-9185-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/b27b3874-daed-11f1-a340-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/b2d8ffa4-daed-11f1-9ccb-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/b3154e50-daed-11f1-9907-a6cfe75afd90"
+    ],
+    "284dd5d0-daed-11f1-b1cd-e7bafa737498": [
+      "https://cdn.realt.by/img/56/8fe882cc-daec-11f1-95ad-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/905acd78-daec-11f1-8a42-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/91004cc6-daec-11f1-bca3-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/918ff20e-daec-11f1-be31-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/9255c59c-daec-11f1-86c7-a6cfe75afd90"
+    ],
+    "2600f510-daec-11f1-83af-83f23cc7a39b": [
+      "https://cdn.realt.by/img/56/c8a46fc8-daeb-11f1-9e5e-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/c8e87ed4-daeb-11f1-a32f-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/c9b966ca-daeb-11f1-9369-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/ca2d4306-daeb-11f1-9b73-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/cb04a83c-daeb-11f1-b2ef-a6cfe75afd90"
+    ],
+    "f6fc48c0-dae9-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/4ef2f76e-dae9-11f1-b1af-0242ac120003",
+      "https://cdn.realt.by/img/56/4f308ee4-dae9-11f1-af67-0242ac120003",
+      "https://cdn.realt.by/img/56/4fe26cfe-dae9-11f1-b12e-0242ac120003",
+      "https://cdn.realt.by/img/56/506cf0ea-dae9-11f1-838d-0242ac120003",
+      "https://cdn.realt.by/img/56/512e2aa8-dae9-11f1-8ec4-0242ac120003"
+    ],
+    "e8251c10-dae8-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/8ece8c1e-dae8-11f1-9c0f-9ec992c48380",
+      "https://cdn.realt.by/img/56/8f60ddb2-dae8-11f1-8296-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/90267b62-dae8-11f1-8596-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/90a86f78-dae8-11f1-a780-a6cfe75afd90",
+      "https://cdn.realt.by/img/56/91634f82-dae8-11f1-8ae5-a6cfe75afd90"
+    ],
+    "1e262ba0-dae5-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/c20213ca-dae4-11f1-9cbb-9ec992c48380",
+      "https://cdn.realt.by/img/56/c2923fa4-dae4-11f1-bdc9-9ec992c48380",
+      "https://cdn.realt.by/img/56/c35bb6a4-dae4-11f1-bdf7-9ec992c48380",
+      "https://cdn.realt.by/img/56/c3fa5142-dae4-11f1-8d0e-9ec992c48380",
+      "https://cdn.realt.by/img/56/c4a26e7c-dae4-11f1-a330-9ec992c48380"
+    ],
+    "40d05a20-dadd-11f1-bb59-d9c9b8bf73ab": [
+      "https://cdn.realt.by/img/56/9e347788-dadc-11f1-9e44-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/9e9194d6-dadc-11f1-ade2-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/9f428e8a-dadc-11f1-b8a9-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/9fdf814a-dadc-11f1-a3d6-b6dc8e4f3ce9",
+      "https://cdn.realt.by/img/56/a0ae937c-dadc-11f1-b124-b6dc8e4f3ce9"
+    ],
     "e0804a00-dad1-11f1-83af-83f23cc7a39b": [
       "https://cdn.realt.by/img/56/a9faa93a-dad1-11f1-813b-9ec992c48380",
       "https://cdn.realt.by/img/56/a9dd0362-dad1-11f1-b22f-9ec992c48380",
@@ -19,8 +180,8 @@
       "https://cdn.realt.by/img/56/f7bd1c46-dac9-11f1-aeb2-3a5ec57fc6ad",
       "https://cdn.realt.by/img/56/f88fefb8-dac9-11f1-9151-3a5ec57fc6ad",
       "https://cdn.realt.by/img/56/f92a0d00-dac9-11f1-b8e3-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/f98d0e82-dac9-11f1-b7b2-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/fa666f6a-dac9-11f1-a509-3a5ec57fc6ad"
+      "https://cdn.realt.by/img/56/fa666f6a-dac9-11f1-a509-3a5ec57fc6ad",
+      "https://cdn.realt.by/img/56/fb7cd61e-dac9-11f1-8431-3a5ec57fc6ad"
     ],
     "b9228ae0-da9f-11f1-bb59-d9c9b8bf73ab": [
       "https://cdn.realt.by/img/56/a4ac65c2-da9f-11f1-9204-a6cfe75afd90",
@@ -1148,66 +1309,11 @@
       "https://cdn.realt.by/img/56/c92935c2-d88f-11f1-99b1-0242ac120003",
       "https://cdn.realt.by/img/56/c9acc64e-d88f-11f1-b856-0242ac120003"
     ],
-    "2fdab510-d87d-11f1-a46c-87fe997ab043": [
-      "https://cdn.realt.by/img/56/1db7f65a-d87c-11f1-874b-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/0b03cede-d87d-11f1-98cc-0242ac120003",
-      "https://cdn.realt.by/img/56/236acc26-d87c-11f1-a187-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/238b0f86-d87c-11f1-a0a1-3a5ec57fc6ad"
-    ],
     "ca7e3890-d87c-11f1-a46c-87fe997ab043": [
       "https://cdn.realt.by/img/56/1db7f65a-d87c-11f1-874b-3a5ec57fc6ad",
       "https://cdn.realt.by/img/56/45661100-d87c-11f1-85d8-0242ac120003",
       "https://cdn.realt.by/img/56/236acc26-d87c-11f1-a187-3a5ec57fc6ad",
       "https://cdn.realt.by/img/56/238b0f86-d87c-11f1-a0a1-3a5ec57fc6ad"
-    ],
-    "3e24c450-d87b-11f1-a46c-87fe997ab043": [
-      "https://cdn.realt.by/img/56/3a3ebb70-d87b-11f1-89b7-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/a262feb0-d87a-11f1-8c29-0242ac120003",
-      "https://cdn.realt.by/img/56/201c3c1e-d87a-11f1-aed2-a6cfe75afd90",
-      "https://cdn.realt.by/img/56/2023feea-d87a-11f1-a5ea-a6cfe75afd90",
-      "https://cdn.realt.by/img/56/202521d0-d87a-11f1-9317-a6cfe75afd90"
-    ],
-    "7769f070-d879-11f1-afbe-b9db0c310dee": [
-      "https://cdn.realt.by/img/56/e1df6b3e-d878-11f1-9112-0242ac120003",
-      "https://cdn.realt.by/img/56/09218f34-d878-11f1-b656-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/13330516-d878-11f1-9569-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/13551796-d878-11f1-a019-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/137094f8-d878-11f1-bb71-3a5ec57fc6ad"
-    ],
-    "07816900-d879-11f1-afbe-b9db0c310dee": [
-      "https://cdn.realt.by/img/56/e1df6b3e-d878-11f1-9112-0242ac120003",
-      "https://cdn.realt.by/img/56/09218f34-d878-11f1-b656-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/169b4632-d878-11f1-9314-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/13330516-d878-11f1-9569-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/13551796-d878-11f1-a019-3a5ec57fc6ad"
-    ],
-    "c0192fe0-d877-11f1-afbe-b9db0c310dee": [
-      "https://cdn.realt.by/img/56/accf1e5e-d877-11f1-be88-0242ac120003",
-      "https://cdn.realt.by/img/56/d8b3e870-d876-11f1-96a5-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/dd952944-d876-11f1-99fa-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/dd9f7020-d876-11f1-8e0e-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/dda2c040-d876-11f1-8f4c-3a5ec57fc6ad"
-    ],
-    "0ba58220-d877-11f1-afbe-b9db0c310dee": [
-      "https://cdn.realt.by/img/56/d8b3e870-d876-11f1-96a5-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/d89a7a84-d876-11f1-a225-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/d898ce64-d876-11f1-a87e-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/d89c9d0a-d876-11f1-ba96-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/4f97855a-d877-11f1-95fe-a6cfe75afd90"
-    ],
-    "d499e030-d855-11f1-afbe-b9db0c310dee": [
-      "https://cdn.realt.by/img/56/bc55e23a-d855-11f1-9ed7-3a5ec57fc6ad",
-      "https://cdn.realt.by/img/56/144aa674-d856-11f1-a215-a6cfe75afd90",
-      "https://cdn.realt.by/img/56/6a333396-d854-11f1-bba8-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/6a3c7d20-d854-11f1-82b8-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/6a3d8134-d854-11f1-a99f-b6dc8e4f3ce9"
-    ],
-    "75e7c7a0-d855-11f1-a46c-87fe997ab043": [
-      "https://cdn.realt.by/img/56/4d4db7c8-d855-11f1-89be-9ec992c48380",
-      "https://cdn.realt.by/img/56/71e82118-d855-11f1-b786-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/6a333396-d854-11f1-bba8-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/6a3c7d20-d854-11f1-82b8-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/6a3d8134-d854-11f1-a99f-b6dc8e4f3ce9"
     ],
     "05cbd420-d855-11f1-afbe-b9db0c310dee": [
       "https://cdn.realt.by/img/56/faff14c6-d854-11f1-992a-b6dc8e4f3ce9",
@@ -1965,20 +2071,6 @@
       "https://cdn.realt.by/img/56/42c68780-d639-11f1-a318-a6cfe75afd90",
       "https://cdn.realt.by/img/56/558ac9bc-d639-11f1-8bbc-a6cfe75afd90"
     ],
-    "ca7b43d0-d636-11f1-afbe-b9db0c310dee": [
-      "https://cdn.realt.by/img/56/25e7e43c-d635-11f1-b5aa-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/c7a7d362-d636-11f1-8373-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/2fbbd4dc-d635-11f1-8d0b-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/2f939c56-d635-11f1-a566-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/2f9c7d6c-d635-11f1-bd42-b6dc8e4f3ce9"
-    ],
-    "60b5a0d0-d636-11f1-9f25-cd6b2db0521a": [
-      "https://cdn.realt.by/img/56/25e7e43c-d635-11f1-b5aa-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/5cbd6ec2-d636-11f1-b806-0242ac120003",
-      "https://cdn.realt.by/img/56/2fbbd4dc-d635-11f1-8d0b-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/2f939c56-d635-11f1-a566-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/2f9c7d6c-d635-11f1-bd42-b6dc8e4f3ce9"
-    ],
     "f08959a0-d635-11f1-afbe-b9db0c310dee": [
       "https://cdn.realt.by/img/56/25e7e43c-d635-11f1-b5aa-b6dc8e4f3ce9",
       "https://cdn.realt.by/img/56/c590fd70-d635-11f1-99a8-a6cfe75afd90",
@@ -2153,27 +2245,6 @@
       "https://cdn.realt.by/img/56/4023eb92-d5be-11f1-a26d-0242ac120003",
       "https://cdn.realt.by/img/56/9643bff2-d5be-11f1-9636-b6dc8e4f3ce9",
       "https://cdn.realt.by/img/56/65cef246-d5bf-11f1-91eb-9ec992c48380"
-    ],
-    "741bae70-d5c9-11f1-9f25-cd6b2db0521a": [
-      "https://cdn.realt.by/img/56/7f0b5cd2-d5c8-11f1-8ac3-0242ac120003",
-      "https://cdn.realt.by/img/56/8b247e4a-d5c8-11f1-b6e6-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/8b37f268-d5c8-11f1-9eab-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/70e071be-d5c9-11f1-8e89-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/8b11bec2-d5c8-11f1-adc9-b6dc8e4f3ce9"
-    ],
-    "401f9370-d5c9-11f1-a46c-87fe997ab043": [
-      "https://cdn.realt.by/img/56/7f0b5cd2-d5c8-11f1-8ac3-0242ac120003",
-      "https://cdn.realt.by/img/56/f94e85a0-d5c8-11f1-bb2c-0242ac120003",
-      "https://cdn.realt.by/img/56/8b247e4a-d5c8-11f1-b6e6-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/8b37f268-d5c8-11f1-9eab-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/8b11bec2-d5c8-11f1-adc9-b6dc8e4f3ce9"
-    ],
-    "cc40cb90-d5c8-11f1-a46c-87fe997ab043": [
-      "https://cdn.realt.by/img/56/7f0b5cd2-d5c8-11f1-8ac3-0242ac120003",
-      "https://cdn.realt.by/img/56/81ea8342-d5c8-11f1-afdf-0242ac120003",
-      "https://cdn.realt.by/img/56/8b247e4a-d5c8-11f1-b6e6-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/8b37f268-d5c8-11f1-9eab-b6dc8e4f3ce9",
-      "https://cdn.realt.by/img/56/8b11bec2-d5c8-11f1-adc9-b6dc8e4f3ce9"
     ],
     "1ee9c530-d5c0-11f1-9f25-cd6b2db0521a": [
       "https://cdn.realt.by/img/56/3fa4117e-d5be-11f1-b62a-0242ac120003",
@@ -3376,13 +3447,6 @@
       "https://cdn.realt.by/img/56/66803b88-d09b-11f1-8810-ae57f579f691",
       "https://cdn.realt.by/img/56/6681d52e-d09b-11f1-83c1-ae57f579f691"
     ],
-    "0bd04640-d061-11f1-881e-9d26b24b7a71": [
-      "https://cdn.realt.by/img/56/e0e77584-d060-11f1-b48f-bee08e9a86b1",
-      "https://cdn.realt.by/img/56/dcc250e6-d060-11f1-ab8c-bee08e9a86b1",
-      "https://cdn.realt.by/img/56/e693d28e-d060-11f1-9ec0-bee08e9a86b1",
-      "https://cdn.realt.by/img/56/e6b7f25e-d060-11f1-aadb-bee08e9a86b1",
-      "https://cdn.realt.by/img/56/e6846a24-d060-11f1-8ea3-bee08e9a86b1"
-    ],
     "f97edc60-d05e-11f1-ae7e-35bbd4f2b7bd": [
       "https://cdn.realt.by/img/56/efdbb4d0-d05e-11f1-8f5e-726af1395927",
       "https://cdn.realt.by/img/56/88f9db5c-d05e-11f1-b5c4-ae57f579f691",
@@ -3403,13 +3467,6 @@
       "https://cdn.realt.by/img/56/79816c72-d05d-11f1-a39a-0242ac120003",
       "https://cdn.realt.by/img/56/799bb6b8-d05d-11f1-b20a-0242ac120003",
       "https://cdn.realt.by/img/56/79b570a8-d05d-11f1-b598-0242ac120003"
-    ],
-    "9b8a63f0-d05d-11f1-881e-9d26b24b7a71": [
-      "https://cdn.realt.by/img/56/79a8ae86-d05d-11f1-8159-0242ac120003",
-      "https://cdn.realt.by/img/56/6ecfbc98-d05d-11f1-b5ac-0242ac120003",
-      "https://cdn.realt.by/img/56/79816c72-d05d-11f1-a39a-0242ac120003",
-      "https://cdn.realt.by/img/56/797a2fc0-d05d-11f1-80da-0242ac120003",
-      "https://cdn.realt.by/img/56/799bb6b8-d05d-11f1-b20a-0242ac120003"
     ],
     "5e744d00-cf8b-11f1-b56d-fddc6cf67616": [
       "https://cdn.realt.by/img/56/443cf5a4-cf8b-11f1-9d3a-7e63418626dd",
@@ -3612,6 +3669,13 @@
       "https://cdn.realt.by/img/56/d1113336-cde3-11f1-8c73-9e558fec14fd",
       "https://cdn.realt.by/img/56/d11b3818-cde3-11f1-86db-9e558fec14fd",
       "https://cdn.realt.by/img/56/d12057ee-cde3-11f1-9685-9e558fec14fd"
+    ],
+    "5275c310-cdda-11f1-8601-c18b4014f71a": [
+      "https://cdn.realt.by/img/56/406d6b3c-cdda-11f1-9f21-e664e23f0eaa",
+      "https://cdn.realt.by/img/56/3f9022fe-cdda-11f1-9bdf-e664e23f0eaa",
+      "https://cdn.realt.by/img/56/4017bade-cdda-11f1-84a4-e664e23f0eaa",
+      "https://cdn.realt.by/img/56/3eb22a8a-cdda-11f1-a3a3-e664e23f0eaa",
+      "https://cdn.realt.by/img/56/3ebaa0de-cdda-11f1-b249-e664e23f0eaa"
     ],
     "9b4f4b70-cd57-11f1-8601-c18b4014f71a": [
       "https://cdn.realt.by/img/56/6b8c2864-cd56-11f1-8b12-0242ac120002",
@@ -4723,6 +4787,13 @@
       "https://cdn.realt.by/img/56/4638abac-c47b-11f1-9323-a2773bac97bd",
       "https://cdn.realt.by/img/56/4a86e908-c47b-11f1-b50b-a2773bac97bd",
       "https://cdn.realt.by/img/56/4cbc2a1c-c47b-11f1-bbc2-a2773bac97bd"
+    ],
+    "6a37a850-c47b-11f1-8601-c18b4014f71a": [
+      "https://cdn.realt.by/img/56/5ba8c09a-c47a-11f1-8b3c-1609820e29bc",
+      "https://cdn.realt.by/img/56/5bb2f038-c47a-11f1-bd0b-1609820e29bc",
+      "https://cdn.realt.by/img/56/5ba518be-c47a-11f1-ba48-1609820e29bc",
+      "https://cdn.realt.by/img/56/5bbf1a3e-c47a-11f1-b4d7-1609820e29bc",
+      "https://cdn.realt.by/img/56/5bc6d6ac-c47a-11f1-beef-1609820e29bc"
     ],
     "10ebdaf0-c47b-11f1-be3e-159bbaa58dfa": [
       "https://cdn.realt.by/img/56/eb934356-c47a-11f1-ad3e-0242ac120002",
