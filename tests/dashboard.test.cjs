@@ -119,3 +119,28 @@ test('employee transfer does not credit the transfer interval as promotion perfo
  const summary=promotionSummary(idx,periodData(idx,'2026-10-25','2026-10-25'));
  assert.equal(summary.events.length,0);assert.equal(summary.agents.get('second').measured,0);
 });
+
+test('automatic refresh ignores incomplete or stale snapshots',()=>{
+ const {snapshotNeedsReload}=require('../docs/dashboard.js');
+ const old='2026-11-08T18:07:00Z',next='2026-11-08T18:37:00Z';
+ assert.equal(snapshotNeedsReload({complete:true,snapshot_at:next},old),true);
+ assert.equal(snapshotNeedsReload({complete:true,snapshot_at:old},old),false);
+ assert.equal(snapshotNeedsReload({complete:true,snapshot_at:old},next),false);
+ assert.equal(snapshotNeedsReload({complete:false,snapshot_at:next},old),false);
+ assert.equal(snapshotNeedsReload({complete:true,snapshot_at:'bad date'},old),false);
+ assert.equal(snapshotNeedsReload({complete:true,snapshot_at:next},undefined),true);
+});
+
+test('dashboard checks for new data after returning to Opera and avoids full CSV polling',()=>{
+ const js=require('node:fs').readFileSync(require('node:path').join(__dirname,'../docs/dashboard.js'),'utf8');
+ const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'../docs/index.html'),'utf8');
+ assert.match(js,/setInterval\(checkForUpdates,60000\)/);
+ assert.match(js,/addEventListener\('visibilitychange'/);
+ assert.match(js,/addEventListener\('focus',checkForUpdates\)/);
+ assert.match(js,/addEventListener\('pageshow'/);
+ assert.match(js,/collection_state\.json\?refresh=/);
+ assert.doesNotMatch(js,/setInterval\(\(\)=>\{if\(!document\.hidden&&!\$\('refresh'\)\.disabled\)load\(\);\},300000\)/);
+ assert.match(js,/quickPeriod='7'/);
+ assert.match(html,/<button data-days="7" class="active">7 дней<\/button>/);
+ assert.match(html,/dashboard\.js\?v=20261109-visible-refresh-v1/);
+});

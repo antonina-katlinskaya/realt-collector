@@ -27,6 +27,8 @@ const {parseCSV}=require('../docs/dashboard.js');
   return route.abort();
  });
  await page.goto('https://antonina-katlinskaya.github.io/realt-collector/',{waitUntil:'domcontentloaded'});
+ // The dashboard starts on Employees; the promotion fixtures belong to the Promotion tab.
+ await page.locator('[data-view="promotion"]').click();
  await page.waitForFunction(()=>document.querySelector('#promoOverviewKpi')?.children.length);
  const summary=page.locator('#employeeSummary'),open=()=>page.locator('#employeeDropdown').evaluate(e=>e.open);
  assert.equal(await page.locator('#multiAgents').getByText('Елена Довгун',{exact:true}).count(),1);
@@ -41,7 +43,7 @@ const {parseCSV}=require('../docs/dashboard.js');
  await page.locator('[data-rooms="4+"]').click();assert.equal(await page.locator('#rooms').inputValue(),'4+');await page.locator('[data-rooms="4+"]').click();assert.equal(await page.locator('#rooms').inputValue(),'');
  assert.equal(await page.locator('.promo-agent').count(),3);assert.equal(await page.locator('.promo-place').count(),3);
  const colors=await page.locator('[data-days="7"]').evaluate(e=>({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color}));
- assert.deepEqual(colors,{background:'rgb(31, 95, 74)',color:'rgb(255, 255, 255)'});
+ assert.deepEqual(colors,{background:'rgb(35, 78, 121)',color:'rgb(255, 255, 255)'});
  const first=page.locator('#promoEmployeeChips button').nth(1);await first.click();const name=await first.innerText();
  assert.ok((await page.locator('#promoPeriods tbody tr td:first-child').allTextContents()).every(n=>n===name));
  await page.locator('#promoEmployeeChips button').first().click();

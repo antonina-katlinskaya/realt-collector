@@ -122,7 +122,12 @@ function collectionFreshness(last,now=Date.now()){
  const due=slots.filter(t=>t+grace<=now),expected=due.length?Math.max(...due):midnight-86400000+18*3600000+10*60000;
  return {expected,stale:!Number.isFinite(Date.parse(last))||Date.parse(last)<expected};
 }
-if(typeof module!=='undefined')module.exports={parseCSV,buildIndex,intervals,statusStart,day,weekday,changesBetween,periodData,promotionPeriods,promotionSummary,collectionFreshness};
+function snapshotNeedsReload(state,loadedSnapshot) {
+ if(!state||state.complete!==true||typeof state.snapshot_at!=='string')return false;
+ const next=Date.parse(state.snapshot_at),last=Date.parse(loadedSnapshot||'');
+ return Number.isFinite(next)&&(!Number.isFinite(last)||next>last);
+}
+if(typeof module!=='undefined')module.exports={parseCSV,buildIndex,intervals,statusStart,day,weekday,changesBetween,periodData,promotionPeriods,promotionSummary,collectionFreshness,snapshotNeedsReload};
 if(typeof document!=='undefined'){
 const ROOT='https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/';
 const $=id=>document.getElementById(id);
@@ -166,9 +171,13 @@ async function restoreArchiveRange(){
  rows=baseRows.concat(...archiveRows.values());index=buildIndex(rows.filter(r=>developerIds.has(r.uuid)));
  if(seq===archiveRequestSeq){populateUnified(new Map([...index.histories.values()].filter(a=>a.length).map(a=>[a.at(-1).userUuid,a.at(-1)])));render();if(failures.length)$('status').textContent='Часть архива не загрузилась: '+failures.join('; ');}
 }
+let autoCheckBusy=false,lastAutoCheckStarted=0,lastAutoCheckSucceeded=0,lastAutoCheckError='';
 function updateFreshness(){
   const last=index?.times.at(-1);if(!last)return;
-  const state=collectionFreshness(last);$('freshness').textContent='Последний снимок: '+date(last);
+  const checked=lastAutoCheckError?' · автопроверка недоступна':lastAutoCheckSucceeded
+   ?' · проверено '+new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Minsk',hour:'2-digit',minute:'2-digit'}).format(lastAutoCheckSucceeded):'';
+  const state=collectionFreshness(last);$('freshness').textContent='Последний снимок: '+date(last)+checked;
+  $('freshness').title=lastAutoCheckError||'Автоматическая проверка доступности новых снимков';
   const warning=$('freshnessWarning');warning.hidden=!state.stale;
   warning.textContent=state.stale?'Данные не обновились по расписанию. Последний снимок: '+date(last)+'. Ожидался сбор от '+date(state.expected)+'. Показаны сохранённые данные.':'';
 }
@@ -297,7 +306,7 @@ function closeDetail(){$('drawer').hidden=true;detailSeq++;lastFocused?.focus();
 for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){recentDays.clear();linkedDays.clear();quickPeriod='custom';applyQuickPeriod();}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;if(id==='from'||id==='to')restoreArchiveRange();else render();});let searchRenderTimer=null;
 $('search').addEventListener('input',()=>{page=0;clearTimeout(searchRenderTimer);searchRenderTimer=setTimeout(()=>render(),180);});
 const recentOffsets={'1':0,yesterday:1,dayBefore:2};
-let recentDays=new Set(),quickPeriod='1';
+let recentDays=new Set(),quickPeriod='7';
 const linkedParams=new URLSearchParams(location.search);
 const employeeLink=linkedParams.get('employee');
 let linkedDays=new Set();
@@ -605,8 +614,32 @@ if(employeeLink){
  activateView('employees');
  load();
 }
+// Poll the tiny committed checkpoint, not the full historical CSV on every tick.
+// Opera may pause background tabs: catch up immediately when a tab becomes visible.
+async function checkForUpdates(){
+ if(document.hidden||autoCheckBusy||$('refresh').disabled)return;
+ const now=Date.now();
+ if(now-lastAutoCheckStarted<15000)return; // deduplicate focus/pageshow/visibility events
+ lastAutoCheckStarted=now;autoCheckBusy=true;
+ try{
+  const response=await fetch(ROOT+'collection_state.json?refresh='+now,{cache:'no-store'});
+  if(!response.ok)throw Error('Проверка снимка: HTTP '+response.status);
+  const state=await response.json();
+  if(state.complete!==true)throw Error('Последний снимок ещё не завершён');
+  if(snapshotNeedsReload(state,index?.times.at(-1))){
+    await load();
+    if(snapshotNeedsReload(state,index?.times.at(-1)))throw Error('Новый снимок опубликован, но страница не смогла его загрузить');
+  }
+  lastAutoCheckSucceeded=Date.now();lastAutoCheckError='';
+ }catch(error){
+  lastAutoCheckError='Ошибка автоматической проверки: '+(error?.message||String(error));
+ }finally{autoCheckBusy=false;updateFreshness();}
+}
 setInterval(updateFreshness,60000);
-setInterval(()=>{if(!document.hidden&&!$('refresh').disabled)load();},300000);
+setInterval(checkForUpdates,60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdates();});
+window.addEventListener('focus',checkForUpdates);
+window.addEventListener('pageshow',()=>{if(!document.hidden)checkForUpdates();});
 }
 
 
