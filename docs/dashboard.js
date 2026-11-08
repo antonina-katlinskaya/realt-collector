@@ -248,7 +248,7 @@ function kufarStyleCard(r,primary,subline,secondary){
  return `<article class="acard" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
   <div class="at">${esc(r.title||r.address||'Объявление')}</div>
   <div class="am">${esc(r.address||'Адрес не указан')}</div>
-  <div class="aw"><span class="card-agent-name">${esc(agentName(r))}</span> · ${esc(r.rooms||'?')}-к. · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
+  <div class="aw"><span class="card-agent-name">${esc(agentName(r))}</span> · ${esc(r.rooms||'?')}K · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
   <div class="ad8">${secondary||''}${p.length&&photoDates[r.uuid]&&photoDates[r.uuid]!==photoDate?' · Фото из снимка '+date(photoDates[r.uuid]):''}</div>
   <div class="amet"><span><b>${primary}</b></span><span>${subline||''}</span></div>
  </div></article>`;
