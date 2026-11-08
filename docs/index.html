@@ -54,7 +54,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
-<script src="dashboard.js?v=20261108-employee-table" defer></script>
+<script src="dashboard.js?v=20261108-period-filters" defer></script>
 
 <style>
 
@@ -105,7 +105,7 @@ main{max-width:1408px}
 <div class="notice error" id="freshnessWarning" role="status" aria-live="polite" hidden></div>
 <details class="filterbox" id="filterBox" open>
 <summary><strong>Фильтры</strong><span id="filtersSummaryPeriod">7 дней</span></summary>
-<div class="filter-row"><span class="filter-caption">Период</span><div id="quick" class="quick"><button data-days="1">Сегодня</button><button data-days="yesterday">Вчера</button><button data-days="7" class="active">7 дней</button><button data-days="30">30 дней</button><button data-days="90">90 дней</button><button data-days="all">Всё время</button><button data-days="custom">Свой период</button></div></div>
+<div class="filter-row"><span class="filter-caption">Период</span><div id="quick" class="quick"><button data-days="1">Сегодня</button><button data-days="yesterday">Вчера</button><button data-days="dayBefore">Позавчера</button><button data-days="7" class="active">7 дней</button><button data-days="14">14 дней</button><button data-days="30">30 дней</button><button data-days="90">90 дней</button><button data-days="custom">Свой период</button></div></div>
 <div id="customDates" class="filter-row" hidden><span class="filter-caption">Даты</span><label>С даты<input type="date" id="from"></label><label>По дату<input type="date" id="to"></label></div>
 <div class="filter-row"><span class="filter-caption">Дни недели</span><div class="daychips" id="weekdays"><label><input type="checkbox" value="0"><span>Пн</span></label><label><input type="checkbox" value="1"><span>Вт</span></label><label><input type="checkbox" value="2"><span>Ср</span></label><label><input type="checkbox" value="3"><span>Чт</span></label><label><input type="checkbox" value="4"><span>Пт</span></label><label><input type="checkbox" value="5"><span>Сб</span></label><label><input type="checkbox" value="6"><span>Вс</span></label></div></div>
 <div class="filter-row"><span class="filter-caption">Компания</span><div id="companyChips" class="filter-chips"></div></div>
