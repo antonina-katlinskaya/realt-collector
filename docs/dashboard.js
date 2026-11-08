@@ -137,6 +137,16 @@ function agentName(r){const email=(r.contactEmail||'').split('@')[0];return know
 let index,rows=[],baseRows=[],seen=null,seenPromise=null,selectedTab='published',page=0,currentModel=null,loadSeq=0,developerIds=new Set();
 const ARCHIVE_START='2026-10-05',archiveRows=new Map(),archiveMissing=new Set();let archiveRequestSeq=0;
 let preciseBounds=null,activeView='promotion',hiddenAgents=new Set(),chosenInterval=null,photos=new Map(),photoLoaded=false,photoDate=null;
+const retainedSnapshots={"2026-11-06":["5d8f4c835793c61b37fd3142ccb9516ddd2640da","f8a4c279c6a7c950e240c5aea7fb14fb701bff0c","42aff4e321dd9a2b88fd20cdb31fc449aa86626c","9d35856ae3475e3a4889d634623d8f7aac766b44","4819156ca0a6a4e4439b44eaefc85a105307d353","d867e6f937bab651a8f56ea65dccd7ccea542684","15e862c2ee58440f79e27c8f739485e1739bf4ee"],"2026-11-07":["02a88a596243e58a726ddb8132a03697ac6aaeec","4f753467283d34f9a22745498c064756240d3dbb","4ebede65c02f0d12a04b81537fc45032a20e88f8","7dece2d4c6796105bdcd001643e7922b5b3be867","21159eb4d0355d5c7b476b3c8116c9c97b5acf09","40ab4a01806412f7ac41908951443a673248dc91","0d87bfdeb587f7dfd6ca7f3b81e0437ef54db7c7","f81017376946ed1392dc651ea9c33bc273a9ae74"]};
+async function readRetainedDay(d){
+ const rows=[];
+ for(const ref of retainedSnapshots[d]){
+   const response=await fetch(ROOT.replace('/main/', '/'+ref+'/')+'snapshots.csv');
+   if(!response.ok)throw Error('Сохранённый снимок: HTTP '+response.status);
+   rows.push(...parseCSV(await response.text()).filter(r=>day(r.snapshot_at)===d));
+ }
+ return rows;
+}
 async function restoreArchiveRange(){
  if(!index)return;
  const seq=++archiveRequestSeq,from=$('from').value,to=$('to').value,last=day(index.times.at(-1));
@@ -147,7 +157,7 @@ async function restoreArchiveRange(){
  const failures=[];let next=0;
  async function worker(){while(next<dates.length){const d=dates[next++];try{
  const response=await fetch(ROOT+'snapshots/'+d+'.csv.gz',{cache:'no-cache'});
- if(response.status===404){archiveMissing.add(d);continue;}if(!response.ok)throw Error('HTTP '+response.status);
+ if(response.status===404){if(retainedSnapshots[d])archiveRows.set(d,await readRetainedDay(d));else archiveMissing.add(d);continue;}if(!response.ok)throw Error('HTTP '+response.status);
  if(typeof DecompressionStream==='undefined')throw Error('Нужен браузер с поддержкой gzip');
  const content=await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).text();
  archiveRows.set(d,parseCSV(content));
