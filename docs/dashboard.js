@@ -571,7 +571,7 @@ function updateEmployeeSummary(){
 }
 function renderCompanyChips(){
  const company=$('company'),selected=company.value;
- company.innerHTML='<option value="">Все</option><option value="etazhi">Этажи</option><option value="bir_bay">Бирбай</option><option value="tvoya_stolitsa">Твоя столица</option>';
+ company.innerHTML='<option value="">Все</option><option value="etazhi">Этажи</option><option value="bir_bay">Бир Бай</option><option value="tvoya_stolitsa">Твоя столица</option>';
  company.value=selected;
  $('companyChips').innerHTML=[...$('company').options].map(o=>`<button data-company="${esc(o.value)}" class="${o.selected?'active':''}">${esc(o.value?(/ЭТАЖИ/i.test(o.textContent)?'Этажи':o.textContent):'Все')}</button>`).join('');
 }
