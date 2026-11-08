@@ -9,10 +9,18 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from zipfile import ZipFile
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from pipeline.archive import REPO, Releases, sha, verify_packet
 from pipeline.storage import rotate
+
+
+class AssetRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is not None:
+            redirected.remove_header("Authorization")
+        return redirected
 
 
 def read_csv(data):
@@ -46,7 +54,7 @@ def main():
                 "User-Agent": "realt-dashboard-restore",
             })
             try:
-                with urlopen(request, timeout=30) as response:
+                with build_opener(AssetRedirect()).open(request, timeout=30) as response:
                     packet = response.read()
                 if sha(packet) != entry["sha256"]:
                     packet = releases.read(entry["url"])
