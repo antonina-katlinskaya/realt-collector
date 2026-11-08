@@ -181,7 +181,7 @@ function createMatcher(){
  const lo=number($('areaMin').value),hi=number($('areaMax').value),search=$('search').value.toLowerCase(),promo=$('promo').value;
  return (r,t=r.snapshot_at,ignorePromo=false)=>{
   const area=number(r.areaTotal);
-  if(agent&&r.userUuid!==agent||multi.size&&!multi.has(r.userUuid))return false;
+  if(employeeLink&&r.userUuid!==employeeLink||agent&&r.userUuid!==agent||multi.size&&!multi.has(r.userUuid))return false;
   if(!selectedDate(t))return false;
   if(quarter&&(r.quarter||'(не определён)')!==quarter||company&&r.agencyName!==company||rooms&&(rooms==='4+'?Number(r.rooms)<4:r.rooms!==rooms)||house&&r.address!==house)return false;
   if(lo!==null&&(area===null||area<lo)||hi!==null&&(area===null||area>hi))return false;
@@ -210,7 +210,7 @@ function svgBars(groups){
     if(groups.length<16||i%Math.ceil(groups.length/12)===0)s+=`<text x="${x+step*.3}" y="${bottom+20}" text-anchor="middle" font-size="10" fill="#62758a">${esc(g.label)}</text>`;
   });return s+'</svg>';
 }
-function render(){if(!index)return;$('status').hidden=activeView==='promotion';updateEmployeeSummary();const m=model();currentModel=m;
+function render(){if(!index)return;$('status').hidden=activeView==='promotion';updateEmployeeSummary();const m=model();currentModel=m;if(employeeLink){const employee=m.observed[0]||index.histories.values().next().value?.find(r=>r.userUuid===employeeLink);$('employeeAdsTitle').textContent=(employee?agentName(employee)+' · ':'')+m.from+' — '+m.to;}
   if(m.from>m.to){$('status').textContent='Дата начала должна быть раньше даты окончания.';return;}
   const comparable=m.events.length>0,delta=m.events.reduce((s,e)=>s+e.delta,0),advertised=m.current.filter(paid).length;
   const activations=m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus'&&![2,3,4].includes(number(x.old))&&[2,3,4].includes(number(x.new)))).length;
@@ -244,7 +244,22 @@ function kufarStyleCard(r,primary,subline,secondary){
   <div class="amet"><span><b>${primary}</b></span><span>${subline||''}</span></div>
  </div></article>`;
 }
-function renderTable(m){const size=40;page=Math.min(page,Math.max(0,Math.ceil(m.listing.length/size)-1));const part=m.listing.slice(page*size,(page+1)*size);
+function renderTable(m){
+ if(employeeLink){
+   const groups=[[],[],[]];
+   const observed=m.observed.slice().sort((a,b)=>(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0));
+   for(const r of observed){
+     if(!r.createdAt||!Number.isFinite(Date.parse(r.createdAt))){groups[2].push(r);continue;}
+     const published=day(r.createdAt);
+     if(published<m.from)groups[1].push(r);
+     else if(published<=m.to&&m.selectDate(r.createdAt))groups[0].push(r);
+   }
+   $('publishedCount').textContent=' · '+fmt(groups.reduce((n,g)=>n+g.length,0));
+   const headings=['Объявления, размещённые в выбранном периоде','Объявления, размещённые до выбранного периода','Объявления без даты публикации'];
+   $('employeeAds').innerHTML=groups.map((group,i)=>i===2&&!group.length?'':`<section><h3>${headings[i]} · ${fmt(group.length)}</h3><div class="cgrid">${group.map(r=>kufarStyleCard(r,fmt(m.growth.get(r.uuid))+' просм. за период','',i===2?'Дата размещения неизвестна':'Размещено '+date(r.createdAt))).join('')||empty('Нет объявлений в этом блоке')}</div></section>`).join('');
+   return;
+ }
+ const size=40;page=Math.min(page,Math.max(0,Math.ceil(m.listing.length/size)-1));const part=m.listing.slice(page*size,(page+1)*size);
   $('listings').innerHTML=part.map(r=>{const st=statusStart(index,r),dv=m.growth.get(r.uuid);return `<tr><td>${esc(agentName(r))}<br><small>${esc(r.contactPhone)}</small></td><td class="title">${photos.has(r.uuid)?`<img loading="lazy" class="listing-thumb" src="${esc(photos.get(r.uuid)[0])}" alt="Фото объявления ${esc(r.code)}">`:''}<a href="https://realt.by/sale-flats/object/${encodeURIComponent(r.code)}/" target="_blank" rel="noopener">${esc(r.address||r.title)} ↗</a><br><small>${esc(r.code)} · ${esc(r.areaTotal)} м² · ${esc(r.storey)}/${esc(r.storeys)} эт. · ${esc(r.quarter||'дом не распознан')}</small>${r.goneAt?'<br><small>Отсутствует с '+date(r.goneAt)+'</small>':''}</td><td>${price(r)}</td><td><span class="badge ${paid(r)?'promo':''}">${esc(label(r))}</span></td><td>${date(st.time)}<br><small>${st.open?'Начало неизвестно':'Смена замечена между обходами'}</small></td><td>${fmt(number(r.views))}</td><td>${fmt(dv)}</td><td><button data-detail="${esc(r.uuid)}">История</button></td></tr>`;}).join('')||'<tr><td colspan="8" class="empty">Нет объявлений по выбранным фильтрам</td></tr>';
   $('adCards').innerHTML=part.map(r=>{
    const dv=m.growth.get(r.uuid);
@@ -271,10 +286,19 @@ async function showDetail(id){const token=++detailSeq,h=index.histories.get(id)|
   try{if(!seenPromise)seenPromise=fetch(ROOT+'listings_seen.json?refresh='+Date.now(),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json();});seen=await seenPromise;if(token!==detailSeq||$('drawer').hidden)return;const hist=seen[id]?.history_views||{};$('historyraw').innerHTML=Object.keys(hist).length?'<table><thead><tr><th>Опорная дата</th><th>Значение API</th></tr></thead><tbody>'+Object.entries(hist).sort().map(([d,v])=>`<tr><td>${esc(d)}</td><td>${fmt(v)}</td></tr>`).join('')+'</tbody></table>':'Исторические значения отсутствуют';}catch(e){seenPromise=null;if(token===detailSeq)$('historyraw').textContent='История пока недоступна: '+e.message;}
 }
 function closeDetail(){$('drawer').hidden=true;detailSeq++;lastFocused?.focus();}
-for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){recentDays.clear();quickPeriod='custom';applyQuickPeriod();}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;if(id==='from'||id==='to')restoreArchiveRange();else render();});let searchRenderTimer=null;
+for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){recentDays.clear();linkedDays.clear();quickPeriod='custom';applyQuickPeriod();}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;if(id==='from'||id==='to')restoreArchiveRange();else render();});let searchRenderTimer=null;
 $('search').addEventListener('input',()=>{page=0;clearTimeout(searchRenderTimer);searchRenderTimer=setTimeout(()=>render(),180);});
 const recentOffsets={'1':0,yesterday:1,dayBefore:2};
 let recentDays=new Set(),quickPeriod='7';
+const linkedParams=new URLSearchParams(location.search);
+const employeeLink=linkedParams.get('employee');
+let linkedDays=new Set();
+function employeeAdsUrl(id,m){
+ const params=new URLSearchParams({employee:id,from:m.from,to:m.to});
+ for(const key of recentDays)params.append('date',shiftedDay(recentOffsets[key]));
+ for(const weekday of checks('weekdays'))params.append('weekday',weekday);
+ return location.pathname+'?'+params;
+}
 function shiftedDay(offset){return new Date(Date.parse(day(new Date())+'T12:00:00Z')-offset*86400000).toISOString().slice(0,10);}
 function applyQuickPeriod(){
  const buttons=[...$('quick').querySelectorAll('[data-days]')];
@@ -291,13 +315,14 @@ function applyQuickPeriod(){
  }
 }
 function selectedDates(){
- const dates=new Set([...recentDays].map(key=>shiftedDay(recentOffsets[key])));
+ const dates=linkedDays.size?linkedDays:new Set([...recentDays].map(key=>shiftedDay(recentOffsets[key])));
  const weekdays=checks('weekdays');
  return t=>(!dates.size||dates.has(day(t)))&&(!weekdays.size||weekdays.has(String(weekday(t))));
 }
 $('quick').addEventListener('click',e=>{
  const b=e.target.closest('[data-days]');if(!b||!index)return;
  const key=b.dataset.days;
+ linkedDays.clear();
  if(Object.hasOwn(recentOffsets,key)){
    if(recentDays.has(key)&&recentDays.size>1)recentDays.delete(key);
    else recentDays.add(key);
@@ -349,8 +374,8 @@ function renderUnified(m){
    const measured=!key.startsWith('delta')||m.events.length>0;
    return `<td class="num${measured&&n>0&&n===best[index]?' employee-best':''}">${measured?fmt(n):'—'}</td>`;
  };
- $('employeeTable').innerHTML='<div class="tbl-wrap emp"><table class="kufar-employee-table"><thead><tr class="grp"><th rowspan="2" scope="col">Сотрудник</th><th rowspan="2" scope="col">Объявлений сейчас</th><th colspan="3" scope="colgroup">Размещены в выбранном периоде</th><th colspan="2" scope="colgroup">Размещены до выбранного периода</th><th colspan="2" scope="colgroup">Все объявления</th></tr><tr><th scope="col">Сколько размещено</th><th scope="col">Просмотры</th><th scope="col">Открыли номер</th><th scope="col">Просмотры</th><th scope="col">Открыли номер</th><th scope="col">В рекламе сейчас</th><th scope="col">Изменений</th></tr></thead><tbody>'+
- rankedAgents.map((a,i)=>`<tr><th scope="row"><button data-select-agent="${esc(a.row.userUuid)}">${a.deltaNew>0&&medals[i]?`<strong>${medals[i]} ${esc(agentName(a.row))}</strong>`:esc(agentName(a.row))}</button></th>${cell(a,'current',0)}${cell(a,'published',1)}${cell(a,'deltaNew',2)}<td class="num muted">—</td>${cell(a,'deltaOld',3)}<td class="num muted">—</td>${cell(a,'paid',4)}${cell(a,'changes',5)}</tr>`).join('')+'</tbody></table></div>';
+ $('employeeTable').innerHTML='<div class="tbl-wrap emp"><table class="kufar-employee-table"><thead><tr class="grp"><th rowspan="2" scope="col">Сотрудник</th><th rowspan="2" scope="col">Объявлений сейчас</th><th colspan="2" scope="colgroup">Объявления, размещённые в выбранном периоде</th><th scope="col">Объявления, размещённые до выбранного периода</th><th colspan="2" scope="colgroup">Все объявления</th></tr><tr><th scope="col">Сколько размещено</th><th scope="col">Просмотры</th><th scope="col">Просмотры</th><th scope="col">В рекламе сейчас</th><th scope="col">Изменений</th></tr></thead><tbody>'+
+ rankedAgents.map((a,i)=>`<tr class="employee-row-link"><th scope="row"><a target="_blank" rel="noopener" href="${esc(employeeAdsUrl(a.row.userUuid,m))}">${a.deltaNew>0&&medals[i]?`<strong>${medals[i]} ${esc(agentName(a.row))}</strong>`:esc(agentName(a.row))}</a></th>${cell(a,'current',0)}${cell(a,'published',1)}${cell(a,'deltaNew',2)}${cell(a,'deltaOld',3)}${cell(a,'paid',4)}${cell(a,'changes',5)}</tr>`).join('')+'</tbody></table></div>';
 
  }
  if(activeView==='promotion')renderPromotions(m);
@@ -553,7 +578,23 @@ $('roomChips').onclick=e=>{const b=e.target.closest('[data-rooms]');if(!b)return
 $('promoEmployeeChips').onclick=e=>{const b=e.target.closest('[data-promo-agent]');if(!b)return;promoEmployee=b.dataset.promoAgent;if(promoSummary)renderPromoAds(promoSummary);};
 $('promoChartLegend').onclick=e=>{const b=e.target.closest('[data-promo-line]');if(!b)return;const id=b.dataset.promoLine;if(promoHiddenLines.has(id))promoHiddenLines.delete(id);else promoHiddenLines.add(id);if(promoSummary)renderPromoChart(promoSummary);};
 
-load();
+$('employeeTable').addEventListener('click',e=>{
+ const row=e.target.closest('.employee-row-link');
+ if(row&&!e.target.closest('a'))row.querySelector('a').click();
+});
+if(employeeLink){
+ const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(Date.parse(value));
+ const from=linkedParams.get('from'),to=linkedParams.get('to');
+ if(validDate(from)&&validDate(to)&&from<=to){
+   $('from').value=from;$('to').value=to;quickPeriod='custom';
+   linkedDays=new Set(linkedParams.getAll('date').filter(validDate));
+ }
+ for(const input of $('weekdays').querySelectorAll('input'))input.checked=linkedParams.getAll('weekday').includes(input.value);
+ document.querySelector('[data-section="ads"]').classList.add('employee-ads-view');
+ $('employeeAds').hidden=false;$('employeeAdsTitle').hidden=false;
+ activateView('ads');
+ load().then(()=>{if(index&&!photoLoaded)loadPhotos();});
+}else load();
 setInterval(updateFreshness,60000);
 setInterval(()=>{if(!document.hidden&&!$('refresh').disabled)load();},300000);
 }
