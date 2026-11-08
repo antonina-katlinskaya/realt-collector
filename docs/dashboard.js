@@ -331,8 +331,7 @@ $('quick').addEventListener('click',e=>{
  const key=b.dataset.days;
  linkedDays.clear();
  if(Object.hasOwn(recentOffsets,key)){
-   if(recentDays.has(key)&&recentDays.size>1)recentDays.delete(key);
-   else recentDays.add(key);
+   recentDays=new Set([key]);
  }else{recentDays.clear();quickPeriod=key;}
  applyQuickPeriod();page=0;render();restoreArchiveRange();
 });
