@@ -93,8 +93,13 @@ jobs:
         if: steps.freshness.outputs.due == 'true'
         run: python analytics.py
 
+      - name: Restore dashboard history from verified release packets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m pipeline.restore_dashboard
+
       - name: Commit data
-        if: always() && (steps.freshness.outputs.due == 'true' || steps.history.outputs.changed == 'true')
+        if: always() && steps.freshness.outcome == 'success'
         run: |
           git config user.name "realt-collector"
           git config user.email "bot@users.noreply.github.com"
@@ -102,9 +107,7 @@ jobs:
             git add data
           else
             git add data/health
-            if [ "${{ steps.history.outputs.changed }}" = "true" ]; then
-              git add data/snapshots
-            fi
+            git add data/snapshots
           fi
           if git diff --cached --quiet; then
             echo "No data changes"
