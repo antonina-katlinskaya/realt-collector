@@ -4,7 +4,7 @@ import io
 import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from urllib.request import Request, build_opener
+from urllib.request import Request, build_opener, urlopen
 from zipfile import ZipFile
 
 from pipeline.archive import REPO, Releases, sha, verify_packet
@@ -34,7 +34,9 @@ def main():
     state = data / "health" / "photo_archive.json"
     index = json.loads(target.read_text(encoding="utf-8"))
     index.setdefault("dates", dict.fromkeys(index["images"], index["snapshot_at"]))
-    processed = set(json.loads(state.read_text())["processed"]) if state.exists() else set()
+    previous = json.loads(state.read_text()) if state.exists() else {}
+    processed = set(previous.get("processed", []))
+    attempts = previous.get("attempts", {})
     if not index.get("legacy_indexed"):
         for file in sorted((data / "raw").glob("*.json*")):
             if file.suffix not in (".json", ".gz"):
@@ -61,7 +63,10 @@ def main():
             except OSError:
                 packet = b""
             if sha(packet) != entry["sha256"]:
-                packet = releases.read(entry["url"])
+                if not entry["url"].startswith(f"https://github.com/{REPO}/releases/download/"):
+                    raise ValueError("Unexpected release URL")
+                with urlopen(entry["url"], timeout=15) as response:
+                    packet = response.read()
             if sha(packet) != entry["sha256"]:
                 raise ValueError("Packet hash mismatch")
             manifest = verify_packet(packet)
@@ -73,17 +78,20 @@ def main():
             print(f"Photo backfill deferred for {entry['snapshot_at']}: {error}", flush=True)
             return None
 
-    batch = entries[-16:]
+    batch = sorted(reversed(entries), key=lambda entry: attempts.get(entry['sha256'], 0))[:16]
     with ThreadPoolExecutor(max_workers=6) as pool:
         for entry, snapshots in zip(batch, pool.map(read, batch)):
             if snapshots is None:
+                digest = entry['sha256']
+                attempts[digest] = attempts.get(digest, 0) + 1
                 continue
             for snapshot in snapshots:
                 merge_snapshot(index, snapshot)
             processed.add(entry["sha256"])
+            attempts.pop(entry["sha256"], None)
     atomic_json(target, index)
     remaining = sum(entry["sha256"] not in processed for entry in entries)
-    atomic_json(state, {"processed": sorted(processed), "remaining": remaining,
+    atomic_json(state, {"processed": sorted(processed), "remaining": remaining, "attempts": attempts,
                         "listings_with_photos": len(index["images"])})
     print(f"Photo index: {len(index['images'])} listings, {remaining} packets pending")
 
