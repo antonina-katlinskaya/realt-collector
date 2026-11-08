@@ -173,8 +173,8 @@ function updateFreshness(){
   warning.textContent=state.stale?'Данные не обновились по расписанию. Последний снимок: '+date(last)+'. Ожидался сбор от '+date(state.expected)+'. Показаны сохранённые данные.':'';
 }
 const checks=id=>new Set([...$(id).querySelectorAll('input:checked')].map(x=>x.value));
-function matches(r,t=r.snapshot_at,ignorePromo=false){const multi=checks('multiAgents'),week=checks('weekdays'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
-return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(ignorePromo||!week.size||week.has(String(weekday(t))))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agencyName===$('company').value)&&(!$('rooms').value||($('rooms').value==='4+'?Number(r.rooms)>=4:r.rooms===$('rooms').value))&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
+function matches(r,t=r.snapshot_at,ignorePromo=false){const multi=checks('multiAgents'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
+return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agencyName===$('company').value)&&(!$('rooms').value||($('rooms').value==='4+'?Number(r.rooms)>=4:r.rooms===$('rooms').value))&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
 function createMatcher(){
  const multi=checks('multiAgents'),selectedDate=selectedDates();
  const agent=$('agent').value,quarter=$('quarter').value,company=$('company').value,rooms=$('rooms').value,house=$('house').value;
@@ -193,7 +193,7 @@ function promoMatch(r){const p=$('promo').value;return !p||(p==='paid'?paid(r):p
 let cachedModelIndex=null,cachedModelKey='',cachedModelValue=null;
 function model(){
  const fields=['from','to','agent','promo','quarter','company','rooms','house','areaMin','areaMax','search','sort'];
- const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),[...checks('weekdays')].sort(),selectedTab,preciseBounds,[...recentDays].sort()]);
+ const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),selectedTab,preciseBounds,[...recentDays].sort()]);
  if(cachedModelIndex===index&&cachedModelKey===key&&cachedModelValue)return cachedModelValue;
  const m=periodData(index,$('from').value,$('to').value,createMatcher(),preciseBounds,'2026-10-27T11:41:00Z',selectedDates());
  let listing=selectedTab==='published'?m.observed.filter(r=>r.createdAt&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to&&m.selectDate(r.createdAt)):selectedTab==='paid'?m.current.filter(paid):selectedTab==='new'?m.newly:selectedTab==='gone'?m.gone:selectedTab==='period'?m.observed:m.current;
@@ -296,7 +296,6 @@ let linkedDays=new Set();
 function employeeAdsUrl(id,m){
  const params=new URLSearchParams({employee:id,from:m.from,to:m.to});
  for(const key of recentDays)params.append('date',shiftedDay(recentOffsets[key]));
- for(const weekday of checks('weekdays'))params.append('weekday',weekday);
  return location.pathname+'?'+params;
 }
 function shiftedDay(offset){return new Date(Date.parse(day(new Date())+'T12:00:00Z')-offset*86400000).toISOString().slice(0,10);}
@@ -316,8 +315,7 @@ function applyQuickPeriod(){
 }
 function selectedDates(){
  const dates=linkedDays.size?linkedDays:new Set([...recentDays].map(key=>shiftedDay(recentOffsets[key])));
- const weekdays=checks('weekdays');
- return t=>(!dates.size||dates.has(day(t)))&&(!weekdays.size||weekdays.has(String(weekday(t))));
+ return t=>!dates.size||dates.has(day(t));
 }
 $('quick').addEventListener('click',e=>{
  const b=e.target.closest('[data-days]');if(!b||!index)return;
@@ -465,7 +463,7 @@ function renderWorks(m){
  renderGallery(m);
 }
 
-function renderPlacements(m){const items=m.observed.filter(r=>r.createdAt&&!Number.isNaN(Date.parse(r.createdAt))&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to&&m.selectDate(r.createdAt)&&(!preciseBounds||(Date.parse(r.createdAt)>=preciseBounds.start&&Date.parse(r.createdAt)<=preciseBounds.end))&&(!checks('weekdays').size||checks('weekdays').has(String(weekday(r.createdAt))))),groups=new Map();for(const r of items){const key=r.rooms+'|'+r.areaTotal;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
+function renderPlacements(m){const items=m.observed.filter(r=>r.createdAt&&!Number.isNaN(Date.parse(r.createdAt))&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to&&m.selectDate(r.createdAt)&&(!preciseBounds||(Date.parse(r.createdAt)>=preciseBounds.start&&Date.parse(r.createdAt)<=preciseBounds.end))),groups=new Map();for(const r of items){const key=r.rooms+'|'+r.areaTotal;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
  $('placementGroups').innerHTML=[...groups.values()].sort((a,b)=>b.length-a.length).map(a=>`<details class="notice"><summary><b>${esc(a[0].rooms)} комн. · ${esc(a[0].areaTotal)} м²</b> — ${a.length} объявлений</summary><div class="placeitems">${a.map(r=>`<div class="placeitem">${adLink(r)}<br>${esc(agentName(r))}<br><small>Размещено ${date(r.createdAt)} · ${price(r)}</small><br>${detailButton(r)}</div>`).join('')}</div></details>`).join('')||empty('В наблюдавшихся объявлениях нет дат публикации внутри этого периода.');
  const heat=Array.from({length:7},()=>Array(24).fill(0));for(const r of items){const h=Number(HOUR_FMT.format(new Date(r.createdAt)));heat[weekday(r.createdAt)][h]++;}const max=Math.max(1,...heat.flat());$('publicationHeat').innerHTML='<div class="tablewrap"><table class="heat"><thead><tr><th></th>'+Array.from({length:24},(_,h)=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((d,i)=>'<tr><th>'+d+'</th>'+heat[i].map(v=>`<td style="background:rgba(20,123,115,${.04+.5*v/max})">${v||'·'}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';
 }
@@ -548,8 +546,8 @@ function detailExtras(id){
 }
 function activateView(view){$('methods').hidden=view==='promotion';const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(['works','leaders','ads'].includes(view)&&!photoLoaded)loadPhotos();}}
 $('views').onclick=e=>{const b=e.target.closest('[data-view]');if(b)activateView(b.dataset.view);};
-for(const id of ['multiAgents','weekdays'])$(id).onchange=()=>{if(id==='multiAgents')$('agent').value='';page=0;render();};
-$('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','rooms','house','areaMin','areaMax','search'])$(id).value='';for(const x of document.querySelectorAll('#multiAgents input,#weekdays input'))x.checked=false;page=0;render();};
+$('multiAgents').onchange=()=>{$('agent').value='';page=0;render();};
+$('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','rooms','house','areaMin','areaMax','search'])$(id).value='';for(const x of document.querySelectorAll('#multiAgents input'))x.checked=false;page=0;render();};
 
 $('intervalButtons').onclick=e=>{const b=e.target.closest('[data-interval]');if(b){chosenInterval=b.dataset.interval;renderInterval(currentModel);}};
 
@@ -589,7 +587,6 @@ if(employeeLink){
    $('from').value=from;$('to').value=to;quickPeriod='custom';
    linkedDays=new Set(linkedParams.getAll('date').filter(validDate));
  }
- for(const input of $('weekdays').querySelectorAll('input'))input.checked=linkedParams.getAll('weekday').includes(input.value);
  document.querySelector('[data-section="ads"]').classList.add('employee-ads-view');
  $('employeeAds').hidden=false;$('employeeAdsTitle').hidden=false;
  activateView('ads');
