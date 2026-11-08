@@ -234,13 +234,22 @@ function renderRanking(m){const agents=new Map();for(const r of m.current){const
   const list=[...agents.values()].sort((a,b)=>b[key]-a[key]).slice(0,10),max=Math.max(1,...list.map(a=>a[key]));
   $('ranking').innerHTML=list.map(a=>`<div class="barrow"><button data-agent="${esc(a.id)}" title="${esc(a.phone)}">${esc(a.name)}</button><div class="bartrack"><div class="bar" style="width:${a[key]/max*100}%"></div></div><b>${fmt(a[key])}</b></div>`).join('')||'<div class="empty">Нет объявлений по выбранным фильтрам</div>';
 }
+let photoDates={};
+document.addEventListener('error',event=>{
+ const img=event.target;
+ if(!img.matches?.('img[data-photo-id]'))return;
+ const next=Number(img.dataset.photoIndex||0)+1;
+ const fallback=photos.get(img.dataset.photoId)?.[next];
+ if(fallback){img.dataset.photoIndex=String(next);img.src=fallback;}
+ else{const placeholder=document.createElement('div');placeholder.className='noimg';placeholder.textContent='Фото недоступно';img.replaceWith(placeholder);}
+},true);
 function kufarStyleCard(r,primary,subline,secondary){
- const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
+ const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" data-photo-id="${esc(r.uuid)}" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
  return `<article class="acard" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
   <div class="at">${esc(r.title||r.address||'Объявление')}</div>
   <div class="am">${esc(r.address||'Адрес не указан')}</div>
   <div class="aw">${esc(agentName(r))} · ${esc(r.rooms||'?')}-комн. · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
-  <div class="ad8">${secondary||''}</div>
+  <div class="ad8">${secondary||''}${p.length&&photoDates[r.uuid]&&photoDates[r.uuid]!==photoDate?' · Фото из снимка '+date(photoDates[r.uuid]):''}</div>
   <div class="amet"><span><b>${primary}</b></span><span>${subline||''}</span></div>
  </div></article>`;
 }
@@ -527,7 +536,7 @@ async function loadPhotos(){if(photoLoaded){if(activeView==='ads')renderTable(cu
  if(manifestResponse.ok){
   const manifest=await manifestResponse.json();
   photos=new Map(Object.entries(manifest.images||{}).filter(([,images])=>Array.isArray(images)&&images.length&&images.every(u=>typeof u==='string'&&u.startsWith('https://'))));
-  photoDate=manifest.snapshot_at;photoLoaded=true;
+  photoDate=manifest.snapshot_at;photoDates=manifest.dates||{};photoLoaded=true;
   if(activeView==='ads')renderTable(currentModel);
   if(activeView==='leaders')renderPromotedGallery(currentModel);
   if(activeView==='works')renderGallery(currentModel);
