@@ -174,7 +174,7 @@ function updateFreshness(){
 }
 const checks=id=>new Set([...$(id).querySelectorAll('input:checked')].map(x=>x.value));
 function matches(r,t=r.snapshot_at,ignorePromo=false){const multi=checks('multiAgents'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
-return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agencyName===$('company').value)&&(!$('rooms').value||($('rooms').value==='4+'?Number(r.rooms)>=4:r.rooms===$('rooms').value))&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
+return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agency===$('company').value)&&(!$('rooms').value||($('rooms').value==='4+'?Number(r.rooms)>=4:r.rooms===$('rooms').value))&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
 function createMatcher(){
  const multi=checks('multiAgents'),selectedDate=selectedDates();
  const agent=$('agent').value,quarter=$('quarter').value,company=$('company').value,rooms=$('rooms').value,house=$('house').value;
@@ -183,7 +183,7 @@ function createMatcher(){
   const area=number(r.areaTotal);
   if(employeeLink&&r.userUuid!==employeeLink||agent&&r.userUuid!==agent||multi.size&&!multi.has(r.userUuid))return false;
   if(!selectedDate(t))return false;
-  if(quarter&&(r.quarter||'(не определён)')!==quarter||company&&r.agencyName!==company||rooms&&(rooms==='4+'?Number(r.rooms)<4:r.rooms!==rooms)||house&&r.address!==house)return false;
+  if(quarter&&(r.quarter||'(не определён)')!==quarter||company&&r.agency!==company||rooms&&(rooms==='4+'?Number(r.rooms)<4:r.rooms!==rooms)||house&&r.address!==house)return false;
   if(lo!==null&&(area===null||area<lo)||hi!==null&&(area===null||area>hi))return false;
   if(search&&![r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes(search))return false;
   return ignorePromo||!promo||(promo==='paid'?paid(r):promo==='other'?![0,2,3,4].includes(number(r.paymentStatus)):r.paymentStatus===promo);
@@ -350,7 +350,7 @@ const empty=message=>`<div class="empty">${message}</div>`;
 function makeTable(headers,body){return '<div class="tablewrap"><table><thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+ (body.length?body.join(''):`<tr><td colspan="${headers.length}" class="empty">Нет подходящих наблюдений</td></tr>` )+'</tbody></table></div>';}
 function populateUnified(agents){
  const selected=checks('multiAgents');$('multiAgents').innerHTML=[...agents.values()].sort((a,b)=>agentName(a).localeCompare(agentName(b),'ru')).map(r=>`<label><input type="checkbox" value="${esc(r.userUuid)}" ${selected.has(r.userUuid)?'checked':''}><span>${esc(agentName(r))}</span></label>`).join('');
- for(const [id,key]of [['rooms','rooms'],['company','agencyName'],['house','address']]){const old=$(id).value;$(id).innerHTML='<option value="">Все</option>'+[...new Set(rows.map(r=>r[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ru',{numeric:true})).map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');$(id).value=old;}
+ for(const [id,key]of [['rooms','rooms'],['house','address']]){const old=$(id).value;$(id).innerHTML='<option value="">Все</option>'+[...new Set(rows.map(r=>r[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ru',{numeric:true})).map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');$(id).value=old;}
  if(!$('rooms').querySelector('option[value="4+"]'))$('rooms').insertAdjacentHTML('beforeend','<option value="4+">4+</option>');
  renderCompanyChips();updateEmployeeSummary();
 }
@@ -570,6 +570,9 @@ function updateEmployeeSummary(){
  for(const b of $('companyChips').querySelectorAll('button'))b.classList.toggle('active',b.dataset.company===$('company').value);
 }
 function renderCompanyChips(){
+ const company=$('company'),selected=company.value;
+ company.innerHTML='<option value="">Все</option><option value="etazhi">Этажи</option><option value="bir_bay">Бирбай</option><option value="tvoya_stolitsa">Твоя столица</option>';
+ company.value=selected;
  $('companyChips').innerHTML=[...$('company').options].map(o=>`<button data-company="${esc(o.value)}" class="${o.selected?'active':''}">${esc(o.value?(/ЭТАЖИ/i.test(o.textContent)?'Этажи':o.textContent):'Все')}</button>`).join('');
 }
 function closeEmployeeDropdown(){$('employeeDropdown').open=false;}
