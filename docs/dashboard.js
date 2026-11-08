@@ -200,7 +200,7 @@ function svgBars(groups){
     if(groups.length<16||i%Math.ceil(groups.length/12)===0)s+=`<text x="${x+step*.3}" y="${bottom+20}" text-anchor="middle" font-size="10" fill="#62758a">${esc(g.label)}</text>`;
   });return s+'</svg>';
 }
-function render(){if(!index)return;$('status').hidden=activeView==='promotion';updateEmployeeSummary();const m=model();currentModel=m;const quick=$('quick').querySelector('button.active');$('filtersSummaryPeriod').textContent=quick?quick.textContent.trim():'Свой период';
+function render(){if(!index)return;$('status').hidden=activeView==='promotion';updateEmployeeSummary();const m=model();currentModel=m;
   if(m.from>m.to){$('status').textContent='Дата начала должна быть раньше даты окончания.';return;}
   const comparable=m.events.length>0,delta=m.events.reduce((s,e)=>s+e.delta,0),advertised=m.current.filter(paid).length;
   const activations=m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus'&&![2,3,4].includes(number(x.old))&&[2,3,4].includes(number(x.new)))).length;
@@ -270,7 +270,7 @@ function applyQuickPeriod(){
  const buttons=[...$('quick').querySelectorAll('[data-days]')];
  const active=buttons.filter(b=>recentDays.size?recentDays.has(b.dataset.days):b.dataset.days===quickPeriod);
  for(const b of buttons){b.classList.toggle('active',active.includes(b));b.setAttribute('aria-pressed',String(active.includes(b)));}
- $('filterPeriodLabel').textContent=active.map(b=>b.textContent).join(' + ');
+ $('filtersSummaryPeriod').textContent=active.map(b=>b.textContent.trim()).join(' + ');
  $('customDates').hidden=quickPeriod!=='custom'||recentDays.size>0;
  preciseBounds=null;
  if(recentDays.size){
@@ -292,7 +292,7 @@ $('quick').addEventListener('click',e=>{
    if(recentDays.has(key)&&recentDays.size>1)recentDays.delete(key);
    else recentDays.add(key);
  }else{recentDays.clear();quickPeriod=key;}
- applyQuickPeriod();page=0;restoreArchiveRange();
+ applyQuickPeriod();page=0;render();restoreArchiveRange();
 });
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;selectedTab=b.dataset.tab;for(const x of $('tabs').querySelectorAll('button'))x.classList.toggle('active',x===b);page=0;render();});
 $('ranking').addEventListener('click',e=>{const b=e.target.closest('[data-agent]');if(b){$('agent').value=b.dataset.agent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();}});
