@@ -93,6 +93,14 @@ jobs:
         if: steps.freshness.outputs.due == 'true'
         run: python analytics.py
 
+      - name: Backfill archived photo links
+        if: always() && steps.freshness.outcome == 'success'
+        timeout-minutes: 4
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m pipeline.restore_photos
+
       - name: Restore dashboard history from verified release packets
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -107,7 +115,7 @@ jobs:
             git add data
           else
             git add data/health
-            git add data/snapshots
+            git add data/snapshots data/photo_manifest.json
           fi
           if git diff --cached --quiet; then
             echo "No data changes"
