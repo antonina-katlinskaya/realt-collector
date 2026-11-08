@@ -27,6 +27,8 @@ const {parseCSV}=require('../docs/dashboard.js');
   return route.abort();
  });
  await page.goto('https://antonina-katlinskaya.github.io/realt-collector/',{waitUntil:'domcontentloaded'});
+ // The dashboard starts on Employees; the promotion fixtures belong to the Promotion tab.
+ await page.locator('[data-view="promotion"]').click();
  await page.waitForFunction(()=>document.querySelector('#promoOverviewKpi')?.children.length);
  const summary=page.locator('#employeeSummary'),open=()=>page.locator('#employeeDropdown').evaluate(e=>e.open);
  assert.equal(await page.locator('#multiAgents').getByText('Елена Довгун',{exact:true}).count(),1);
