@@ -133,7 +133,7 @@ const price=r=>fmt(number(r.price))+' '+({'978':'€','840':'$','933':'BYN'}[r.p
 const label=r=>r.payment_label||({'0':'Бесплатно','2':'Выделение','3':'Поднятие','4':'Спецпредложение'}[r.paymentStatus]||'Статус '+r.paymentStatus);
 const known={'i.s.barashenko':'Ирина Барашенко','e.v.boriskina':'Елена Борискина','v.n.khatkovskaya':'Вероника Хатковская'};
 const knownById={'77ff7ab0-6e68-11ee-818e-0935d63487ea':'Ирина Барашенко','ff985560-a80d-11f0-bfef-45b6701187ce':'Елена Борискина','d6a0a26a-26a6-11ec-ae6c-dee111c4eff3':'Вероника Хатковская','cd9285f2-3506-4986-af06-7749b55924e7':'Елена Довгун'};
-function agentName(r){const email=(r.contactEmail||'').split('@')[0];return knownById[r.userUuid]||known[email]||(r.contactName||'Без имени');}
+function agentName(r){const email=(r.contactEmail||'').split('@')[0];return knownById[r.userUuid]||known[email]||(r.contactName?.trim()||(r.agency==='tvoya_stolitsa'?'Твоя столица':r.agency==='bir_bay'?'Бир Бай':r.agencyName)||'Без имени');}
 let index,rows=[],baseRows=[],seen=null,seenPromise=null,selectedTab='published',page=0,currentModel=null,loadSeq=0,developerIds=new Set();
 const ARCHIVE_START='2026-10-05',archiveRows=new Map(),archiveMissing=new Set();let archiveRequestSeq=0;
 let preciseBounds=null,activeView='promotion',hiddenAgents=new Set(),chosenInterval=null,photos=new Map(),photoLoaded=false,photoDate=null;
@@ -248,7 +248,7 @@ function kufarStyleCard(r,primary,subline,secondary){
  return `<article class="acard" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
   <div class="at">${esc(r.title||r.address||'Объявление')}</div>
   <div class="am">${esc(r.address||'Адрес не указан')}</div>
-  <div class="aw">${esc(agentName(r))} · ${esc(r.rooms||'?')}-комн. · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
+  <div class="aw"><span class="card-agent-name">${esc(agentName(r))}</span> · ${esc(r.rooms||'?')}-комн. · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
   <div class="ad8">${secondary||''}${p.length&&photoDates[r.uuid]&&photoDates[r.uuid]!==photoDate?' · Фото из снимка '+date(photoDates[r.uuid]):''}</div>
   <div class="amet"><span><b>${primary}</b></span><span>${subline||''}</span></div>
  </div></article>`;
