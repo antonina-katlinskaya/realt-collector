@@ -163,9 +163,9 @@ async function readRetainedDay(d){
  }
  return rows;
 }
-async function restoreArchiveRange(){
+async function restoreArchiveRange(fromOverride=null,toOverride=null){
  if(!index)return;
- const seq=++archiveRequestSeq,from=$('from').value,to=$('to').value,last=day(index.times.at(-1));
+ const seq=++archiveRequestSeq,from=fromOverride||$('from').value,to=toOverride||$('to').value,last=day(index.times.at(-1));
  if(!from||!to||from>to)return;
  const dates=[];for(let t=Date.parse((from>ARCHIVE_START?from:ARCHIVE_START)+'T12:00:00Z'),end=Date.parse((to<last?to:last)+'T12:00:00Z');t<=end;t+=86400000){const d=new Date(t).toISOString().slice(0,10);if(!archiveRows.has(d)&&!archiveMissing.has(d))dates.push(d);}
  if(!dates.length){if(seq===archiveRequestSeq)render();return;}
@@ -195,10 +195,10 @@ function updateFreshness(){
 const checks=id=>new Set([...$(id).querySelectorAll('input:checked')].map(x=>x.value));
 function matches(r,t=r.snapshot_at,ignorePromo=false){const multi=checks('multiAgents'),area=number(r.areaTotal),lo=number($('areaMin').value),hi=number($('areaMax').value);
 return (!$('agent').value||r.userUuid===$('agent').value)&&(!multi.size||multi.has(r.userUuid))&&(!$('quarter').value||(r.quarter||'(не определён)')===$('quarter').value)&&(!$('company').value||r.agency===$('company').value)&&(!$('rooms').value||($('rooms').value==='4+'?Number(r.rooms)>=4:r.rooms===$('rooms').value))&&(!$('house').value||r.address===$('house').value)&&(lo===null||(area!==null&&area>=lo))&&(hi===null||(area!==null&&area<=hi))&&(!$('search').value||[r.title,r.address,r.code,agentName(r)].join(' ').toLowerCase().includes($('search').value.toLowerCase()))&&(ignorePromo||promoMatch(r));}
-function createMatcher(){
- const multi=checks('multiAgents'),selectedDate=selectedDates();
+function createMatcher(opts={}){
+ const multi=checks('multiAgents'),selectedDate=opts.ignoreSelectedDays?(()=>true):selectedDates();
  const agent=$('agent').value,quarter=$('quarter').value,company=$('company').value,rooms=$('rooms').value,house=$('house').value;
- const lo=number($('areaMin').value),hi=number($('areaMax').value),search=$('search').value.toLowerCase(),promo=$('promo').value;
+ const lo=number($('areaMin').value),hi=number($('areaMax').value),search=$('search').value.toLowerCase(),promo=opts.ignorePromoSelection?'':$('promo').value;
  return (r,t=r.snapshot_at,ignorePromo=false)=>{
   const area=number(r.areaTotal);
   if(employeeLink&&r.userUuid!==employeeLink||agent&&r.userUuid!==agent||multi.size&&!multi.has(r.userUuid))return false;
@@ -418,6 +418,7 @@ function renderUnified(m){
  }
  if(activeView==='promotion')renderPromotions(m);
  if(activeView==='works')renderWorks(m);
+ if(activeView==='demand')renderDemand();
  if(activeView==='placements')renderPlacements(m);
  if(activeView==='hours')renderInterval(m);
  const baseline=m.newly.length===0&&index.times.length===1?' Базовый снимок содержит уже существовавшие объявления; он не считается массовой новой публикацией.':'';
@@ -489,19 +490,123 @@ function renderTrend(m){const ids=[...new Set(m.events.map(e=>e.row.userUuid))];
  for(const id of visible){const color=palette[ids.indexOf(id)%palette.length],v=values.get(id);let path='',connected=false;times.forEach((t,i)=>{if(!v.has(t)){connected=false;return;}path+=(connected?' L':' M')+x(i)+' '+y(v.get(t));connected=true;});svg+=`<path d="${path}" fill="none" stroke="${color}" stroke-width="2"/>`;times.forEach((t,i)=>{if(!v.has(t))return;svg+=`<circle cx="${x(i)}" cy="${y(v.get(t)||0)}" r="4" fill="${color}"><title>${esc(names.get(id))} · конец интервала ${date(t)} · +${v.get(t)||0}</title></circle>`;});}
  times.forEach((t,i)=>{if(times.length<12||i%Math.ceil(times.length/10)===0)svg+=`<text x="${x(i)}" y="280" text-anchor="middle" font-size="11">${date(t).slice(0,5)} ${date(t).slice(-5)}</text>`;});$('agentTrend').innerHTML=svg+'</svg>';
 }
-function renderWorks(m){
- const byId=new Map();
- for(const e of m.events.filter(e=>e.category==='free')){
-  if(!byId.has(e.id))byId.set(e.id,{r:e.row,views:0,hours:0});
-  const v=byId.get(e.id);v.views+=e.delta;v.hours+=(Date.parse(e.end)-Date.parse(e.start))/3600000;
+
+function organicSets(m){
+ const entries=new Map();
+ // Only a verified pair with free status at both ends counts towards organics.
+ for(const e of m.events){
+  if(e.category!=='free')continue;
+  let v=entries.get(e.id);
+  if(!v){v={r:e.row,delta:0,hours:0,measured:true};entries.set(e.id,v);}
+  v.delta+=e.delta;
+  v.hours+=(Date.parse(e.end)-Date.parse(e.start))/3600000;
+  v.r=e.row;
  }
- const verified=byId.size>0;
+ // Show cards with no verified interval too, but never manufacture their growth.
+ for(const r of m.observed){
+  if(!free(r)||entries.has(r.uuid))continue;
+  entries.set(r.uuid,{r,delta:null,hours:null,measured:false});
+ }
+ const newer=[],older=[];
+ for(const v of entries.values()){
+  const stamp=Date.parse(v.r.createdAt||'');
+  if(!Number.isFinite(stamp))continue;
+  const published=day(v.r.createdAt);
+  if(published<m.from)older.push(v);
+  else if(published<=m.to&&m.selectDate(v.r.createdAt))newer.push(v);
+ }
  const sort=$('organicSort').value;
- const list=(verified?[...byId.values()]:m.current.filter(free).map(r=>({r,views:number(r.views)||0,hours:null}))).sort((a,b)=>sort==='views'?b.views-a.views:comparePublication(a.r,b.r,sort)).slice(0,30);
- $('organicTable').innerHTML=(verified?'<p class="muted">Рейтинг по проверенному приросту при бесплатном статусе на двух замерах.</p>':'<p class="notice">После исправления сборщика ещё нет сопоставимых проверенных интервалов. Ниже — объявления без продвижения на последнем обходе, по общему счётчику просмотров. Это временный список, а не доказанный органический прирост.</p>')+
- makeTable(['Сотрудник','Объявление',verified?'Прирост без рекламы':'Всего просмотров','Наблюдалось часов',''],list.map(v=>`<tr><td>${employeeBadge(v.r)}</td><td class="wrap">${adLink(v.r)}</td><td>${verified?'+'+fmt(v.views):fmt(v.views)}</td><td>${v.hours===null?'—':fmt(Math.round(v.hours*10)/10)}</td><td>${detailButton(v.r)}</td></tr>`));
+ const sorter=(a,b)=>{
+  if(sort!=='views')return comparePublication(a.r,b.r,sort);
+  return (b.delta===null?-1:b.delta)-(a.delta===null?-1:a.delta)
+   ||(number(b.r.views)||0)-(number(a.r.views)||0)
+   || comparePublication(a.r,b.r,'recent');
+ };
+ return {newAds:newer.sort(sorter).slice(0,30),oldAds:older.sort(sorter).slice(0,30)};
+}
+function renderWorks(m){
+ const sets=organicSets(m);
+ const makeRank=(items)=>items.length?makeTable(
+  ['№','Сотрудник','Объявление','Прирост за период','Всего просмотров','Без рекламы, часов',''],
+  items.map((v,i)=>'<tr><td>'+(i+1)+'</td><td>'+employeeBadge(v.r)+'</td><td class="wrap">'+adLink(v.r)+'</td><td>'+(v.delta===null?'—':'+'+fmt(v.delta))+'</td><td>'+fmt(number(v.r.views))+'</td><td>'+(v.hours===null?'—':fmt(Math.round(v.hours*10)/10))+'</td><td>'+detailButton(v.r)+'</td></tr>')
+ ):empty('Нет подходящих объявлений с датой публикации.');
+ $('organicTable').innerHTML='<h3>Размещены в выбранном периоде</h3>'+makeRank(sets.newAds)
+   +'<h3>Размещены до выбранного периода</h3>'+makeRank(sets.oldAds);
  $('wordsTable').innerHTML='';
- renderGallery(m);
+ renderGallery(m,sets);
+}
+
+
+// Independent date controls for the Demand tab. Other tabs retain their own filters.
+let demandPeriod='today',demandMode='all',demandMetric='total',demandVisible=40;
+function demandDates(){
+ const today=shiftedDay(0);
+ if(demandPeriod==='custom'){
+  return {from:$('demandFrom').value||shiftedDay(4),to:$('demandTo').value||today};
+ }
+ const span={'today':1,'yesterday':1,'daybefore':1,'7':7,'14':14,'30':30,'90':90}[demandPeriod]||1;
+ const back=demandPeriod==='yesterday'?1:demandPeriod==='daybefore'?2:0;
+ return {from:shiftedDay(back+span-1),to:shiftedDay(back)};
+}
+function demandGroups(m){
+ const groups=new Map(),skipped={priceChanged:0,missingPrice:0};
+ for(const e of m.events){
+  if(demandMode==='free'&&e.category!=='free'||demandMode==='paid'&&e.category!=='paid')continue;
+  const before=index.byTime.get(e.start)?.get(e.id);
+  const after=e.row;
+  const area=number(after.areaTotal),cost=number(after.price),currency=String(after.priceCurrency||'');
+  if(area===null||cost===null||!currency){skipped.missingPrice++;continue;}
+  // If a property or price changed between snapshots, its visits cannot be assigned to a definite price.
+  if(!before||number(before.areaTotal)!==area||number(before.price)!==cost||String(before.priceCurrency||'')!==currency){
+   skipped.priceChanged++;continue;
+  }
+  const key=area+'|'+cost+'|'+currency;
+  let g=groups.get(key);
+  if(!g){g={area,price:cost,currency,views:0,items:new Map(),intervals:0};groups.set(key,g);}
+  g.views+=e.delta;g.intervals++;
+  const prior=g.items.get(e.id);
+  if(prior){prior.delta+=e.delta;prior.row=after;}
+  else g.items.set(e.id,{row:after,delta:e.delta});
+ }
+ const records=[...groups.values()].map(g=>({...g,count:g.items.size,avg:g.items.size?g.views/g.items.size:0}));
+ records.sort((a,b)=>demandMetric==='average'?b.avg-a.avg||b.views-a.views:b.views-a.views||b.avg-a.avg);
+ return {records,skipped};
+}
+function renderDemand(){
+ if(!index)return;
+ const {from,to}=demandDates();
+ $('demandCustom').hidden=demandPeriod!=='custom';
+ for(const [id,attr,value] of [['demandPeriods','demandPeriod',demandPeriod],['demandModes','demandMode',demandMode],['demandMetrics','demandMetric',demandMetric]]){
+  for(const b of $(id).querySelectorAll('button')){const active=b.dataset[attr]===value;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));}
+ }
+ if(from>to){$('demandNotice').textContent='Начало периода не может быть позже его окончания.';$('demandChart').innerHTML='';$('demandKpis').innerHTML='';$('demandTable').innerHTML='';$('demandMore').hidden=true;return;}
+ const m=periodData(index,from,to,createMatcher({ignoreSelectedDays:true,ignorePromoSelection:true}),null,'2026-10-27T11:41:00Z',()=>true);
+ const {records,skipped}=demandGroups(m);
+ const total=records.reduce((sum,g)=>sum+g.views,0);
+ const ids=new Set(records.flatMap(g=>[...g.items.keys()]));
+ const why=m.snapshotCount<2?'Для подсчёта прироста нужны хотя бы два достоверных снимка. ':'';
+ $('demandNotice').textContent='Период: '+from+' — '+to+' · снимков: '+m.snapshotCount
+  +' · по полностью сопоставимым интервалам. '+why
+  +(skipped.priceChanged?' Исключены интервалы со сменой цены или площади: '+skipped.priceChanged+'.':'')
+  +(skipped.missingPrice?' Без цены или площади: '+skipped.missingPrice+'.':'')
+  +(m.unstableIds.size?' Сбросы счётчиков исключены: '+m.unstableIds.size+'.':'');
+ const kpis=[['Просмотры за период',fmt(total),'Сумма измеренных приростов'],['Объявлений',fmt(ids.size),'С сопоставимыми интервалами'],['Сочетаний площади и цены',fmt(records.length),'Разные цены считаем отдельно']];
+ $('demandKpis').innerHTML=kpis.map(v=>'<div class="demand-kpi"><strong>'+v[1]+'</strong><div>'+v[0]+'</div><span>'+v[2]+'</span></div>').join('');
+ const areaLabel=g=>g.area.toLocaleString('ru-RU',{maximumFractionDigits:5})+' м² · '+price({price:g.price,priceCurrency:g.currency});
+ const metric=g=>demandMetric==='average'?g.avg:g.views;
+ const max=Math.max(1,...records.slice(0,12).map(metric));
+ $('demandChart').innerHTML=records.length?records.slice(0,12).map(g=>{
+  const width=Math.max(0,100*metric(g)/max);
+  return '<div class="demand-chart-row"><div class="demand-chart-label">'+esc(areaLabel(g))+'<small>'+fmt(g.count)+' объявлений</small></div><div class="demand-chart-track"><div class="demand-chart-fill" style="width:'+width.toFixed(2)+'%"></div></div><div class="demand-chart-val">'+fmt(Math.round(metric(g)*10)/10)+'</div></div>';
+ }).join(''):empty('Нет подтверждённых приростов за этот период и выбранный тип объявлений.');
+ const rows=records.slice(0,demandVisible).map((g,i)=>{
+  const children=[...g.items.values()].sort((a,b)=>b.delta-a.delta).map(v=>'<li>'+adLink(v.row)+'<br><small>+'+fmt(v.delta)+' за период · всего '+fmt(number(v.row.views))+'</small></li>').join('');
+  const details='<details class="demand-group-list"><summary>'+fmt(g.count)+' объявлений — раскрыть</summary><ol>'+children+'</ol></details>';
+  return '<tr><td>'+(i+1)+'</td><td><strong>'+esc(g.area.toLocaleString('ru-RU',{maximumFractionDigits:5}))+' м²</strong></td><td>'+esc(price({price:g.price,priceCurrency:g.currency}))+'</td><td>'+fmt(g.count)+'</td><td><strong>+'+fmt(g.views)+'</strong></td><td>'+fmt(Math.round(g.avg*10)/10)+'</td><td>'+details+'</td></tr>';
+ });
+ $('demandTable').innerHTML=records.length?makeTable(['№','Площадь','Цена','Объявлений','Просмотры за период','На объявление','Состав группы'],rows):empty('Нет данных для таблицы.');
+ $('demandMore').hidden=records.length<=demandVisible;
+ $('demandMore').textContent='Показать ещё ('+fmt(Math.min(40,records.length-demandVisible))+' из '+fmt(records.length-demandVisible)+' оставшихся)';
 }
 
 function renderPlacements(m){const items=m.observed.filter(r=>r.createdAt&&!Number.isNaN(Date.parse(r.createdAt))&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to&&m.selectDate(r.createdAt)&&(!preciseBounds||(Date.parse(r.createdAt)>=preciseBounds.start&&Date.parse(r.createdAt)<=preciseBounds.end))),groups=new Map();for(const r of items){const key=r.rooms+'|'+r.areaTotal;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
@@ -512,17 +617,16 @@ function renderInterval(m){const times=[...new Set(m.events.map(e=>e.end))];if(!
  if(!times.includes(chosenInterval))chosenInterval=times.at(-1);$('intervalButtons').innerHTML=times.map(t=>{const es=m.events.filter(e=>e.end===t);return `<button class="intervalpick ${t===chosenInterval?'active':''}" data-interval="${esc(t)}">${date(es[0].start)} → ${date(t)}<br><b>+${fmt(totalEvents(es))} просмотров</b></button>`;}).join('');
  const ev=m.events.filter(e=>e.end===chosenInterval).sort((a,b)=>b.delta-a.delta);$('intervalDetail').innerHTML=makeTable(['Агент','Объявление','Начало → конец','Прирост','Статус интервала',''],ev.slice(0,100).map(e=>`<tr><td>${employeeBadge(e.row)}</td><td class="wrap">${adLink(e.row)}</td><td>${date(e.start)}<br>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td><td>${detailButton(e.row)}</td></tr>`));
 }
-function renderGallery(m){
- const organic=new Map();
- for(const e of m.events){if(e.category==='free')organic.set(e.id,(organic.get(e.id)||0)+e.delta);}
- const hasGrowth=organic.size>0;
- const sort=$('organicSort').value;
- const items=(hasGrowth?m.observed.filter(r=>organic.has(r.uuid)):m.current.filter(free)).sort((a,b)=>sort!=='views'?comparePublication(a,b,sort):hasGrowth?(organic.get(b.uuid)||0)-(organic.get(a.uuid)||0):(number(b.views)||0)-(number(a.views)||0)).slice(0,30);
- $('gallery').innerHTML=items.map(r=>kufarStyleCard(r,
-  hasGrowth?'+'+fmt(organic.get(r.uuid))+' просм.':fmt(number(r.views))+' просм. всего',
-  hasGrowth?'Прирост при бесплатном статусе':'Исторический прирост пока неизвестен',
-  'Бесплатно · '+(r.createdAt?'размещено '+date(r.createdAt):'дата неизвестна')
- )).join('')||empty('Нет объявлений, удовлетворяющих условиям рейтинга.');
+
+function renderGallery(m,sets=organicSets(m)){
+ const card=(v)=>kufarStyleCard(v.r,
+  v.delta===null?'— · нет двух замеров':'+'+fmt(v.delta)+' просм. за период',
+  'Всего: '+fmt(number(v.r.views))+' просмотров',
+  'Бесплатно · '+(v.r.createdAt?'размещено '+date(v.r.createdAt):'дата неизвестна'));
+ $('organicNewCount').textContent='· '+fmt(sets.newAds.length);
+ $('organicOldCount').textContent='· '+fmt(sets.oldAds.length);
+ $('gallery').innerHTML=sets.newAds.map(card).join('')||empty('Нет новых органических объявлений с подтверждённой датой публикации.');
+ $('galleryOld').innerHTML=sets.oldAds.map(card).join('')||empty('Нет ранее опубликованных органических объявлений для выбранного периода.');
 }
 
 function renderPromotedGallery(m){
@@ -588,8 +692,23 @@ function detailExtras(id){
  const html=`<section class="panel"><h3>Прирост за выбранный период</h3><div class="detailgrid">${split}</div><p class="muted tiny">Пусто означает отсутствие сопоставимого интервала. Нули появляются только при двух полученных одинаковых счётчиках.</p>${makeTable(['Начало','Конец','Прирост','Статус'],ev.map(e=>`<tr><td>${date(e.start)}</td><td>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td></tr>`))}<h3>Изменения за период</h3>${changesHTML(changes).replace(/<button data-detail="[^"]+">История<\/button>/g,'')}</section>`;
  $('detail').insertAdjacentHTML('beforeend',html);
 }
-function activateView(view){$('methods').hidden=view==='promotion';const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(['works','leaders','ads'].includes(view)&&!photoLoaded)loadPhotos();}}
+function activateView(view){$('methods').hidden=view==='promotion';const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(view==='demand'){const d=demandDates();restoreArchiveRange(d.from,d.to);}if(['works','leaders','ads'].includes(view)&&!photoLoaded)loadPhotos();}}
 for(const id of ['organicSort','promotedSort'])$(id).addEventListener('change',render);
+
+$('demandPeriods').onclick=e=>{
+ const button=e.target.closest('[data-demand-period]');if(!button)return;
+ demandPeriod=button.dataset.demandPeriod;demandVisible=40;
+ if(demandPeriod==='custom'){if(!$('demandFrom').value)$('demandFrom').value=shiftedDay(4);if(!$('demandTo').value)$('demandTo').value=shiftedDay(0);}
+ renderDemand();const d=demandDates();restoreArchiveRange(d.from,d.to);
+};
+for(const name of ['demandFrom','demandTo'])$(name).addEventListener('change',()=>{
+ if(demandPeriod!=='custom')return;
+ demandVisible=40;renderDemand();const d=demandDates();restoreArchiveRange(d.from,d.to);
+});
+$('demandModes').onclick=e=>{const b=e.target.closest('[data-demand-mode]');if(!b)return;demandMode=b.dataset.demandMode;demandVisible=40;renderDemand();};
+$('demandMetrics').onclick=e=>{const b=e.target.closest('[data-demand-metric]');if(!b)return;demandMetric=b.dataset.demandMetric;demandVisible=40;renderDemand();};
+$('demandMore').onclick=()=>{demandVisible+=40;renderDemand();};
+
 $('views').onclick=e=>{const b=e.target.closest('[data-view]');if(b)activateView(b.dataset.view);};
 $('multiAgents').onchange=()=>{$('agent').value='';page=0;render();};
 $('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','rooms','house','areaMin','areaMax','search'])$(id).value='';for(const x of document.querySelectorAll('#multiAgents input'))x.checked=false;page=0;render();};

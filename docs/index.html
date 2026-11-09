@@ -55,7 +55,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
-<script src="dashboard.js?v=20261109-green-employee-names-v1" defer></script>
+<script src="dashboard.js?v=20261109-organic-demand-v1" defer></script>
 
 <style>
 
@@ -137,6 +137,33 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 .card-agent-name,.employee-name{background:transparent;color:inherit;font-weight:inherit;padding:0;border-radius:0}
 [data-section="ads"] .card-agent-name,[data-section="ads"] .employee-name,[data-section="works"] .card-agent-name,[data-section="works"] .employee-name,[data-section="leaders"] .card-agent-name,[data-section="leaders"] .employee-name{font-weight:650;color:#184c74;background:#dceeff;border-radius:4px;padding:1px 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 </style><style>.listing-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:8px 0 12px}.listing-sort{display:flex;flex-direction:column;gap:4px;margin-inline-start:auto;width:min(100%,320px);font-size:14px}.listing-sort select,.listing-sort option{font-size:16px}.listing-sort select{width:100%;min-height:42px}</style>
+<style>
+.organic-block-title{margin:26px 0 6px;font-size:20px}
+.demand-label{font-size:13px;font-weight:700;margin:22px 0 9px;color:var(--ink)}
+.demand-buttons{display:flex;gap:7px;flex-wrap:wrap}
+.demand-buttons button{padding:9px 13px;border-radius:22px;background:#f0efeb;border:1px solid #e3e1db}
+.demand-buttons button.active{background:#234e79;color:white}
+.demand-custom{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+.demand-custom label{min-width:150px}
+.demand-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.demand-kpi{background:#f5f7fa;padding:18px;border-radius:12px;border:1px solid var(--line)}
+.demand-kpi strong{display:block;font-size:27px}.demand-kpi span{font-size:12px;color:var(--muted)}
+.demand-chart-row{display:grid;grid-template-columns:minmax(190px,260px) minmax(110px,1fr) 85px;align-items:center;gap:12px;margin:12px 0}
+.demand-chart-label{font-size:13px;font-weight:650}
+.demand-chart-label small{display:block;font-size:11px;font-weight:400}
+.demand-chart-track{height:16px;border-radius:6px;background:#edf0f3;overflow:hidden}
+.demand-chart-fill{height:100%;background:#234e79;border-radius:6px}
+.demand-chart-val{text-align:right;font-weight:650;font-variant-numeric:tabular-nums}
+.demand-table-details{margin-top:25px}
+.demand-table-details summary{font-weight:650;cursor:pointer;margin-bottom:15px}
+.demand-table-details .tablewrap{max-height:740px}.demand-table-details table{white-space:normal}
+.demand-table-details td,.demand-table-details th{font-variant-numeric:tabular-nums}
+.demand-group-list{min-width:245px;max-width:440px}
+.demand-group-list summary{font-size:12px;font-weight:500}
+.demand-group-list li{margin:7px 0}
+#demandMore{margin-top:14px}
+@media(max-width:760px){.demand-kpis{grid-template-columns:1fr}.demand-chart-row{grid-template-columns:130px 1fr 60px;gap:7px}.demand-chart-label{font-size:12px}}
+</style>
 </head>
 <body><main>
 <header><div><h1>Радар REALT</h1><div class="muted">Минск Мир · Зелёная гавань · объявления и продвижение</div></div><div class="meta"><div id="freshness">Загружаем данные…</div><div class="headerlinks"><button id="refresh" title="Перечитать сохранённые снимки; новый сбор запускается по расписанию">Обновить данные</button></div></div></header>
@@ -151,7 +178,7 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <div class="filter-search"><input id="search" type="search" placeholder="Поиск по заголовку, адресу или номеру объявления" aria-label="Поиск объявлений"><span class="newbuild-label">✓ Только новостройки</span><button id="reset">Сбросить фильтры</button></div>
 <div hidden><select id="agent"><option value="">Все сотрудники</option></select><select id="company"><option value="">Все</option></select><select id="rooms"><option value="">Все</option></select><select id="promo"><option value="">Любое</option></select><select id="quarter"><option value="">Все</option></select><select id="house"><option value="">Все</option></select><input id="areaMin" type="number"><input id="areaMax" type="number"></div>
 </details>
-<nav id="views" class="viewtabs" aria-label="Основные разделы радара"><button data-view="competitors">Конкуренты</button><button data-view="promotion" class="active">Продвижение</button><button data-view="ads">Объявления за период</button><button data-view="employees">Сотрудники</button><button data-view="works">Топ органика</button><button data-view="leaders">Топ продвижение</button></nav>
+<nav id="views" class="viewtabs" aria-label="Основные разделы радара"><button data-view="competitors">Конкуренты</button><button data-view="promotion" class="active">Продвижение</button><button data-view="ads">Объявления за период</button><button data-view="employees">Сотрудники</button><button data-view="works">Топ органика</button><button data-view="demand">Спрос</button><button data-view="leaders">Топ продвижение</button></nav>
 <section class="panel" id="competitor-watch" data-section="competitors" hidden aria-labelledby="competitor-watch-title">
 <h2 id="competitor-watch-title">Конкуренты под наблюдением · 30 дней</h2>
 <p class="muted">Активные карточки Realt, созданные за последние 30 дней. Дни размещения считаются по Минску.</p>
@@ -180,9 +207,44 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <section class="panel promo-panel"><h2>Все объявления в продвижении <span id="promoCount"></span></h2><div id="promoEmployeeChips" class="filter-chips promo-employee-chips"></div><div id="promoPeriods"></div></section>
 <details class="promo-notes"><summary>О данных продвижения</summary><p>Статус рекламы виден на момент обхода. Даты — первое и последнее подтверждение, а не даты покупки пакета. ¹ Дни считаются по датам, когда реклама была замечена. Прирост просмотров доступен только для сопоставимых замеров; прочерк означает отсутствие данных. Открытия телефона и расходы пока не получены.</p></details>
 </section>
+
 <section data-section="works" hidden>
-<section class="panel"><h2>Топ органика</h2><p class="muted">Новостройки без платного продвижения. Рейтинг прироста появится после двух достоверных обходов; до этого показываются общие просмотры с пометкой.</p><div class="listing-toolbar"><div id="photoStatus" role="status"></div><label class="listing-sort"><span>Сортировка</span><select id="organicSort"><option value="views">По просмотрам</option><option value="recent">От новых к старым</option><option value="oldest">От старых к новым</option><option value="duration">Дольше опубликованные сверху</option></select></label></div><div id="gallery" class="cgrid"></div></section>
-<section class="panel"><h2>Рейтинг органических объявлений</h2><div id="organicTable"></div></section><div id="wordsTable" hidden></div>
+<section class="panel">
+<h2>Топ органика</h2>
+<p class="muted">Без платного продвижения на сопоставимых замерах. Прирост за выбранный период считается отдельно от накопленных просмотров. Если двух замеров нет, прирост не рассчитывается.</p>
+<div class="listing-toolbar"><div id="photoStatus" role="status"></div><label class="listing-sort"><span>Сортировка</span><select id="organicSort"><option value="views">По просмотрам за период</option><option value="recent">От новых к старым</option><option value="oldest">От старых к новым</option><option value="duration">Дольше опубликованные сверху</option></select></label></div>
+<h3 class="organic-block-title">Топ-30 · Размещены в выбранном периоде <span id="organicNewCount"></span></h3>
+<p class="muted">Новые публикации, отсортированные по измеренному органическому приросту.</p>
+<div id="gallery" class="cgrid"></div>
+<h3 class="organic-block-title">Топ-30 · Размещены до выбранного периода <span id="organicOldCount"></span></h3>
+<p class="muted">Ранее размещённые объявления — отдельно прирост и просмотры всего.</p>
+<div id="galleryOld" class="cgrid"></div>
+</section>
+<section class="panel"><h2>Подробный рейтинг органики</h2><div id="organicTable"></div></section><div id="wordsTable" hidden></div>
+</section>
+<section data-section="demand" hidden>
+<section class="panel">
+<h2>Спрос · что интересовало покупателей</h2>
+<p class="muted">Группы по точной площади, цене и валюте. Только измеренный прирост между достоверными снимками; просмотры не равны уникальным покупателям.</p>
+<div class="demand-label">Период анализа</div>
+<div id="demandPeriods" class="demand-buttons" role="group" aria-label="Период анализа спроса">
+<button type="button" data-demand-period="today" class="active">Сегодня</button><button type="button" data-demand-period="yesterday">Вчера</button><button type="button" data-demand-period="daybefore">Позавчера</button><button type="button" data-demand-period="7">7 дней</button><button type="button" data-demand-period="14">14 дней</button><button type="button" data-demand-period="30">30 дней</button><button type="button" data-demand-period="90">90 дней</button><button type="button" data-demand-period="custom">Свой период</button>
+</div>
+<div id="demandCustom" class="demand-custom" hidden><label>От <input type="date" id="demandFrom"></label><label>До <input type="date" id="demandTo"></label></div>
+<div class="demand-label">Тип объявлений</div>
+<div id="demandModes" class="demand-buttons" role="group" aria-label="Тип объявлений">
+<button type="button" data-demand-mode="all" class="active">Все объявления</button><button type="button" data-demand-mode="free">Только органика</button><button type="button" data-demand-mode="paid">Продвижение</button>
+</div>
+<div class="demand-label">Рейтинг интереса по площадям</div>
+<div id="demandMetrics" class="demand-buttons" role="group" aria-label="Показатель">
+<button type="button" data-demand-metric="total" class="active">По сумме просмотров</button><button type="button" data-demand-metric="average">В среднем на объявление</button>
+</div>
+<div id="demandNotice" class="muted" role="status" aria-live="polite"></div>
+<div id="demandKpis" class="demand-kpis"></div>
+<h3>Какие квартиры вызвали больше интереса</h3>
+<div id="demandChart"></div>
+<details class="demand-table-details" open><summary>Подробная таблица сочетаний площади и цены</summary><div id="demandTable" class="tablewrap"></div><button type="button" id="demandMore" hidden>Показать ещё</button></details>
+</section>
 </section>
 <section data-section="placements" class="panel" hidden><h2>Какие площади и комнатность размещают</h2><p class="muted">Группы объявлений с датой createdAt внутри периода. Дата взята из карточки; первый снимок не считается новой публикацией.</p><div id="placementGroups"></div><h3>День недели × час публикации</h3><p class="muted">Это даты публикации из карточек, а не время посещений клиентов.</p><div id="publicationHeat"></div></section>
 <section data-section="hours" class="panel" hidden><h2>Когда росли просмотры</h2><p class="muted">Выбери интервал, чтобы увидеть объявления и прирост. Снимок помечен временем начала сбора; фактическое получение счётчика могло быть позже. Точный момент посещения неизвестен.</p><div id="intervalButtons" class="quick"></div><div id="intervalDetail"></div><div class="notice">Расписание начала сбора: 09:17, 12:17, 15:17, 18:17, 21:17 Минск. Резервная проверка пропущенного сбора — каждый час в :47 с 09:47 до 21:47. При длинном сборе интервалы могут быть ещё шире. Почасовую тепловую карту посетителей эти данные не подтверждают.</div></section>
