@@ -2212,5 +2212,18 @@
       "archive": "verified-github-release",
       "packet_bytes": 840267
     }
+  },
+  {
+    "started_at": "2026-11-09T09:37:15.530780+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 70,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-09T12:10:00+03:00",
+    "retryable_pagination": true,
+    "error": "SourcePaginationChanged: Source total or page size changed",
+    "duration_seconds": 352.435
   }
 ]
