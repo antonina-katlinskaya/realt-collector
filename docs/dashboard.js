@@ -537,74 +537,143 @@ function renderWorks(m){
 }
 
 
-// Independent date controls for the Demand tab. Other tabs retain their own filters.
+// Independent date controls for the Demand tab. Other views keep their current filters.
+// Ranges reflect observed Realt distribution: areas cluster near 30–80 m²,
+// and EUR prices near 45–140k. Upper bounds are EXCLUSIVE.
 let demandPeriod='today',demandMode='all',demandMetric='total',demandVisible=40;
+const DEMAND_AREA_EDGES=[0,30,35,40,45,50,55,60,65,70,75,80,90,100,120,140,160,180,200,250,300,Infinity];
+const DEMAND_PRICE_EDGES=[0,45000,50000,55000,60000,65000,70000,80000,90000,100000,120000,140000,160000,180000,200000,250000,300000,400000,500000,750000,Infinity];
+// BYN is kept separate from EUR and USD, with 3x broader brackets.
+const DEMAND_BYN_EDGES=DEMAND_PRICE_EDGES.map(v=>v===Infinity?v:v*3);
 function demandDates(){
  const today=shiftedDay(0);
- if(demandPeriod==='custom'){
-  return {from:$('demandFrom').value||shiftedDay(4),to:$('demandTo').value||today};
- }
- const span={'today':1,'yesterday':1,'daybefore':1,'7':7,'14':14,'30':30,'90':90}[demandPeriod]||1;
- const back=demandPeriod==='yesterday'?1:demandPeriod==='daybefore'?2:0;
+ if(demandPeriod==='custom')return {from:$('demandFrom').value||shiftedDay(4),to:$('demandTo').value||today};
+ const span={'today':1,'yesterday':1,'7':7,'14':14,'30':30,'90':90}[demandPeriod]||1;
+ const back=demandPeriod==='yesterday'?1:0;
  return {from:shiftedDay(back+span-1),to:shiftedDay(back)};
 }
+function demandBand(n,edges){
+ if(!Number.isFinite(n)||n<0)return null;
+ for(let i=0;i<edges.length-1;i++)if(n>=edges[i]&&n<edges[i+1])return {low:edges[i],high:edges[i+1]};
+ return null;
+}
+function demandGroupDescriptor(area,cost,currency){
+ if(demandMetric==='total')return {key:'exact|'+area+'|'+cost+'|'+currency,area,price:cost,currency,low:null,high:null};
+ if(demandMetric==='area'){
+  const band=demandBand(area,DEMAND_AREA_EDGES);
+  return band&&{key:'area|'+band.low,area:null,price:null,currency:null,...band};
+ }
+ const band=demandBand(cost,currency==='933'?DEMAND_BYN_EDGES:DEMAND_PRICE_EDGES);
+ return band&&{key:'price|'+currency+'|'+band.low,area:null,price:null,currency,...band};
+}
+function demandGroupLabel(g){
+ if(demandMetric==='total')return g.area.toLocaleString('ru-RU',{maximumFractionDigits:5})+' м² · '+price({price:g.price,priceCurrency:g.currency});
+ if(demandMetric==='area')return (g.low===0?'До '+fmt(g.high):g.high===Infinity?'От '+fmt(g.low):fmt(g.low)+'–'+fmt(g.high))+' м²';
+ const cur=({'978':'€','840':'$','933':'BYN'}[g.currency]||g.currency);
+ const k=n=>fmt(n/1000);
+ return (g.low===0?'До '+k(g.high):g.high===Infinity?'От '+k(g.low):k(g.low)+'–'+k(g.high))+' тыс. '+cur;
+}
 function demandGroups(m){
- const groups=new Map(),skipped={priceChanged:0,missingPrice:0};
+ const groups=new Map(),skipped={changed:0,missing:0,unknownStatus:0};
  for(const e of m.events){
+  // Unknown transition intervals are not assigned to paid or organic, so All = Paid + Organic.
+  if(e.category!=='paid'&&e.category!=='free'){skipped.unknownStatus++;continue;}
   if(demandMode==='free'&&e.category!=='free'||demandMode==='paid'&&e.category!=='paid')continue;
-  const before=index.byTime.get(e.start)?.get(e.id);
-  const after=e.row;
+  const before=index.byTime.get(e.start)?.get(e.id),after=e.row;
   const area=number(after.areaTotal),cost=number(after.price),currency=String(after.priceCurrency||'');
-  if(area===null||cost===null||!currency){skipped.missingPrice++;continue;}
-  // If a property or price changed between snapshots, its visits cannot be assigned to a definite price.
-  if(!before||number(before.areaTotal)!==area||number(before.price)!==cost||String(before.priceCurrency||'')!==currency){
-   skipped.priceChanged++;continue;
-  }
-  const key=area+'|'+cost+'|'+currency;
-  let g=groups.get(key);
-  if(!g){g={area,price:cost,currency,views:0,items:new Map(),intervals:0};groups.set(key,g);}
+  const needArea=demandMetric!=='price',needPrice=demandMetric!=='area';
+  if(!before||(needArea&&(area===null||area<=0))||(needPrice&&(cost===null||cost<=0||!currency))){skipped.missing++;continue;}
+  const stableArea=number(before.areaTotal)===area;
+  const stablePrice=number(before.price)===cost&&String(before.priceCurrency||'')===currency;
+  // Do not discard a price-change interval when ranking AREA only: its area remained known.
+  if((needArea&&!stableArea)||(needPrice&&!stablePrice)){skipped.changed++;continue;}
+  const d=demandGroupDescriptor(area,cost,currency);
+  if(!d){skipped.missing++;continue;}
+  let g=groups.get(d.key);
+  if(!g){g={...d,views:0,items:new Map(),intervals:0};groups.set(d.key,g);}
   g.views+=e.delta;g.intervals++;
-  const prior=g.items.get(e.id);
-  if(prior){prior.delta+=e.delta;prior.row=after;}
+  const prev=g.items.get(e.id);
+  if(prev){prev.delta+=e.delta;prev.row=after;}
   else g.items.set(e.id,{row:after,delta:e.delta});
  }
- const records=[...groups.values()].map(g=>({...g,count:g.items.size,avg:g.items.size?g.views/g.items.size:0}));
- records.sort((a,b)=>demandMetric==='average'?b.avg-a.avg||b.views-a.views:b.views-a.views||b.avg-a.avg);
+ const records=[...groups.values()].map(g=>({...g,count:g.items.size,avg:g.items.size?g.views/g.items.size:0}))
+   .sort((a,b)=>b.views-a.views||b.count-a.count||String(a.key).localeCompare(String(b.key),'ru'));
  return {records,skipped};
+}
+function demandPareto(records){
+ const total=records.reduce((sum,g)=>sum+g.views,0);
+ const allAds=new Set(records.flatMap(g=>[...g.items.keys()]));
+ const selected=new Set();
+ let used=0,views=0;
+ if(total>0)for(const g of records){
+  if(views>=total*.8)break;
+  used++;views+=g.views;for(const id of g.items.keys())selected.add(id);
+ }
+ return {total,allAds:allAds.size,groups:used,ads:selected.size,
+  viewShare:total?100*views/total:0,groupShare:records.length?100*used/records.length:0,
+  adShare:allAds.size?100*selected.size/allAds.size:0};
 }
 function renderDemand(){
  if(!index)return;
  const {from,to}=demandDates();
  $('demandCustom').hidden=demandPeriod!=='custom';
  for(const [id,attr,value] of [['demandPeriods','demandPeriod',demandPeriod],['demandModes','demandMode',demandMode],['demandMetrics','demandMetric',demandMetric]]){
-  for(const b of $(id).querySelectorAll('button')){const active=b.dataset[attr]===value;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));}
+  for(const b of $(id).querySelectorAll('button')){
+   const active=b.dataset[attr]===value;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));
+  }
  }
- if(from>to){$('demandNotice').textContent='Начало периода не может быть позже его окончания.';$('demandChart').innerHTML='';$('demandKpis').innerHTML='';$('demandTable').innerHTML='';$('demandMore').hidden=true;return;}
+ if(from>to){
+  $('demandNotice').textContent='Начало периода не может быть позже его окончания.';
+  for(const id of ['demandChart','demandKpis','demandTable','demandPareto'])$(id).innerHTML='';
+  $('demandMore').hidden=true;return;
+ }
  const m=periodData(index,from,to,createMatcher({ignoreSelectedDays:true,ignorePromoSelection:true}),null,'2026-10-27T11:41:00Z',()=>true);
- const {records,skipped}=demandGroups(m);
- const total=records.reduce((sum,g)=>sum+g.views,0);
- const ids=new Set(records.flatMap(g=>[...g.items.keys()]));
- const why=m.snapshotCount<2?'Для подсчёта прироста нужны хотя бы два достоверных снимка. ':'';
- $('demandNotice').textContent='Период: '+from+' — '+to+' · снимков: '+m.snapshotCount
-  +' · по полностью сопоставимым интервалам. '+why
-  +(skipped.priceChanged?' Исключены интервалы со сменой цены или площади: '+skipped.priceChanged+'.':'')
-  +(skipped.missingPrice?' Без цены или площади: '+skipped.missingPrice+'.':'')
+ const {records,skipped}=demandGroups(m),pareto=demandPareto(records);
+ const percent=n=>n.toLocaleString('ru-RU',{maximumFractionDigits:1});
+ const titles={total:['Интерес по точной площади и цене','Сочетания площади и цены'],price:['Интерес по диапазонам стоимости','Диапазоны стоимости'],area:['Интерес по диапазонам площади','Диапазоны площади']};
+ $('demandChartTitle').textContent=titles[demandMetric][0];
+ $('demandTableTitle').textContent='Подробная таблица · '+titles[demandMetric][1].toLowerCase();
+ const why=m.snapshotCount<2?'Для расчёта нужны хотя бы два замера. ':'';
+ $('demandNotice').textContent='Период: '+from+' — '+to+' · снимков: '+m.snapshotCount+' · только сопоставимые интервалы. '+why
+  +(skipped.changed?' Исключены изменения параметров группы: '+skipped.changed+'.':'')
+  +(skipped.missing?' Нет необходимой площади/цены: '+skipped.missing+'.':'')
+  +(skipped.unknownStatus?' Неопределённый статус продвижения: '+skipped.unknownStatus+'.':'')
   +(m.unstableIds.size?' Сбросы счётчиков исключены: '+m.unstableIds.size+'.':'');
- const kpis=[['Просмотры за период',fmt(total),'Сумма измеренных приростов'],['Объявлений',fmt(ids.size),'С сопоставимыми интервалами'],['Сочетаний площади и цены',fmt(records.length),'Разные цены считаем отдельно']];
- $('demandKpis').innerHTML=kpis.map(v=>'<div class="demand-kpi"><strong>'+v[1]+'</strong><div>'+v[0]+'</div><span>'+v[2]+'</span></div>').join('');
- const areaLabel=g=>g.area.toLocaleString('ru-RU',{maximumFractionDigits:5})+' м² · '+price({price:g.price,priceCurrency:g.currency});
- const metric=g=>demandMetric==='average'?g.avg:g.views;
- const max=Math.max(1,...records.slice(0,12).map(metric));
- $('demandChart').innerHTML=records.length?records.slice(0,12).map(g=>{
-  const width=Math.max(0,100*metric(g)/max);
-  return '<div class="demand-chart-row"><div class="demand-chart-label">'+esc(areaLabel(g))+'<small>'+fmt(g.count)+' объявлений</small></div><div class="demand-chart-track"><div class="demand-chart-fill" style="width:'+width.toFixed(2)+'%"></div></div><div class="demand-chart-val">'+fmt(Math.round(metric(g)*10)/10)+'</div></div>';
- }).join(''):empty('Нет подтверждённых приростов за этот период и выбранный тип объявлений.');
- const rows=records.slice(0,demandVisible).map((g,i)=>{
-  const children=[...g.items.values()].sort((a,b)=>b.delta-a.delta).map(v=>'<li>'+adLink(v.row)+'<br><small>+'+fmt(v.delta)+' за период · всего '+fmt(number(v.row.views))+'</small></li>').join('');
-  const details='<details class="demand-group-list"><summary>'+fmt(g.count)+' объявлений — раскрыть</summary><ol>'+children+'</ol></details>';
-  return '<tr><td>'+(i+1)+'</td><td><strong>'+esc(g.area.toLocaleString('ru-RU',{maximumFractionDigits:5}))+' м²</strong></td><td>'+esc(price({price:g.price,priceCurrency:g.currency}))+'</td><td>'+fmt(g.count)+'</td><td><strong>+'+fmt(g.views)+'</strong></td><td>'+fmt(Math.round(g.avg*10)/10)+'</td><td>'+details+'</td></tr>';
+ const kpis=[
+  [fmt(pareto.total),'Просмотры за период','Измеренный прирост'],
+  [fmt(pareto.allAds),'Объявлений','С проверенным приростом'],
+  [fmt(records.length),'Групп предложений',demandMetric==='total'?'Точная площадь + цена':'Укрупнённые диапазоны'],
+  [pareto.total?percent(pareto.viewShare)+'%':'—','Группы, дающие 80%',pareto.total?fmt(pareto.groups)+' из '+fmt(records.length)+' · '+fmt(pareto.ads)+' объявлений':'Пока нет прироста']
+ ];
+ $('demandKpis').innerHTML=kpis.map(v=>'<div class="demand-kpi"><strong>'+v[0]+'</strong><div class="demand-kpi-description"><div class="demand-kpi-title">'+v[1]+'</div><span>'+v[2]+'</span></div></div>').join('');
+ $('demandPareto').textContent=pareto.total?
+  '80% просмотров обеспечивают '+fmt(pareto.groups)+' из '+fmt(records.length)+' групп ('+percent(pareto.groupShare)+'%) · '+fmt(pareto.ads)+' из '+fmt(pareto.allAds)+' объявлений ('+percent(pareto.adShare)+'%)':
+  'Недостаточно подтверждённых просмотров для расчёта 80/20';
+ let running=0;
+ const max=Math.max(1,...records.slice(0,12).map(g=>g.views));
+ const rgb=(i)=>{const f=Math.min(i,11)/11;return 'rgb('+Math.round(146+58*f)+','+Math.round(190+36*f)+','+Math.round(215+24*f)+')';};
+ const heading='<div class="demand-chart-head"><span>Группа</span><span>Просмотры по группам</span><span style="text-align:right">Просм.</span><span style="text-align:right">Накоплено</span></div>';
+ $('demandChart').innerHTML=records.length?heading+records.slice(0,12).map((g,i)=>{
+  running+=g.views;
+  const width=Math.max(0,100*g.views/max);
+  const progress=pareto.total?percent(100*running/pareto.total):'0';
+  return '<div class="demand-chart-row '+(i<pareto.groups?'pareto-focus':'')+'"><div class="demand-chart-label">'+esc(demandGroupLabel(g))+'<small>'+fmt(g.count)+' объявлений · '+percent(pareto.total?100*g.views/pareto.total:0)+'% просмотров</small></div><div class="demand-chart-track"><div class="demand-chart-fill" style="width:'+width.toFixed(2)+'%;background:'+rgb(i)+'"></div></div><div class="demand-chart-val">'+fmt(g.views)+'</div><div class="demand-chart-share">Σ '+progress+'%</div></div>';
+ }).join('')+'<div class="demand-chart-foot">Показаны первые '+fmt(Math.min(12,records.length))+' из '+fmt(records.length)+' групп. Голубым оттенком выделена доля спроса; в таблице доступны остальные группы.</div>':
+ empty('Нет подтверждённых приростов за этот период и выбранный тип объявлений.');
+ let cumulative=0;
+ const groupRows=records.slice(0,demandVisible).map((g,i)=>{
+  // Cumulative percentage must reflect the full sorted ranking, including undisplayed rows.
+  const fraction=pareto.total?100*g.views/pareto.total:0;
+  const previous=records.slice(0,i).reduce((sum,x)=>sum+x.views,0);
+  const accumulated=pareto.total?100*(previous+g.views)/pareto.total:0;
+  const children=[...g.items.values()].sort((a,b)=>b.delta-a.delta).map(v=>
+   '<li>'+adLink(v.row)+'<br><small>+'+fmt(v.delta)+' за период · всего '+fmt(number(v.row.views))+'</small></li>').join('');
+  const details='<details class="demand-group-list"><summary>'+fmt(g.count)+' объявлений · раскрыть</summary><ol>'+children+'</ol></details>';
+  return '<tr><td>'+(i+1)+'</td><td><strong>'+esc(demandGroupLabel(g))+'</strong></td><td>'+fmt(g.count)+'</td><td><strong>+'+fmt(g.views)+'</strong></td><td>'+percent(fraction)+'%</td><td>'+percent(accumulated)+'%</td><td>'+percent(g.avg)+'</td><td>'+details+'</td></tr>';
  });
- $('demandTable').innerHTML=records.length?makeTable(['№','Площадь','Цена','Объявлений','Просмотры за период','На объявление','Состав группы'],rows):empty('Нет данных для таблицы.');
+ $('demandTable').innerHTML=records.length?makeTable(
+  ['№','Группа','Объявлений','Просмотры','Доля','Накоплено','На объявление','Состав группы'],groupRows):
+  empty('Нет подтверждённых интервалов для подробной таблицы.');
  $('demandMore').hidden=records.length<=demandVisible;
  $('demandMore').textContent='Показать ещё ('+fmt(Math.min(40,records.length-demandVisible))+' из '+fmt(records.length-demandVisible)+' оставшихся)';
 }

@@ -149,16 +149,86 @@ test('dashboard checks for new data after returning to Opera and avoids full CSV
  assert.match(html,/<script src="dashboard\.js\?v=[^\"]+" defer><\/script>/);
 });
 
-test('Demand tab has eight periods, three independent modes and grouped price/area analytics',()=>{
+test('Demand header has seven periods and exactly three ranking choices',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const html=fs.readFileSync(path.join(__dirname,'../docs/index.html'),'utf8');
  const js=fs.readFileSync(path.join(__dirname,'../docs/dashboard.js'),'utf8');
  assert.match(html,/data-view="demand">Спрос/);
- for(const id of ['today','yesterday','daybefore','7','14','30','90','custom'])assert.ok(html.includes('data-demand-period="'+id+'"'),id);
+ for(const id of ['today','yesterday','7','14','30','90','custom'])assert.ok(html.includes('data-demand-period="'+id+'"'),id);
+ assert.doesNotMatch(html,/data-demand-period="daybefore"/);
  for(const id of ['all','free','paid'])assert.ok(html.includes('data-demand-mode="'+id+'"'),id);
- for(const id of ['total','average'])assert.ok(html.includes('data-demand-metric="'+id+'"'),id);
+ for(const id of ['total','price','area'])assert.ok(html.includes('data-demand-metric="'+id+'"'),id);
+ assert.doesNotMatch(html,/data-demand-metric="average"/);
+ assert.match(html,/id="demandPareto"/);
+ assert.match(html,/class="demand-controls"/);
+ assert.match(html,/demand-chart-fill/);
  assert.match(js,/function demandGroups\(m\)/);
- assert.match(js,/const key=area\+'\|'\+cost\+'\|'\+currency;/);
- assert.match(js,/skipped\.priceChanged\+\+/);
+ assert.match(js,/function demandPareto\(records\)/);
  assert.match(js,/function organicSets\(m\)/);
+});
+
+test('Demand group bins: exact area+price, currency-safe price intervals and area bands',()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const js=fs.readFileSync(path.join(__dirname,'../docs/dashboard.js'),'utf8');
+ const start=js.indexOf('// Independent date controls for the Demand tab.');
+ const end=js.indexOf('function renderPlacements(m){',start);
+ assert.ok(start>0&&end>start);
+ const rows={},events=[];
+ const add=(id,area,amount,currency,status,views,priorPrice=amount)=>{
+  const r={uuid:id,areaTotal:String(area),price:String(amount),priceCurrency:currency,paymentStatus:status,views:String(views*2),createdAt:'2026-11-09T09:00:00Z'};
+  rows[id]={...r,price:String(priorPrice)};
+  events.push({id,start:'before',end:'after',row:r,delta:views,category:status==='0'?'free':status==='2'?'paid':'unknown'});
+ };
+ add('A',48.5,100000,'978','0',50);
+ add('B',48.5,100000,'978','2',30);
+ add('C',48.5,105000,'978','2',10);
+ add('D',82,90000,'978','0',10);
+ add('E',48.5,100000,'840','2',5);
+ add('F',48.5,300000,'933','0',6);
+ add('G',48.5,100000,'978','0',20,99000);
+ add('H',48.5,100000,'978','transition',100);
+ const ctx={Map,Set,Date,Number,String,Math,
+  index:{byTime:new Map([['before',new Map(Object.entries(rows))]])},
+  number:x=>x===''||x==null||!Number.isFinite(Number(x))?null:Number(x),
+  fmt:x=>String(x),price:r=>String(r.price),esc:x=>String(x)};
+ vm.createContext(ctx);vm.runInContext(js.slice(start,end),ctx);
+ const evaluate=(metric,mode='all')=>{
+  vm.runInContext("demandMetric='"+metric+"'; demandMode='"+mode+"';",ctx);
+  return vm.runInContext('demandGroups',ctx)({events});
+ };
+ const exact=evaluate('total');
+ assert.equal(exact.records.reduce((n,g)=>n+g.views,0),111);
+ assert.equal(exact.records.length,5);
+ assert.equal(exact.records[0].views,80);
+ assert.equal(exact.records[0].count,2);
+ assert.equal(exact.skipped.changed,1);
+ assert.equal(exact.skipped.unknownStatus,1);
+ assert.ok(exact.records.some(x=>x.currency==='840'&&x.views===5));
+ const euro=evaluate('price');
+ assert.equal(euro.records.length,4);
+ assert.equal(euro.records[0].views,90); // 100k and 105k EUR share 100–120k price range
+ assert.ok(euro.records.some(x=>x.currency==='933'&&x.views===6)); // no currency mixing
+ assert.ok(euro.records.some(x=>x.currency==='840'&&x.views===5));
+ const area=evaluate('area');
+ assert.equal(area.records.length,2);
+ assert.equal(area.records[0].low,45);
+ assert.equal(area.records[0].high,50);
+ assert.equal(area.records[0].views,121); // price change is still valid for AREA
+ assert.equal(evaluate('total','free').records.reduce((n,g)=>n+g.views,0),66);
+ assert.equal(evaluate('total','paid').records.reduce((n,g)=>n+g.views,0),45);
+});
+
+test('Pareto report identifies how many groups and unique listings create 80 percent of views',()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const js=fs.readFileSync(path.join(__dirname,'../docs/dashboard.js'),'utf8');
+ const start=js.indexOf('function demandPareto(records){'),end=js.indexOf('function renderDemand(){',start);
+ assert.ok(start>0&&end>start);
+ const ctx={Set,Math,Map};
+ vm.createContext(ctx);vm.runInContext(js.slice(start,end),ctx);
+ const records=[45,35,15,5].map((views,i)=>({views,items:new Map([[String(i),{}]])}));
+ const p=vm.runInContext('demandPareto',ctx)(records);
+ assert.equal(p.total,100);assert.equal(p.groups,2);assert.equal(p.ads,2);
+ assert.equal(p.viewShare,80);assert.equal(p.groupShare,50);assert.equal(p.adShare,50);
+ const noViews=vm.runInContext('demandPareto',ctx)([]);
+ assert.equal(noViews.groups,0);assert.equal(noViews.total,0);
 });
