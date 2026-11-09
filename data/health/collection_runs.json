@@ -2079,5 +2079,18 @@
     "retryable_pagination": true,
     "error": "SourcePaginationChanged: Source total or page size changed",
     "duration_seconds": 232.666
+  },
+  {
+    "started_at": "2026-11-09T06:07:13.630216+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 224,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-09T08:10:00+03:00",
+    "retryable_pagination": false,
+    "error": "RuntimeError: Archive readback failed: HTTP 504",
+    "duration_seconds": 827.336
   }
 ]
