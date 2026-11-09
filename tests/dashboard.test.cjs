@@ -97,7 +97,11 @@ test('ranking excludes all pre-fix intervals but preserves raw history',()=>{
 test('organic view renders gallery cards as well as table',()=>{
  const js=require('node:fs').readFileSync(require('node:path').join(__dirname,'../docs/dashboard.js'),'utf8');
  const body=js.split('function renderWorks(m){')[1].split('\nfunction renderPlacements(m)')[0];
- assert.match(body,/renderGallery\(m\);/);
+ assert.match(body,/renderGallery\(m(?:,sets)?\);/);
+ const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'../docs/index.html'),'utf8');
+ assert.match(html,/id="gallery"/);
+ assert.match(html,/id="galleryOld"/);
+ assert.match(js,/kufarStyleCard\(v\.r,/);
 });
 
 
@@ -140,7 +144,21 @@ test('dashboard checks for new data after returning to Opera and avoids full CSV
  assert.match(js,/addEventListener\('pageshow'/);
  assert.match(js,/collection_state\.json\?refresh=/);
  assert.doesNotMatch(js,/setInterval\(\(\)=>\{if\(!document\.hidden&&!\$\('refresh'\)\.disabled\)load\(\);\},300000\)/);
- assert.match(js,/quickPeriod='7'/);
- assert.match(html,/<button data-days="7" class="active">7 дней<\/button>/);
+ assert.match(js,/quickPeriod='1'/);
+ assert.match(html,/<button data-days="1" class="active">Сегодня<\/button>/);
  assert.match(html,/<script src="dashboard\.js\?v=[^\"]+" defer><\/script>/);
+});
+
+test('Demand tab has eight periods, three independent modes and grouped price/area analytics',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const html=fs.readFileSync(path.join(__dirname,'../docs/index.html'),'utf8');
+ const js=fs.readFileSync(path.join(__dirname,'../docs/dashboard.js'),'utf8');
+ assert.match(html,/data-view="demand">Спрос/);
+ for(const id of ['today','yesterday','daybefore','7','14','30','90','custom'])assert.ok(html.includes('data-demand-period="'+id+'"'),id);
+ for(const id of ['all','free','paid'])assert.ok(html.includes('data-demand-mode="'+id+'"'),id);
+ for(const id of ['total','average'])assert.ok(html.includes('data-demand-metric="'+id+'"'),id);
+ assert.match(js,/function demandGroups\(m\)/);
+ assert.match(js,/const key=area\+'\|'\+cost\+'\|'\+currency;/);
+ assert.match(js,/skipped\.priceChanged\+\+/);
+ assert.match(js,/function organicSets\(m\)/);
 });
