@@ -210,13 +210,23 @@ function createMatcher(){
 }
 function promoMatch(r){const p=$('promo').value;return !p||(p==='paid'?paid(r):p==='other'?![0,2,3,4].includes(number(r.paymentStatus)):r.paymentStatus===p);}
 let cachedModelIndex=null,cachedModelKey='',cachedModelValue=null;
+function comparePublication(a,b,sort){
+ const dateA=Date.parse(a.createdAt),dateB=Date.parse(b.createdAt);
+ const knownA=Number.isFinite(dateA),knownB=Number.isFinite(dateB);
+ if(!knownA||!knownB)return Number(knownB)-Number(knownA);
+ if(sort==='duration'){
+  const age=(row,created)=>Math.max(0,(Date.parse(row.snapshot_at)||created)-created);
+  return age(b,dateB)-age(a,dateA)||dateA-dateB;
+ }
+ return sort==='oldest'?dateA-dateB:dateB-dateA;
+}
 function model(){
  const fields=['from','to','agent','promo','quarter','company','rooms','house','areaMin','areaMax','search','sort'];
  const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),selectedTab,preciseBounds,[...recentDays].sort()]);
  if(cachedModelIndex===index&&cachedModelKey===key&&cachedModelValue)return cachedModelValue;
  const m=periodData(index,$('from').value,$('to').value,createMatcher(),preciseBounds,'2026-10-27T11:41:00Z',selectedDates());
  let listing=selectedTab==='published'?m.observed.filter(r=>r.createdAt&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to&&m.selectDate(r.createdAt)):selectedTab==='paid'?m.current.filter(paid):selectedTab==='new'?m.newly:selectedTab==='gone'?m.gone:selectedTab==='period'?m.observed:m.current;
- const sort=$('sort').value;listing=listing.slice().sort((a,b)=>sort==='growth'?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):sort==='views'?(number(b.views)||0)-(number(a.views)||0):sort==='price'?String(a.priceCurrency).localeCompare(String(b.priceCurrency))||(number(a.price)||0)-(number(b.price)||0):String(b.createdAt).localeCompare(String(a.createdAt)));
+ const sort=$('sort').value;listing=listing.slice().sort((a,b)=>sort==='growth'?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):sort==='views'?(number(b.views)||0)-(number(a.views)||0):sort==='price'?String(a.priceCurrency).localeCompare(String(b.priceCurrency))||(number(a.price)||0)-(number(b.price)||0):comparePublication(a,b,sort));
  cachedModelIndex=index;cachedModelKey=key;cachedModelValue={...m,listing};return cachedModelValue;
 }
 function svgBars(groups){
@@ -229,7 +239,7 @@ function svgBars(groups){
     if(groups.length<16||i%Math.ceil(groups.length/12)===0)s+=`<text x="${x+step*.3}" y="${bottom+20}" text-anchor="middle" font-size="10" fill="#62758a">${esc(g.label)}</text>`;
   });return s+'</svg>';
 }
-function render(){if(!index)return;$('status').hidden=activeView==='promotion';updateEmployeeSummary();const m=model();currentModel=m;if(employeeLink){const employee=m.observed[0]||index.histories.values().next().value?.find(r=>r.userUuid===employeeLink);$('employeeAdsTitle').textContent=(employee?agentName(employee)+' · ':'')+m.from+' — '+m.to;}
+function render(){if(!index)return;$('status').hidden=['promotion','competitors'].includes(activeView);updateEmployeeSummary();const m=model();currentModel=m;if(employeeLink){const employee=m.observed[0]||index.histories.values().next().value?.find(r=>r.userUuid===employeeLink);$('employeeAdsTitle').textContent=(employee?agentName(employee)+' · ':'')+m.from+' — '+m.to;}
   if(m.from>m.to){$('status').textContent='Дата начала должна быть раньше даты окончания.';return;}
   const comparable=m.events.length>0,delta=m.events.reduce((s,e)=>s+e.delta,0),advertised=m.current.filter(paid).length;
   const activations=m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus'&&![2,3,4].includes(number(x.old))&&[2,3,4].includes(number(x.new)))).length;
@@ -382,7 +392,7 @@ function agentsFor(m){const out=new Map();const publication=r=>{if(!r.createdAt|
 function renderUnified(m){
  if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
  if(activeView==='leaders'){
- const promoted=new Map();for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}const list=[...promoted.values()].sort((a,b)=>b.delta-a.delta);
+ const promoted=new Map();for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}const sort=$('promotedSort').value;const list=[...promoted.values()].sort((a,b)=>sort==='views'?b.delta-a.delta:comparePublication(a.row,b.row,sort));
  $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Всего просмотров страницы',''],list.slice(0,100).map((v,i)=>`<tr><td>${i+1}</td><td>${esc(agentName(v.row))}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
  if(photoLoaded)renderPromotedGallery(m);
  }
@@ -482,7 +492,8 @@ function renderWorks(m){
   const v=byId.get(e.id);v.views+=e.delta;v.hours+=(Date.parse(e.end)-Date.parse(e.start))/3600000;
  }
  const verified=byId.size>0;
- const list=(verified?[...byId.values()]:m.current.filter(free).map(r=>({r,views:number(r.views)||0,hours:null}))).sort((a,b)=>b.views-a.views).slice(0,30);
+ const sort=$('organicSort').value;
+ const list=(verified?[...byId.values()]:m.current.filter(free).map(r=>({r,views:number(r.views)||0,hours:null}))).sort((a,b)=>sort==='views'?b.views-a.views:comparePublication(a.r,b.r,sort)).slice(0,30);
  $('organicTable').innerHTML=(verified?'<p class="muted">Рейтинг по проверенному приросту при бесплатном статусе на двух замерах.</p>':'<p class="notice">После исправления сборщика ещё нет сопоставимых проверенных интервалов. Ниже — объявления без продвижения на последнем обходе, по общему счётчику просмотров. Это временный список, а не доказанный органический прирост.</p>')+
  makeTable(['Сотрудник','Объявление',verified?'Прирост без рекламы':'Всего просмотров','Наблюдалось часов',''],list.map(v=>`<tr><td>${esc(agentName(v.r))}</td><td class="wrap">${adLink(v.r)}</td><td>${verified?'+'+fmt(v.views):fmt(v.views)}</td><td>${v.hours===null?'—':fmt(Math.round(v.hours*10)/10)}</td><td>${detailButton(v.r)}</td></tr>`));
  $('wordsTable').innerHTML='';
@@ -501,7 +512,8 @@ function renderGallery(m){
  const organic=new Map();
  for(const e of m.events){if(e.category==='free')organic.set(e.id,(organic.get(e.id)||0)+e.delta);}
  const hasGrowth=organic.size>0;
- const items=(hasGrowth?m.observed.filter(r=>organic.has(r.uuid)):m.current.filter(free)).sort((a,b)=>hasGrowth?(organic.get(b.uuid)||0)-(organic.get(a.uuid)||0):(number(b.views)||0)-(number(a.views)||0)).slice(0,30);
+ const sort=$('organicSort').value;
+ const items=(hasGrowth?m.observed.filter(r=>organic.has(r.uuid)):m.current.filter(free)).sort((a,b)=>sort!=='views'?comparePublication(a,b,sort):hasGrowth?(organic.get(b.uuid)||0)-(organic.get(a.uuid)||0):(number(b.views)||0)-(number(a.views)||0)).slice(0,30);
  $('gallery').innerHTML=items.map(r=>kufarStyleCard(r,
   hasGrowth?'+'+fmt(organic.get(r.uuid))+' просм.':fmt(number(r.views))+' просм. всего',
   hasGrowth?'Прирост при бесплатном статусе':'Исторический прирост пока неизвестен',
@@ -526,6 +538,8 @@ function renderPromotedGallery(m){
  const confirmed=[...promoted.values()].filter(v=>v.delta>0).sort((a,b)=>b.delta-a.delta);
  const fallback=confirmed.length===0;
  const ranked=fallback?[...historical.values()].sort((a,b)=>String(b.last).localeCompare(String(a.last))).map(x=>({...x,delta:null})):confirmed.map(x=>({...x,...historical.get(x.row.uuid)}));
+ const sort=$('promotedSort').value;
+ if(sort!=='views')ranked.sort((a,b)=>comparePublication(a.row,b.row,sort));
  const total=ranked.length;
  const rooms=new Map();
  for(const v of ranked){
@@ -571,6 +585,7 @@ function detailExtras(id){
  $('detail').insertAdjacentHTML('beforeend',html);
 }
 function activateView(view){$('methods').hidden=view==='promotion';const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(['works','leaders','ads'].includes(view)&&!photoLoaded)loadPhotos();}}
+for(const id of ['organicSort','promotedSort'])$(id).addEventListener('change',render);
 $('views').onclick=e=>{const b=e.target.closest('[data-view]');if(b)activateView(b.dataset.view);};
 $('multiAgents').onchange=()=>{$('agent').value='';page=0;render();};
 $('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','rooms','house','areaMin','areaMax','search'])$(id).value='';for(const x of document.querySelectorAll('#multiAgents input'))x.checked=false;page=0;render();};
@@ -621,7 +636,7 @@ if(employeeLink){
  activateView('ads');
  load().then(()=>{if(index&&!photoLoaded)loadPhotos();});
 }else{
- activateView('employees');
+ activateView(location.hash==='#competitor-watch'?'competitors':'employees');
  load();
 }
 // Poll the tiny committed checkpoint, not the full historical CSV on every tick.

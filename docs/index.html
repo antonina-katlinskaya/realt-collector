@@ -55,7 +55,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
-<script src="dashboard.js?v=20261109-agent-labels-v1" defer></script>
+<script src="dashboard.js?v=20261109-view-sort-v1" defer></script>
 
 <style>
 
@@ -138,12 +138,6 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 </style></head>
 <body><main>
 <header><div><h1>Радар REALT</h1><div class="muted">Минск Мир · Зелёная гавань · объявления и продвижение</div></div><div class="meta"><div id="freshness">Загружаем данные…</div><div class="headerlinks"><button id="refresh" title="Перечитать сохранённые снимки; новый сбор запускается по расписанию">Обновить данные</button></div></div></header>
-<section class="panel" id="competitor-watch" aria-labelledby="competitor-watch-title">
-<h2 id="competitor-watch-title">Конкуренты под наблюдением · 30 дней</h2>
-<p class="muted">Активные карточки Realt, созданные за последние 30 дней. Дни размещения считаются по Минску.</p>
-<p class="muted" id="competitor-watch-status" role="status">Загружаем срез…</p>
-<div id="competitor-watch-tables"></div>
-</section>
 <script src="competitor-watch.js?v=1" defer></script>
 <div class="notice error" id="freshnessWarning" role="status" aria-live="polite" hidden></div>
 <details class="filterbox" id="filterBox" open>
@@ -155,19 +149,25 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <div class="filter-search"><input id="search" type="search" placeholder="Поиск по заголовку, адресу или номеру объявления" aria-label="Поиск объявлений"><span class="newbuild-label">✓ Только новостройки</span><button id="reset">Сбросить фильтры</button></div>
 <div hidden><select id="agent"><option value="">Все сотрудники</option></select><select id="company"><option value="">Все</option></select><select id="rooms"><option value="">Все</option></select><select id="promo"><option value="">Любое</option></select><select id="quarter"><option value="">Все</option></select><select id="house"><option value="">Все</option></select><input id="areaMin" type="number"><input id="areaMax" type="number"></div>
 </details>
-<nav id="views" class="viewtabs" aria-label="Основные разделы радара"><button data-view="promotion" class="active">Продвижение</button><button data-view="ads">Объявления за период</button><button data-view="employees">Сотрудники</button><button data-view="works">Топ органика</button><button data-view="leaders">Топ продвижение</button></nav>
+<nav id="views" class="viewtabs" aria-label="Основные разделы радара"><button data-view="competitors">Конкуренты</button><button data-view="promotion" class="active">Продвижение</button><button data-view="ads">Объявления за период</button><button data-view="employees">Сотрудники</button><button data-view="works">Топ органика</button><button data-view="leaders">Топ продвижение</button></nav>
+<section class="panel" id="competitor-watch" data-section="competitors" hidden aria-labelledby="competitor-watch-title">
+<h2 id="competitor-watch-title">Конкуренты под наблюдением · 30 дней</h2>
+<p class="muted">Активные карточки Realt, созданные за последние 30 дней. Дни размещения считаются по Минску.</p>
+<p class="muted" id="competitor-watch-status" role="status">Загружаем срез…</p>
+<div id="competitor-watch-tables"></div>
+</section>
 <div id="status" class="muted" role="status" aria-live="polite"></div>
 <div class="cards" id="cards"></div>
 <div class="notice" id="coverage"></div>
 <div data-section="overview" hidden><div class="grid"><section class="panel"><h2>Когда росли просмотры</h2><div class="muted">Прирост общего счётчика между обходами. Наведи на столбец, чтобы увидеть интервал.</div><div class="legend"><span><i class="dot" style="background:#147b73"></i>Продвижение наблюдалось</span><span><i class="dot" style="background:#396cc1"></i>Бесплатно на обоих обходах</span><span><i class="dot" style="background:#b67b25"></i>Статус менялся / неизвестен</span></div><div id="traffic"></div></section>
 <section class="panel"><div class="tablehead"><h2>Сравнение агентов</h2><select id="rank" aria-label="Показатель сравнения"><option value="count">Число объявлений</option><option value="growth">Прирост просмотров</option><option value="paid">В продвижении</option><option value="views">Просмотры за всё время</option></select></div><div class="muted">Нажми на агента, чтобы открыть его объявления</div><div id="ranking"></div></section></div><section class="panel"><h2>По датам</h2><p class="muted">Прирост отнесён к дате конца интервала, а не к доказанному дню визита. Пустое значение означает недостаток замеров.</p><div id="dailyTable"></div></section><section class="panel"><h2>Что сделали конкуренты</h2><div class="muted">Сравнение соседних снимков: цена, заголовок, параметры и продвижение.</div><div id="changesFeed"></div></section></div>
 <section class="panel" data-section="ads" hidden>
-<div class="tablehead"><div><h2>Объявления за период <span id="publishedCount"></span></h2><p class="muted">Размещены в выбранном периоде · подтверждённые новостройки Минск-Мира. «Всего просмотров» — счётчик открытий страницы объявления; «прирост» — разница достоверных замеров. Ни то ни другое не означает открытие телефона.</p></div><select id="sort" aria-label="Сортировка"><option value="views">По просмотрам</option><option value="recent">Новые сверху</option><option value="price">По цене</option><option value="growth">По приросту просмотров</option></select></div>
+<div class="tablehead"><div><h2>Объявления за период <span id="publishedCount"></span></h2><p class="muted">Размещены в выбранном периоде · подтверждённые новостройки Минск-Мира. «Всего просмотров» — счётчик открытий страницы объявления; «прирост» — разница достоверных замеров. Ни то ни другое не означает открытие телефона.</p></div><select id="sort" aria-label="Сортировка"><option value="views">По просмотрам</option><option value="recent">От новых к старым</option><option value="oldest">От старых к новым</option><option value="duration">Дольше опубликованные сверху</option><option value="price">По цене</option><option value="growth">По приросту просмотров</option></select></div>
 <div class="tabs" id="tabs" hidden><button data-tab="published" class="active">Размещены за период</button></div>
 <div id="employeeAdsTitle" class="muted" hidden></div><div id="employeeAds" hidden></div><div id="adCards" class="cgrid"></div>
 <div class="pagination"><span id="rowcount"></span><div><button id="prev" class="pagebtn">← Назад</button><button id="next" class="pagebtn">Далее →</button></div></div>
 <details class="adTableDetails"><summary>Подробная таблица</summary><button id="export">Скачать выбранные строки CSV</button><div class="tablewrap"><table><thead><tr><th>Агент</th><th>Объявление</th><th>Цена</th><th>Продвижение</th><th>Наблюдается с</th><th>Просмотры всего</th><th>Прирост за период</th><th></th></tr></thead><tbody id="listings"></tbody></table></div></details></section>
-<section data-section="leaders" class="panel" hidden><h2>Топ продвижение</h2><p class="muted">Рейтинг по приросту просмотров только в сопоставимых интервалах с платным статусом на обоих обходах. Это не доказательство, что все просмотры получены благодаря рекламе.</p><div id="promotedGallery" class="promo-layout"></div><details><summary>Подробная таблица рейтинга</summary><div id="leadersTable"></div></details></section>
+<section data-section="leaders" class="panel" hidden><h2>Топ продвижение</h2><label>Сортировка <select id="promotedSort"><option value="views">По просмотрам</option><option value="recent">От новых к старым</option><option value="oldest">От старых к новым</option><option value="duration">Дольше опубликованные сверху</option></select></label><p class="muted">Рейтинг по приросту просмотров только в сопоставимых интервалах с платным статусом на обоих обходах. Это не доказательство, что все просмотры получены благодаря рекламе.</p><div id="promotedGallery" class="promo-layout"></div><details><summary>Подробная таблица рейтинга</summary><div id="leadersTable"></div></details></section>
 <section data-section="employees" class="panel" hidden><h2>Результаты сотрудников</h2><p class="employee-legend">🥇🥈🥉 — больше всего просмотров по объявлениям, размещённым в выбранном периоде. <span class="employee-swatch"></span> — лучшее значение в столбце.</p><div id="employeeTable"></div><details><summary>Карточки сотрудников</summary><div id="employeeHighlights" class="employee-highlights"></div></details><h3>Действия сотрудников</h3><div id="employeeChanges"></div></section>
 <section data-section="promotion">
 <div class="cards" id="promoOverviewKpi"></div>
@@ -179,7 +179,7 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <details class="promo-notes"><summary>О данных продвижения</summary><p>Статус рекламы виден на момент обхода. Даты — первое и последнее подтверждение, а не даты покупки пакета. ¹ Дни считаются по датам, когда реклама была замечена. Прирост просмотров доступен только для сопоставимых замеров; прочерк означает отсутствие данных. Открытия телефона и расходы пока не получены.</p></details>
 </section>
 <section data-section="works" hidden>
-<section class="panel"><h2>Топ органика</h2><p class="muted">Новостройки без платного продвижения. Рейтинг прироста появится после двух достоверных обходов; до этого показываются общие просмотры с пометкой.</p><div id="photoStatus" role="status"></div><div id="gallery" class="cgrid"></div></section>
+<section class="panel"><h2>Топ органика</h2><label>Сортировка <select id="organicSort"><option value="views">По просмотрам</option><option value="recent">От новых к старым</option><option value="oldest">От старых к новым</option><option value="duration">Дольше опубликованные сверху</option></select></label><p class="muted">Новостройки без платного продвижения. Рейтинг прироста появится после двух достоверных обходов; до этого показываются общие просмотры с пометкой.</p><div id="photoStatus" role="status"></div><div id="gallery" class="cgrid"></div></section>
 <section class="panel"><h2>Рейтинг органических объявлений</h2><div id="organicTable"></div></section><div id="wordsTable" hidden></div>
 </section>
 <section data-section="placements" class="panel" hidden><h2>Какие площади и комнатность размещают</h2><p class="muted">Группы объявлений с датой createdAt внутри периода. Дата взята из карточки; первый снимок не считается новой публикацией.</p><div id="placementGroups"></div><h3>День недели × час публикации</h3><p class="muted">Это даты публикации из карточек, а не время посещений клиентов.</p><div id="publicationHeat"></div></section>
