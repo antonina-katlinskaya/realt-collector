@@ -1,0 +1,32 @@
+name: Realt full public-pagination consistency probe
+on:
+  push:
+    branches: [fix/realt-live-pagination-drift-20261109]
+    paths: ['.github/workflows/realt-pagination-full-probe.yml']
+permissions:
+  contents: read
+jobs:
+  full-public-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Validate complete oldest-first pagination without writing data
+        run: |
+          python -u - <<'PY'
+          import requests
+          import collector, config as C
+          session=requests.Session()
+          session.headers.update({'content-type':'application/json','user-agent':C.USER_AGENT,'accept':'application/json'})
+          items=collector.fetch_agency_listings(session, C.AGENCIES['etazhi'])
+          uuids=[str(x.get('uuid') or '') for x in items]
+          dates=[x.get('createdAt') for x in items]
+          assert len(items)>1000, f'Unexpectedly small agency listing count: {len(items)}'
+          assert all(uuids) and len(set(uuids))==len(uuids), 'Missing or duplicate UUIDs'
+          assert all(dates) and dates==sorted(dates), 'Ordering not strictly stable'
+          print('SUCCESS: consistent full public oldest-first scan, unique count:',len(items),flush=True)
+          PY
