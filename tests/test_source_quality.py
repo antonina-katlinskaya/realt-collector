@@ -20,6 +20,31 @@ class SourceQualityTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "materially"):
             verify_pages([pages[0], {**pages[1], "returned": 18}, pages[2]], ["a"], 30)
 
+    def test_bounded_tail_growth_is_complete(self):
+        pages = [
+            {"agency": "a", "page": 1, "total": 4, "returned": 2},
+            {"agency": "a", "page": 2, "total": 5, "returned": 2},
+            {"agency": "a", "page": 3, "total": 5, "returned": 1},
+        ]
+        self.assertEqual(verify_pages(pages, ["a"], 2)["a"],
+                         {"reported": 5, "retrieved": 5, "pages": 3})
+
+    def test_incomplete_growth_cannot_be_accepted(self):
+        pages = [
+            {"agency": "a", "page": 1, "total": 4, "returned": 2},
+            {"agency": "a", "page": 2, "total": 5, "returned": 2},
+        ]
+        with self.assertRaisesRegex(RuntimeError, 'Incomplete'):
+            verify_pages(pages, ["a"], 2)
+
+    def test_shrinking_source_is_not_mistaken_for_growth(self):
+        pages = [
+            {"agency": "a", "page": 1, "total": 5, "returned": 2},
+            {"agency": "a", "page": 2, "total": 4, "returned": 2},
+        ]
+        with self.assertRaisesRegex(RuntimeError, 'shrank'):
+            verify_pages(pages, ["a"], 2)
+
     def test_never_accept_first_major_drop(self):
         ids = [f"uuid-{n}" for n in range(900)]
         ok, candidate, why = assess_drop(self.baseline, 900, ids, self.first)
