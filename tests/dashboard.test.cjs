@@ -142,5 +142,5 @@ test('dashboard checks for new data after returning to Opera and avoids full CSV
  assert.doesNotMatch(js,/setInterval\(\(\)=>\{if\(!document\.hidden&&!\$\('refresh'\)\.disabled\)load\(\);\},300000\)/);
  assert.match(js,/quickPeriod='7'/);
  assert.match(html,/<button data-days="7" class="active">7 дней<\/button>/);
- assert.match(html,/dashboard\.js\?v=20261109-visible-refresh-v1/);
+ assert.match(html,/<script src="dashboard\.js\?v=[^\"]+" defer><\/script>/);
 });
