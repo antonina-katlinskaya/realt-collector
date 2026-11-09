@@ -220,13 +220,16 @@ function comparePublication(a,b,sort){
  }
  return sort==='oldest'?dateA-dateB:dateB-dateA;
 }
+function compareListing(a,b,sort,m){
+ return sort==='growth'?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):sort==='views'?(number(b.views)||0)-(number(a.views)||0):sort==='price'?String(a.priceCurrency).localeCompare(String(b.priceCurrency))||(number(a.price)||0)-(number(b.price)||0):comparePublication(a,b,sort);
+}
 function model(){
  const fields=['from','to','agent','promo','quarter','company','rooms','house','areaMin','areaMax','search','sort'];
  const key=JSON.stringify([fields.map(id=>$(id).value),[...checks('multiAgents')].sort(),selectedTab,preciseBounds,[...recentDays].sort()]);
  if(cachedModelIndex===index&&cachedModelKey===key&&cachedModelValue)return cachedModelValue;
  const m=periodData(index,$('from').value,$('to').value,createMatcher(),preciseBounds,'2026-10-27T11:41:00Z',selectedDates());
  let listing=selectedTab==='published'?m.observed.filter(r=>r.createdAt&&day(r.createdAt)>=m.from&&day(r.createdAt)<=m.to&&m.selectDate(r.createdAt)):selectedTab==='paid'?m.current.filter(paid):selectedTab==='new'?m.newly:selectedTab==='gone'?m.gone:selectedTab==='period'?m.observed:m.current;
- const sort=$('sort').value;listing=listing.slice().sort((a,b)=>sort==='growth'?(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0):sort==='views'?(number(b.views)||0)-(number(a.views)||0):sort==='price'?String(a.priceCurrency).localeCompare(String(b.priceCurrency))||(number(a.price)||0)-(number(b.price)||0):comparePublication(a,b,sort));
+ listing=listing.slice().sort((a,b)=>compareListing(a,b,$('sort').value,m));
  cachedModelIndex=index;cachedModelKey=key;cachedModelValue={...m,listing};return cachedModelValue;
 }
 function svgBars(groups){
@@ -285,7 +288,7 @@ function kufarStyleCard(r,primary,subline,secondary){
 function renderTable(m){
  if(employeeLink){
    const groups=[[],[],[]];
-   const observed=m.observed.slice().sort((a,b)=>(m.growth.get(b.uuid)||0)-(m.growth.get(a.uuid)||0));
+   const observed=m.observed.slice().sort((a,b)=>compareListing(a,b,$('sort').value,m));
    for(const r of observed){
      if(!r.createdAt||!Number.isFinite(Date.parse(r.createdAt))){groups[2].push(r);continue;}
      const published=day(r.createdAt);
@@ -294,7 +297,7 @@ function renderTable(m){
    }
    $('publishedCount').textContent=' · '+fmt(groups.reduce((n,g)=>n+g.length,0));
    const headings=['Объявления, размещённые в выбранном периоде','Объявления, размещённые до выбранного периода','Объявления без даты публикации'];
-   $('employeeAds').innerHTML=groups.map((group,i)=>i===2&&!group.length?'':`<section><h3>${headings[i]} · ${fmt(group.length)}</h3><div class="cgrid">${group.map(r=>kufarStyleCard(r,fmt(m.growth.get(r.uuid))+' просм. за период','',i===2?'Дата размещения неизвестна':'Размещено '+date(r.createdAt))).join('')||empty('Нет объявлений в этом блоке')}</div></section>`).join('');
+   $('employeeAds').innerHTML=groups.map((group,i)=>i===2&&!group.length?'':`<section><h3>${headings[i]} · ${fmt(group.length)}</h3><div class="cgrid">${group.map(r=>kufarStyleCard(r,m.growth.has(r.uuid)?fmt(m.growth.get(r.uuid))+' просм. за период':'Нет данных за период','',i===2?'Дата размещения неизвестна':'Размещено '+date(r.createdAt))).join('')||empty('Нет объявлений в этом блоке')}</div></section>`).join('');
    return;
  }
  const size=40;page=Math.min(page,Math.max(0,Math.ceil(m.listing.length/size)-1));const part=m.listing.slice(page*size,(page+1)*size);
@@ -326,7 +329,7 @@ function closeDetail(){$('drawer').hidden=true;detailSeq++;lastFocused?.focus();
 for(const id of ['from','to','agent','promo','quarter','sort','rank','rooms','company','house','areaMin','areaMax'])$(id).addEventListener('change',()=>{if(id==='from'||id==='to'){recentDays.clear();linkedDays.clear();quickPeriod='custom';applyQuickPeriod();}if(id==='agent')for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;if(id==='from'||id==='to')restoreArchiveRange();else render();});let searchRenderTimer=null;
 $('search').addEventListener('input',()=>{page=0;clearTimeout(searchRenderTimer);searchRenderTimer=setTimeout(()=>render(),180);});
 const recentOffsets={'1':0,yesterday:1,dayBefore:2};
-let recentDays=new Set(),quickPeriod='7';
+let recentDays=new Set(),quickPeriod='1';
 const linkedParams=new URLSearchParams(location.search);
 const employeeLink=linkedParams.get('employee');
 let linkedDays=new Set();
@@ -625,6 +628,7 @@ $('employeeTable').addEventListener('click',e=>{
  if(row&&!e.target.closest('a'))row.querySelector('a').click();
 });
 if(employeeLink){
+ $('sort').value='growth';
  const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(Date.parse(value));
  const from=linkedParams.get('from'),to=linkedParams.get('to');
  if(validDate(from)&&validDate(to)&&from<=to){
@@ -633,9 +637,11 @@ if(employeeLink){
  }
  document.querySelector('[data-section="ads"]').classList.add('employee-ads-view');
  $('employeeAds').hidden=false;$('employeeAdsTitle').hidden=false;
+ applyQuickPeriod();
  activateView('ads');
  load().then(()=>{if(index&&!photoLoaded)loadPhotos();});
 }else{
+ applyQuickPeriod();
  activateView(location.hash==='#competitor-watch'?'competitors':'employees');
  load();
 }
