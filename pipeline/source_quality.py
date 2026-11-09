@@ -8,30 +8,40 @@ from collections import Counter
 
 
 def verify_pages(pages, agencies, page_size):
-    """Require complete source pagination without changing the original queries."""
+    """Verify every accepted page and the final count, including bounded growth.
+
+    The live source may append newly created ads while a stable oldest-first
+    scan is in progress. We accept such growth only when every page is present
+    and all returned rows exactly cover the final total. Shrinkage and gaps
+    remain invalid; the caller independently rejects UUID overlap and reorders.
+    """
     summary = {}
     for agency in agencies:
         observations = [p for p in pages if p["agency"] == agency]
         if not observations:
             raise RuntimeError("Missing source list pages for an agency")
-        first = [p for p in observations if p["page"] == 1]
-        if len(first) != 1:
-            raise RuntimeError("Missing or repeated first source page")
-        initial_total = first[0]["total"]
-        if initial_total <= 0:
-            raise RuntimeError("Empty agency search result requires review")
-        expected = ceil(initial_total / page_size)
+        first_total = observations[0]["total"]
+        if first_total <= 0 or observations[0]["page"] != 1:
+            raise RuntimeError("Missing or invalid first source page")
+        totals = [p["total"] for p in observations]
+        if any(after < before for before, after in zip(totals, totals[1:])):
+            raise RuntimeError("Source pagination total shrank during a scan")
+        final_total = totals[-1]
+        max_growth = max(20, (first_total + 19) // 20)
+        if final_total > first_total + max_growth:
+            raise RuntimeError("Source pagination grew beyond safe allowance")
+        expected_pages = ceil(final_total / page_size)
         numbers = [p["page"] for p in observations]
-        if len(numbers) != expected or set(numbers) != set(range(1, expected + 1)):
+        if numbers != list(range(1, expected_pages + 1)):
             raise RuntimeError("Incomplete or repeated source pages")
+        for p in observations:
+            required = min(page_size, final_total - (p["page"] - 1) * page_size)
+            if p["returned"] != required:
+                raise RuntimeError("Source pagination count differs materially from final totalCount")
         actual = sum(p["returned"] for p in observations)
-        # Allow modest live changes during pagination, but not an incomplete search.
-        tolerance = max(5, ceil(initial_total * 0.02))
-        if abs(actual - initial_total) > tolerance:
-            raise RuntimeError("Source pagination count differs materially from totalCount")
-        if any(p["returned"] > page_size or p["returned"] < 0 for p in observations):
-            raise RuntimeError("Invalid source page size")
-        summary[agency] = {"reported": initial_total, "retrieved": actual, "pages": expected}
+        if actual != final_total:
+            raise RuntimeError("Incomplete source page rows")
+        summary[agency] = {"reported": final_total, "retrieved": actual, "pages": expected_pages}
     return summary
 
 
