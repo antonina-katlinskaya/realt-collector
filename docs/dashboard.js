@@ -137,7 +137,17 @@ const date=t=>new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Minsk',day:'2-di
 const price=r=>fmt(number(r.price))+' '+({'978':'€','840':'$','933':'BYN'}[r.priceCurrency]||esc(r.priceCurrency));
 const label=r=>r.payment_label||({'0':'Бесплатно','2':'Выделение','3':'Поднятие','4':'Спецпредложение'}[r.paymentStatus]||'Статус '+r.paymentStatus);
 const known={'i.s.barashenko':'Ирина Барашенко','e.v.boriskina':'Елена Борискина','v.n.khatkovskaya':'Вероника Хатковская'};
-const knownById={'77ff7ab0-6e68-11ee-818e-0935d63487ea':'Ирина Барашенко','ff985560-a80d-11f0-bfef-45b6701187ce':'Елена Борискина','d6a0a26a-26a6-11ec-ae6c-dee111c4eff3':'Вероника Хатковская','cd9285f2-3506-4986-af06-7749b55924e7':'Елена Довгун'};
+const knownById={'77ff7ab0-6e68-11ee-818e-0935d63487ea':'Ирина Барашенко','ff985560-a80d-11f0-bfef-45b6701187ce':'Елена Борискина','d6a0a26a-26a6-11ec-ae6c-dee111c4eff3':'Вероника Хатковская','cd9285f2-3506-4986-af06-7749b55924e7':'Елена Довгун',
+  '0e864780-6dfd-11f0-931a-236519b12548':'Рената Добринец',
+  '53504f40-a386-11ec-beec-b72528b8f1cb':'Анастасия Биянова',
+  '531e68cd-7e87-11ec-ad48-dee111c4eff3':'Юлия Русина',
+  '72d50308-480a-11ef-9475-36151b799575':'Бир Бай',
+  '4e8505e0-c222-11ec-bd7c-83ed5d8015b5':'Дарья Иванова',
+  '5f3a9050-b4b1-11f0-a915-7b17e0ec0a88':'Анна Зенкевич',
+  '4ee9d2a0-1e11-11f1-b3a0-e766e2742c97':'Екатерина Матеюнас',
+  '750be340-cf0a-11ee-a145-7b28109f3934':'Ольга Михальченко',
+  '86c15360-43be-11f1-85ac-914dfc1e3c07':'Валерий Калина'
+};
 function agentName(r){const email=(r.contactEmail||'').split('@')[0];return knownById[r.userUuid]||known[email]||(r.contactName?.trim()||(r.agency==='tvoya_stolitsa'?'Твоя столица':r.agency==='bir_bay'?'Бир Бай':r.agencyName)||'Без имени');}
 let index,rows=[],baseRows=[],seen=null,seenPromise=null,selectedTab='published',page=0,currentModel=null,loadSeq=0,developerIds=new Set();
 const ARCHIVE_START='2026-10-05',archiveRows=new Map(),archiveMissing=new Set();let archiveRequestSeq=0;
