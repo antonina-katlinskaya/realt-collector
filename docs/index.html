@@ -55,7 +55,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
-<script src="dashboard.js?v=20261109-organic-demand-v1" defer></script>
+<script src="dashboard.js?v=20261109-demand-pareto-v2" defer></script>
 
 <style>
 
@@ -138,31 +138,59 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 [data-section="ads"] .card-agent-name,[data-section="ads"] .employee-name,[data-section="works"] .card-agent-name,[data-section="works"] .employee-name,[data-section="leaders"] .card-agent-name,[data-section="leaders"] .employee-name{font-weight:650;color:#184c74;background:#dceeff;border-radius:4px;padding:1px 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 </style><style>.listing-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:8px 0 12px}.listing-sort{display:flex;flex-direction:column;gap:4px;margin-inline-start:auto;width:min(100%,320px);font-size:14px}.listing-sort select,.listing-sort option{font-size:16px}.listing-sort select{width:100%;min-height:42px}</style>
 <style>
+
 .organic-block-title{margin:26px 0 6px;font-size:20px}
-.demand-label{font-size:13px;font-weight:700;margin:22px 0 9px;color:var(--ink)}
-.demand-buttons{display:flex;gap:7px;flex-wrap:wrap}
-.demand-buttons button{padding:9px 13px;border-radius:22px;background:#f0efeb;border:1px solid #e3e1db}
-.demand-buttons button.active{background:#234e79;color:white}
-.demand-custom{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
-.demand-custom label{min-width:150px}
-.demand-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
-.demand-kpi{background:#f5f7fa;padding:18px;border-radius:12px;border:1px solid var(--line)}
-.demand-kpi strong{display:block;font-size:27px}.demand-kpi span{font-size:12px;color:var(--muted)}
-.demand-chart-row{display:grid;grid-template-columns:minmax(190px,260px) minmax(110px,1fr) 85px;align-items:center;gap:12px;margin:12px 0}
-.demand-chart-label{font-size:13px;font-weight:650}
-.demand-chart-label small{display:block;font-size:11px;font-weight:400}
-.demand-chart-track{height:16px;border-radius:6px;background:#edf0f3;overflow:hidden}
-.demand-chart-fill{height:100%;background:#234e79;border-radius:6px}
-.demand-chart-val{text-align:right;font-weight:650;font-variant-numeric:tabular-nums}
-.demand-table-details{margin-top:25px}
-.demand-table-details summary{font-weight:650;cursor:pointer;margin-bottom:15px}
-.demand-table-details .tablewrap{max-height:740px}.demand-table-details table{white-space:normal}
-.demand-table-details td,.demand-table-details th{font-variant-numeric:tabular-nums}
-.demand-group-list{min-width:245px;max-width:440px}
-.demand-group-list summary{font-size:12px;font-weight:500}
-.demand-group-list li{margin:7px 0}
-#demandMore{margin-top:14px}
-@media(max-width:760px){.demand-kpis{grid-template-columns:1fr}.demand-chart-row{grid-template-columns:130px 1fr 60px;gap:7px}.demand-chart-label{font-size:12px}}
+.demand-panel{padding:16px 18px 20px!important}
+.demand-heading{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0 0 12px}
+.demand-heading h2{margin:0;font-size:23px;letter-spacing:-.3px}
+.demand-heading p{margin:0;font-size:12px;line-height:1.35}
+.demand-controls{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:25px;row-gap:10px;padding:11px 12px;border:1px solid #e7ebef;border-radius:12px;background:#fafbfc}
+.demand-control{display:flex;align-items:center;gap:12px;min-width:0}
+.demand-period-control{grid-column:1/-1}
+.demand-mode-control{grid-column:1}
+.demand-metric-control{grid-column:2}
+.demand-control-caption{min-width:72px;flex:none;font-weight:650;font-size:12px;color:#4b5c69}
+.demand-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.demand-buttons button{font-size:12px;white-space:nowrap;padding:7px 11px;min-height:31px;border-radius:18px;background:#f1f1ed;border:1px solid #e6e7e8;transition:background .15s ease}
+.demand-buttons button:hover{background:#e2eaf0}
+.demand-buttons button.active,.demand-buttons button.active:hover{background:#345f81;color:white;border-color:#345f81}
+.demand-custom{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding-left:84px}
+.demand-custom[hidden]{display:none!important}
+.demand-custom label{display:flex;gap:7px;align-items:center;font-size:12px}
+.demand-custom input{padding:6px 8px;border:1px solid #d7dfe4;border-radius:7px}
+.demand-notice{font-size:11px;line-height:1.35;margin:7px 2px 0;min-height:15px}
+.demand-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:10px 0 16px}
+.demand-kpi{display:flex;gap:10px;align-items:center;min-height:74px;padding:10px 12px;border-radius:10px;background:#f5f8fa;border:1px solid #e2eaf0}
+.demand-kpi strong{display:block;white-space:nowrap;font-size:22px;line-height:1.18;letter-spacing:-.4px}
+.demand-kpi .demand-kpi-description{min-width:0;line-height:1.25}
+.demand-kpi .demand-kpi-title{font-size:12px;font-weight:600}
+.demand-kpi span{display:block;margin-top:3px;font-size:10px;color:#718393}
+.demand-section-heading{display:flex;gap:18px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;margin:3px 0 12px}
+.demand-section-heading h3{margin:0;font-size:18px}
+.demand-pareto{font-size:12px;color:#476c82;font-weight:600}
+.demand-chart{max-width:100%}
+.demand-chart-head,.demand-chart-row{display:grid;grid-template-columns:minmax(175px,285px) minmax(110px,1fr) 92px 76px;align-items:center;gap:13px}
+.demand-chart-head{font-size:10px;font-weight:650;color:#80909c;margin-bottom:4px}
+.demand-chart-row{padding:6px 0;border-bottom:1px solid #f0f3f5}
+.demand-chart-row.pareto-focus{background:linear-gradient(90deg,rgba(202,225,239,.16),transparent 70%)}
+.demand-chart-label{font-size:12px;font-weight:650;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+.demand-chart-label small{display:block;margin-top:3px;font-size:10px;font-weight:400;color:#83929e}
+.demand-chart-track{height:14px;border-radius:6px;background:#edf3f7;overflow:hidden}
+.demand-chart-fill{height:100%;border-radius:6px;transition:width .18s ease}
+.demand-chart-val{text-align:right;font-size:12px;font-weight:650;font-variant-numeric:tabular-nums}
+.demand-chart-share{text-align:right;font-size:11px;color:#698297;font-variant-numeric:tabular-nums}
+.demand-chart-foot{font-size:11px;color:#8394a1;margin:10px 0 4px}
+.demand-table-details{margin:17px 0 0}
+.demand-table-details>summary{font-size:13px;font-weight:650;cursor:pointer;margin-bottom:11px}
+.demand-table-details .tablewrap{max-height:740px}
+.demand-table-details table{white-space:normal}
+.demand-table-details td,.demand-table-details th{font-variant-numeric:tabular-nums;font-size:12px}
+.demand-group-list{min-width:225px;max-width:440px}
+.demand-group-list summary{font-size:11px;font-weight:500}
+.demand-group-list ol{padding-left:22px}.demand-group-list li{margin:7px 0}
+#demandMore{margin-top:12px}
+@media(max-width:1050px){.demand-controls{grid-template-columns:1fr;gap:9px}.demand-period-control,.demand-mode-control,.demand-metric-control{grid-column:1}.demand-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.demand-panel{padding:12px!important}.demand-heading{gap:5px}.demand-control{flex-wrap:wrap;gap:6px}.demand-control-caption{min-width:70px}.demand-buttons button{font-size:11px;padding:6px 9px}.demand-custom{padding-left:0}.demand-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.demand-kpi{padding:9px;display:block;min-height:72px}.demand-kpi strong{font-size:20px}.demand-chart-head,.demand-chart-row{grid-template-columns:125px minmax(65px,1fr) 60px;gap:6px}.demand-chart-share{display:none}.demand-chart-label{font-size:11px}.demand-chart-val{font-size:11px}}
 </style>
 </head>
 <body><main>
@@ -222,28 +250,56 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 </section>
 <section class="panel"><h2>Подробный рейтинг органики</h2><div id="organicTable"></div></section><div id="wordsTable" hidden></div>
 </section>
+
 <section data-section="demand" hidden>
-<section class="panel">
-<h2>Спрос · что интересовало покупателей</h2>
-<p class="muted">Группы по точной площади, цене и валюте. Только измеренный прирост между достоверными снимками; просмотры не равны уникальным покупателям.</p>
-<div class="demand-label">Период анализа</div>
-<div id="demandPeriods" class="demand-buttons" role="group" aria-label="Период анализа спроса">
-<button type="button" data-demand-period="today" class="active">Сегодня</button><button type="button" data-demand-period="yesterday">Вчера</button><button type="button" data-demand-period="daybefore">Позавчера</button><button type="button" data-demand-period="7">7 дней</button><button type="button" data-demand-period="14">14 дней</button><button type="button" data-demand-period="30">30 дней</button><button type="button" data-demand-period="90">90 дней</button><button type="button" data-demand-period="custom">Свой период</button>
+<section class="panel demand-panel">
+<div class="demand-heading">
+ <h2>Спрос</h2>
+ <p class="muted">Какие предложения получают больше просмотров? Сравниваем проверенные приросты, не уникальных покупателей.</p>
 </div>
-<div id="demandCustom" class="demand-custom" hidden><label>От <input type="date" id="demandFrom"></label><label>До <input type="date" id="demandTo"></label></div>
-<div class="demand-label">Тип объявлений</div>
-<div id="demandModes" class="demand-buttons" role="group" aria-label="Тип объявлений">
-<button type="button" data-demand-mode="all" class="active">Все объявления</button><button type="button" data-demand-mode="free">Только органика</button><button type="button" data-demand-mode="paid">Продвижение</button>
+<div class="demand-controls">
+ <div class="demand-control demand-period-control">
+  <span class="demand-control-caption">Период</span>
+  <div id="demandPeriods" class="demand-buttons" role="group" aria-label="Период анализа спроса">
+   <button type="button" data-demand-period="today" class="active">Сегодня</button>
+   <button type="button" data-demand-period="yesterday">Вчера</button>
+   <button type="button" data-demand-period="7">7 дней</button>
+   <button type="button" data-demand-period="14">14 дней</button>
+   <button type="button" data-demand-period="30">30 дней</button>
+   <button type="button" data-demand-period="90">90 дней</button>
+   <button type="button" data-demand-period="custom">Свой период</button>
+  </div>
+ </div>
+ <div id="demandCustom" class="demand-custom" hidden><label>От <input type="date" id="demandFrom"></label><label>До <input type="date" id="demandTo"></label></div>
+ <div class="demand-control demand-mode-control">
+  <span class="demand-control-caption">Объявления</span>
+  <div id="demandModes" class="demand-buttons" role="group" aria-label="Тип объявлений">
+   <button type="button" data-demand-mode="all" class="active">Все</button>
+   <button type="button" data-demand-mode="free">Органика</button>
+   <button type="button" data-demand-mode="paid">Продвижение</button>
+  </div>
+ </div>
+ <div class="demand-control demand-metric-control">
+  <span class="demand-control-caption">Рейтинг</span>
+  <div id="demandMetrics" class="demand-buttons" role="group" aria-label="Принцип группировки спроса">
+   <button type="button" data-demand-metric="total" class="active">По просмотрам</button>
+   <button type="button" data-demand-metric="price">По стоимости</button>
+   <button type="button" data-demand-metric="area">По площадям</button>
+  </div>
+ </div>
 </div>
-<div class="demand-label">Рейтинг интереса по площадям</div>
-<div id="demandMetrics" class="demand-buttons" role="group" aria-label="Показатель">
-<button type="button" data-demand-metric="total" class="active">По сумме просмотров</button><button type="button" data-demand-metric="average">В среднем на объявление</button>
-</div>
-<div id="demandNotice" class="muted" role="status" aria-live="polite"></div>
+<div id="demandNotice" class="demand-notice muted" role="status" aria-live="polite"></div>
 <div id="demandKpis" class="demand-kpis"></div>
-<h3>Какие квартиры вызвали больше интереса</h3>
-<div id="demandChart"></div>
-<details class="demand-table-details" open><summary>Подробная таблица сочетаний площади и цены</summary><div id="demandTable" class="tablewrap"></div><button type="button" id="demandMore" hidden>Показать ещё</button></details>
+<div class="demand-section-heading">
+ <h3 id="demandChartTitle">Какие квартиры вызвали больше интереса</h3>
+ <div id="demandPareto" class="demand-pareto" role="status"></div>
+</div>
+<div id="demandChart" class="demand-chart"></div>
+<details class="demand-table-details" open>
+ <summary><span id="demandTableTitle">Подробная таблица сочетаний площади и цены</span></summary>
+ <div id="demandTable" class="tablewrap"></div>
+ <button type="button" id="demandMore" hidden>Показать ещё</button>
+</details>
 </section>
 </section>
 <section data-section="placements" class="panel" hidden><h2>Какие площади и комнатность размещают</h2><p class="muted">Группы объявлений с датой createdAt внутри периода. Дата взята из карточки; первый снимок не считается новой публикацией.</p><div id="placementGroups"></div><h3>День недели × час публикации</h3><p class="muted">Это даты публикации из карточек, а не время посещений клиентов.</p><div id="publicationHeat"></div></section>
