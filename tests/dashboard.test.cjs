@@ -232,3 +232,57 @@ test('Pareto report identifies how many groups and unique listings create 80 per
  const noViews=vm.runInContext('demandPareto',ctx)([]);
  assert.equal(noViews.groups,0);assert.equal(noViews.total,0);
 });
+
+
+test('Demand navigation and layout: tab last, date and ranking share first row, legible labels and no cumulative column',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const html=fs.readFileSync(path.join(__dirname,'../docs/index.html'),'utf8');
+ const js=fs.readFileSync(path.join(__dirname,'../docs/dashboard.js'),'utf8');
+ const nav=html.slice(html.indexOf('<nav id="views"'),html.indexOf('</nav>',html.indexOf('<nav id="views"')));
+ assert.ok(nav.indexOf('data-view="leaders"')<nav.indexOf('data-view="demand"'),'Demand must follow Top promotion');
+ assert.match(html,/id="demandControls"/);
+ assert.match(html,/grid-template-areas:"period metric" "mode mode"/);
+ assert.match(html,/#views>button\[data-view="demand"\]/);
+ assert.match(html,/#views>button\[data-view="demand"\]\.active/);
+ assert.match(html,/\.demand-chart-label\{font-size:15px\}/);
+ const demand=js.slice(js.indexOf('// Independent date controls for the Demand tab.'),js.indexOf('function renderPlacements(m){'));
+ assert.doesNotMatch(demand,/'Накоплено'/);
+ assert.doesNotMatch(demand,/demand-chart-share/);
+ assert.match(demand,/colspan="7"/);
+ assert.match(demand,/class="cgrid demand-gallery-grid"/);
+ assert.match(demand,/demandTop30\(g\)/);
+ assert.match(demand,/data-demand-expand/);
+ assert.match(demand,/aria-expanded/);
+ assert.match(js,/if\(\['works','leaders','ads','demand'\]\.includes\(view\)&&!photoLoaded\)loadPhotos\(\)/);
+ assert.match(js,/if\(activeView==='demand'\)renderDemand\(\)/);
+});
+
+test('Demand photo gallery ranks top 30 by measured growth, not lifetime views',()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const js=fs.readFileSync(path.join(__dirname,'../docs/dashboard.js'),'utf8');
+ const start=js.indexOf('function demandTop30(g){'),end=js.indexOf('function renderDemand(){',start);
+ assert.ok(start>0&&end>start);
+ const ctx={number:x=>Number(x),String};
+ vm.createContext(ctx);vm.runInContext(js.slice(start,end),ctx);
+ const items=new Map();
+ for(let i=0;i<38;i++)items.set('item'+i,{row:{uuid:'item'+i,views:String(10000-i)},delta:i});
+ const sorted=vm.runInContext('demandTop30',ctx)({items});
+ assert.equal(sorted.length,30);
+ assert.equal(sorted[0].delta,37);
+ assert.equal(sorted.at(-1).delta,8);
+ assert.equal(sorted.some(x=>x.delta===0),false);
+});
+
+test('Demand labels use lowercase до and от for open-ended bands',()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const js=fs.readFileSync(path.join(__dirname,'../docs/dashboard.js'),'utf8');
+ const start=js.indexOf('function demandGroupLabel(g){'),end=js.indexOf('function demandGroups(m){',start);
+ assert.ok(start>0&&end>start);
+ const ctx={demandMetric:'area',fmt:x=>String(x),price:()=>'',Number};
+ vm.createContext(ctx);vm.runInContext(js.slice(start,end),ctx);
+ const fn=vm.runInContext('demandGroupLabel',ctx);
+ assert.equal(fn({low:0,high:30}),'до 30 м²');
+ assert.equal(fn({low:300,high:Infinity}),'от 300 м²');
+ vm.runInContext("demandMetric='price'",ctx);
+ assert.equal(fn({low:0,high:45000,currency:'978'}),'до 45 тыс. €');
+});
