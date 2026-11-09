@@ -2225,5 +2225,18 @@
     "retryable_pagination": true,
     "error": "SourcePaginationChanged: Source total or page size changed",
     "duration_seconds": 352.435
+  },
+  {
+    "started_at": "2026-11-09T09:48:40.196943+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 51,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-09T12:10:00+03:00",
+    "retryable_pagination": true,
+    "error": "SourcePaginationChanged: Missing or repeated UUID across source pages",
+    "duration_seconds": 265.784
   }
 ]
