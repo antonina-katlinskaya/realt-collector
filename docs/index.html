@@ -55,7 +55,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
-<script src="dashboard.js?v=20261109-demand-gallery-v3" defer></script>
+<script src="dashboard.js?v=20261110-promotion-activation-v1" defer></script>
 
 <style>
 
@@ -303,6 +303,7 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <section data-section="promotion">
 <div class="cards" id="promoOverviewKpi"></div>
 <section class="panel promo-panel"><div class="promo-heading"><h2>Сейчас в рекламе</h2><span id="promoLastSeen" class="update-badge"></span></div><div id="livePromo" class="promo-live-grid"></div></section>
+<section class="panel promo-panel" id="promoActivationPanel"><h2>Новые включения продвижения <span id="promoActivationCount"></span></h2><p class="promo-subtitle">Переход с бесплатного на платный статус между двумя обходами. Объявления появляются сразу, без ожидания второго платного замера. Тип услуги из публичного API может быть неполным; проверенные сведения из кабинета отмечены отдельно.</p><div class="tablewrap"><div id="promoActivationRows"></div></div></section>
 <section class="panel promo-panel" id="promoResultPanel" hidden><h2>Результат рекламы</h2><p class="promo-subtitle">По приросту просмотров при продвижении за выбранный период.</p><div id="promoResults" class="promo-podium"></div></section>
 <section class="panel promo-panel" id="promoTypesPanel" hidden><h2>Виды продвижения</h2><div id="promoTypes"></div></section>
 <section class="panel promo-panel" id="promoChartPanel" hidden><div class="promo-heading"><h2>Динамика рекламы</h2><span class="metric-chip">Просмотры</span></div><div id="promoDailyChart"></div><div id="promoChartLegend" class="promo-legend"></div></section>
