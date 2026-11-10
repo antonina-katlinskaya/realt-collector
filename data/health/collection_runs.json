@@ -3438,5 +3438,18 @@
       "archive": "verified-github-release",
       "packet_bytes": 908632
     }
+  },
+  {
+    "started_at": "2026-11-10T17:37:14.724255+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 3,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-10T20:10:00+03:00",
+    "retryable_pagination": false,
+    "error": "RuntimeError: запрос searchObjects не удался после 3 попыток: HTTPSConnectionPool(host='realt.by', port=443): Read timed out. (read timeout=30)",
+    "duration_seconds": 108.962
   }
 ]
