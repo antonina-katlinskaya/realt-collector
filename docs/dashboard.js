@@ -763,8 +763,14 @@ function renderPromotedGallery(m){
   const paidRows=history.filter(r=>paid(r)&&day(r.snapshot_at)>=m.from&&day(r.snapshot_at)<=m.to&&filter(r,r.snapshot_at,true));
   if(!paidRows.length)continue;
   const recent=paidRows.at(-1),latest=history.at(-1);
-  historical.set(id,{row:latest||recent,first:paidRows[0].snapshot_at,last:recent.snapshot_at,kind:label(recent)});
+  historical.set(id,{row:latest||recent,first:paidRows[0].snapshot_at,last:recent.snapshot_at,kind:promotionName(recent,index)});
  }
+ // Newly activated paid ads are always visible even before there are two
+ // consecutive paid observations. They are NOT ranked by an invented growth.
+ const filterActivation=createMatcher();
+ const newlyActivated=promotionActivations(index,m.from,m.to,filterActivation,preciseBounds)
+   .filter(e=>historical.has(e.row.uuid));
+ const newIds=new Set(newlyActivated.map(e=>e.row.uuid));
  const confirmed=[...promoted.values()].filter(v=>v.delta>0).sort((a,b)=>b.delta-a.delta);
  const fallback=confirmed.length===0;
  const ranked=fallback?[...historical.values()].sort((a,b)=>String(b.last).localeCompare(String(a.last))).map(x=>({...x,delta:null})):confirmed.map(x=>({...x,...historical.get(x.row.uuid)}));
@@ -783,7 +789,13 @@ function renderPromotedGallery(m){
  const introduction=fallback?
  `<p class="muted">За период замечено ${fmt(total)} объявлений с платным статусом. Пока нет достаточных проверенных интервалов для рейтинга по эффективности. Ниже — история рекламы, начиная с недавно замеченных; это НЕ рейтинг по просмотрам.</p>`:
  `<p class="muted">ТОП-${Math.min(30,total)} по достоверному приросту просмотров в платных интервалах. Открытия номера Realt не предоставляет.</p>`;
- $('promotedGallery').innerHTML=introduction+'<h3>По комнатности</h3>'+roomTable+'<h3>Объявления с продвижением</h3>'+
+ const newCards=newlyActivated.slice(0,40).map(e=>kufarStyleCard(e.row,
+   'Прирост при рекламе: —',
+   'Нужно два последовательных платных замера',
+   'Новое включение между '+date(e.from)+' и '+date(e.to)+' · '+esc(promotionName(e.row,index))
+ )).join('');
+ const pendingHeading=newlyActivated.length?'<h3>Новые включения продвижения · '+fmt(newlyActivated.length)+'</h3><p class="muted">Показаны сразу после первого подтверждённого платного статуса. Не включены в рейтинг по просмотрам до двух последовательных платных замеров.</p><div class="cgrid">'+newCards+'</div>':'';
+ $('promotedGallery').innerHTML=pendingHeading+introduction+'<h3>По комнатности</h3>'+roomTable+'<h3>Объявления с продвижением</h3>'+
  '<div class="cgrid">'+items.map(v=>kufarStyleCard(v.row,
   v.delta===null?'Прирост: —':'+'+fmt(v.delta)+' просм.',
   v.delta===null?'Достоверного прироста ещё нет':'При продвижении',
