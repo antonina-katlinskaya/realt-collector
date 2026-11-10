@@ -74,6 +74,35 @@ function periodData(index,from,to,accept=()=>true,bounds=null,trustedFrom=null,s
  return {from,to,end,selectDate,snapshotCount:available.length,current,observed:[...observed.values()],events,unstableIds,excludedEvents,excludedLegacyEvents,growth,newly,gone:[...gone.values()],changes};
 }
 
+const verifiedSpecialCampaigns={
+'2d3ce4c0-dc17-11f1-944f-490f455d63c4':['4272673','кабинет Realt'],
+'21abdd70-d6a7-11f1-a46c-87fe997ab043':['4268596','сообщение пользователя'],
+'c03a4070-d68a-11f1-afbe-b9db0c310dee':['4268272','сообщение пользователя'],
+'b61f1250-d2b1-11f1-ac48-d357b614dc5d':['4265953','сообщение пользователя'],
+'2bb71970-cf71-11f1-b56d-fddc6cf67616':['4263821','сообщение пользователя']};
+function promotionName(row,index){
+ const evidence=verifiedSpecialCampaigns[row.uuid];
+ if(!evidence||String(row.code)!==evidence[0]||Number(row.paymentStatus)!==3||row.snapshot_at<'2026-11-10T08:37:15Z')return label(row);
+ const hist=index.histories.get(row.uuid)||[];
+ let i=hist.findIndex(x=>x.snapshot_at===row.snapshot_at);
+ if(i<0)return label(row);
+ const positions=new Map(index.times.map((t,j)=>[t,j]));
+ while(i>0&&Number(hist[i-1].paymentStatus)===3&&positions.get(hist[i].snapshot_at)===positions.get(hist[i-1].snapshot_at)+1)i--;
+ return hist[i].snapshot_at==='2026-11-10T08:37:15Z'?'Спецпредложение ('+evidence[1]+')':label(row);
+}
+function promotionActivations(index,from,to,accept=()=>true,bounds=null){
+ const out=[];
+ for(let i=1;i<index.times.length;i++){
+ const beforeTime=index.times[i-1],afterTime=index.times[i];
+ if(day(afterTime)<from||day(afterTime)>to||(bounds&&(Date.parse(afterTime)<bounds.start||Date.parse(afterTime)>bounds.end)))continue;
+ const before=index.byTime.get(beforeTime),after=index.byTime.get(afterTime);
+ for(const [id,row] of after){const previous=before.get(id);
+ if(previous&&previous.userUuid===row.userUuid&&!paid(previous)&&paid(row)&&accept(row,afterTime))
+ out.push({row,from:beforeTime,to:afterTime});}
+ }
+ return out.sort((a,b)=>b.to.localeCompare(a.to));
+}
+
 function promotionPeriods(index,from,to,accept=()=>true,bounds=null){
  const spans=[],positions=new Map(index.times.map((t,i)=>[t,i]));
  const inside=t=>day(t)>=from&&day(t)<=to&&(!bounds||(Date.parse(t)>=bounds.start&&Date.parse(t)<=bounds.end));
@@ -127,7 +156,7 @@ function snapshotNeedsReload(state,loadedSnapshot) {
  const next=Date.parse(state.snapshot_at),last=Date.parse(loadedSnapshot||'');
  return Number.isFinite(next)&&(!Number.isFinite(last)||next>last);
 }
-if(typeof module!=='undefined')module.exports={parseCSV,buildIndex,intervals,statusStart,day,weekday,changesBetween,periodData,promotionPeriods,promotionSummary,collectionFreshness,snapshotNeedsReload};
+if(typeof module!=='undefined')module.exports={parseCSV,buildIndex,intervals,statusStart,day,weekday,changesBetween,periodData,promotionPeriods,promotionSummary,promotionActivations,promotionName,collectionFreshness,snapshotNeedsReload};
 if(typeof document!=='undefined'){
 const ROOT='https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/';
 const $=id=>document.getElementById(id);
@@ -431,7 +460,7 @@ function liveAgentCard(id,items){
  return `<article class="promo-agent"><div class="promo-agent-head"><button data-select-agent="${esc(id)}">${employeeBadge(items[0])}</button><span>${items.length} в рекламе</span></div>${items.map(r=>{
   const st=statusStart(index,r),h=index.histories.get(r.uuid)||[];
   const days=new Set(h.filter(x=>x.snapshot_at>=st.time&&x.snapshot_at<=r.snapshot_at).map(x=>day(x.snapshot_at))).size;
-  return `<div class="promo-ad"><a href="${urlFor(r)}" target="_blank" rel="noopener">${esc(r.address||r.title)}</a><div class="promo-ad-footer"><small>${esc(r.areaTotal)} м² · ${price(r)}</small><span class="promo-status type-${esc(r.paymentStatus)}">${esc(label(r))} · ${days} дн. наблюдения</span></div></div>`;
+  return `<div class="promo-ad"><a href="${urlFor(r)}" target="_blank" rel="noopener">${esc(r.address||r.title)}</a><div class="promo-ad-footer"><small>${esc(r.areaTotal)} м² · ${price(r)}</small><span class="promo-status type-${esc(r.paymentStatus)}">${esc(promotionName(r,index))} · ${days} дн. наблюдения</span></div></div>`;
  }).join('')}</article>`;
 }
 function renderPromoChart(summary){
@@ -460,13 +489,16 @@ function renderPromoAds(summary){
  $('promoEmployeeChips').innerHTML=summary.ads.size?`<button data-promo-agent="" class="${promoEmployee?'':'active'}">Все</button>`+agents.map(([id,a])=>`<button data-promo-agent="${esc(id)}" class="${promoEmployee===id?'active':''}">${esc(agentName(a.row))}</button>`).join(''):'';
  $('promoCount').textContent='· '+summary.ads.size;
  const ads=[...summary.ads.values()].filter(a=>!promoEmployee||a.row.userUuid===promoEmployee).sort((a,b)=>agentName(a.row).localeCompare(agentName(b.row),'ru')||b.views-a.views||a.row.uuid.localeCompare(b.row.uuid));
- $('promoPeriods').innerHTML=ads.length?makeTable(['Сотрудник','Объявление','Реклама / даты','Дней¹','Просмотры','Цена',''],ads.map(a=>`<tr><td>${employeeBadge(a.row)}</td><td class="wrap">${adLink(a.row)}</td><td>${[...a.statuses].map(status=>esc(label({paymentStatus:status}))).join(', ')}<br><small>${promoShortDate(a.first)}–${promoShortDate(a.last)}</small></td><td>${a.days.size}</td><td>${a.measured?fmt(a.views):'—'}</td><td class="nowrap">${price(a.row)}</td><td>${detailButton(a.row)}</td></tr>`)):'<div class="promo-empty">За выбранный период продвижение не замечено.</div>';
+ $('promoPeriods').innerHTML=ads.length?makeTable(['Сотрудник','Объявление','Реклама / даты','Дней¹','Просмотры','Цена',''],ads.map(a=>`<tr><td>${employeeBadge(a.row)}</td><td class="wrap">${adLink(a.row)}</td><td>${[...a.statuses].map(status=>esc(promotionName({...a.row,paymentStatus:status},index))).join(', ')}<br><small>${promoShortDate(a.first)}–${promoShortDate(a.last)}</small></td><td>${a.days.size}</td><td>${a.measured?fmt(a.views):'—'}</td><td class="nowrap">${price(a.row)}</td><td>${detailButton(a.row)}</td></tr>`)):'<div class="promo-empty">За выбранный период продвижение не замечено.</div>';
 }
 function renderPromotions(m){
- const summary=promotionSummary(index,m,createMatcher(),preciseBounds);promoSummary=summary;
+ const matcher=createMatcher(),summary=promotionSummary(index,m,matcher,preciseBounds);promoSummary=summary;
  const total=totalEvents(summary.events),kpis=[['Объявлений в продвижении',summary.ads.size,'за выбранный период'],['Просмотры при рекламе',summary.events.length?total:null,'прирост за выбранный период'],['Сейчас в рекламе',summary.active.length,'по последнему обходу']];
  $('promoOverviewKpi').innerHTML=kpis.map(([title,value,note])=>`<div class="card"><strong>${fmt(value)}</strong><div class="kpi-label">${title}</div><span>${note}</span></div>`).join('');
  $('promoLastSeen').textContent='последний обход '+promoShortDate(index.times.at(-1))+' '+date(index.times.at(-1)).slice(-5);
+ const activations=promotionActivations(index,m.from,m.to,matcher,preciseBounds);
+ $('promoActivationCount').textContent='· '+activations.length;
+ $('promoActivationRows').innerHTML=activations.length?makeTable(['Сотрудник','Объявление','Продвижение','Зафиксировано между обходами'],activations.slice(0,100).map(e=>`<tr><td>${employeeBadge(e.row)}</td><td class="wrap">${adLink(e.row)}</td><td>${esc(promotionName(e.row,index))}</td><td>${date(e.from)} — ${date(e.to)}</td></tr>`)):'<div class="promo-empty">Новых включений платной рекламы за период не обнаружено.</div>';
  const active=new Map();for(const r of summary.active){if(!active.has(r.userUuid))active.set(r.userUuid,[]);active.get(r.userUuid).push(r);}
  $('livePromo').innerHTML=[...active].sort((a,b)=>b[1].length-a[1].length).map(([id,ads])=>liveAgentCard(id,ads)).join('')||'<div class="promo-empty">На последнем обходе рекламы нет.</div>';
  const ranked=[...summary.agents.values()].filter(a=>a.measured).sort((a,b)=>b.views-a.views||b.ids.size-a.ids.size);
@@ -475,7 +507,7 @@ function renderPromotions(m){
  $('promoTypesPanel').hidden=!summary.types.size;
  $('promoTypes').innerHTML=[...summary.types].sort((a,b)=>Number(a[0])-Number(b[0])).map(([status,byAgent])=>{
   const list=[...byAgent.values()].sort((a,b)=>b.views-a.views||b.ids.size-a.ids.size),measured=list.some(a=>a.measured);
-  return `<h3>${esc(label({paymentStatus:status}))}</h3>`+makeTable(['Сотрудник','Объявлений','Объявл.-дней¹','Просмотры'],list.map((a,i)=>`<tr class="${measured&&i===0&&a.measured?'leader-row':''}"><td>${employeeBadge(a.row)}</td><td>${a.ids.size}</td><td>${a.days.size}</td><td>${a.measured?fmt(a.views):'—'}</td></tr>`));
+  return `<h3>${esc(status==='3'?'Код 3: поднятие или спецпредложение':label({paymentStatus:status}))}</h3>`+makeTable(['Сотрудник','Объявлений','Объявл.-дней¹','Просмотры'],list.map((a,i)=>`<tr class="${measured&&i===0&&a.measured?'leader-row':''}"><td>${employeeBadge(a.row)}</td><td>${a.ids.size}</td><td>${a.days.size}</td><td>${a.measured?fmt(a.views):'—'}</td></tr>`));
  }).join('');
  $('promoChartPanel').hidden=!summary.events.length;if(summary.events.length)renderPromoChart(summary);
  renderPromoAds(summary);
