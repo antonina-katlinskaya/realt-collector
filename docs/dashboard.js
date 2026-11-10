@@ -81,14 +81,15 @@ const verifiedSpecialCampaigns={
 'b61f1250-d2b1-11f1-ac48-d357b614dc5d':['4265953','сообщение пользователя'],
 '2bb71970-cf71-11f1-b56d-fddc6cf67616':['4263821','сообщение пользователя']};
 function promotionName(row,index){
+ const fallback=({'0':'Бесплатно','2':'Выделение','3':'Поднятие (тип по публичному API не уточнён)','4':'Спецпредложение'})[String(row.paymentStatus)]||'Статус '+row.paymentStatus;
  const evidence=verifiedSpecialCampaigns[row.uuid];
- if(!evidence||String(row.code)!==evidence[0]||Number(row.paymentStatus)!==3||row.snapshot_at<'2026-11-10T08:37:15Z')return label(row);
+ if(!evidence||String(row.code)!==evidence[0]||Number(row.paymentStatus)!==3||row.snapshot_at<'2026-11-10T08:37:15Z')return fallback;
  const hist=index.histories.get(row.uuid)||[];
  let i=hist.findIndex(x=>x.snapshot_at===row.snapshot_at);
- if(i<0)return label(row);
+ if(i<0)return fallback;
  const positions=new Map(index.times.map((t,j)=>[t,j]));
  while(i>0&&Number(hist[i-1].paymentStatus)===3&&positions.get(hist[i].snapshot_at)===positions.get(hist[i-1].snapshot_at)+1)i--;
- return hist[i].snapshot_at==='2026-11-10T08:37:15Z'?'Спецпредложение ('+evidence[1]+')':label(row);
+ return hist[i].snapshot_at==='2026-11-10T08:37:15Z'?'Спецпредложение ('+evidence[1]+')':fallback;
 }
 function promotionActivations(index,from,to,accept=()=>true,bounds=null){
  const out=[];
