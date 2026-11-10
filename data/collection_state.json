@@ -1,32 +1,32 @@
 {
   "schema": 1,
   "complete": true,
-  "snapshot_at": "2026-11-10T12:07:11Z",
-  "completed_at": "2026-11-10T12:18:57.690446+00:00",
+  "snapshot_at": "2026-11-10T12:30:45Z",
+  "completed_at": "2026-11-10T12:42:41.159875+00:00",
   "rows": 2530,
   "raw_paths": [],
   "archive_entry": {
     "tag": "realt-data-2026-W46",
-    "asset_id": 731338165,
-    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W46/snapshot-2026-11-10_12-07-11-28f04a4746be.zip",
-    "name": "snapshot-2026-11-10_12-07-11-28f04a4746be.zip",
-    "bytes": 911882,
-    "sha256": "28f04a4746be6a4050dc28a9225f28ba200d243a406ae5b9114edd4d3a183972",
+    "asset_id": 731406228,
+    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W46/snapshot-2026-11-10_12-30-45-a011f35ae3cf.zip",
+    "name": "snapshot-2026-11-10_12-30-45-a011f35ae3cf.zip",
+    "bytes": 911340,
+    "sha256": "a011f35ae3cfe97b37faf64626cc174ddc7b20121b01a9eb4353d2c28ee319b6",
     "verified": true,
-    "snapshot_at": "2026-11-10T12:07:11Z",
-    "completed_at": "2026-11-10T12:18:57.690446+00:00",
+    "snapshot_at": "2026-11-10T12:30:45Z",
+    "completed_at": "2026-11-10T12:42:41.159875+00:00",
     "rows": 2530,
     "raw_members": [
-      "2026-11-10_12-07_bir_bay.json.gz",
-      "2026-11-10_12-07_etazhi.json.gz",
-      "2026-11-10_12-07_tvoya_stolitsa.json.gz"
+      "2026-11-10_12-30_bir_bay.json.gz",
+      "2026-11-10_12-30_etazhi.json.gz",
+      "2026-11-10_12-30_tvoya_stolitsa.json.gz"
     ],
     "csv_member": "rows.csv.gz"
   },
   "source_quality": {
     "60fcf380-4e01-11f1-943e-89d1a667d5d7": {
-      "reported": 1438,
-      "retrieved": 1438,
+      "reported": 1436,
+      "retrieved": 1436,
       "pages": 48
     },
     "46e1035d-7b00-11eb-8943-0cc47adabd66": {
@@ -41,7 +41,7 @@
     }
   },
   "quality_reason": "normal",
-  "history_backfill_pending": 1343,
+  "history_backfill_pending": 1333,
   "observed_at": "per-object in raw snapshots",
-  "duration_seconds": 706.116
+  "duration_seconds": 715.503
 }
