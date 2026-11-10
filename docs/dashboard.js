@@ -434,7 +434,7 @@ function renderUnified(m){
  if(activeView==='leaders'){
  const promoted=new Map();for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}const sort=$('promotedSort').value;const list=[...promoted.values()].sort((a,b)=>sort==='views'?b.delta-a.delta:comparePublication(a.row,b.row,sort));
  $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Всего просмотров страницы',''],list.slice(0,100).map((v,i)=>`<tr><td>${i+1}</td><td>${employeeBadge(v.row)}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
- if(photoLoaded)renderPromotedGallery(m);
+ renderPromotedGallery(m);
  }
  if(activeView==='employees'){
  $('employeeChanges').innerHTML=changesHTML(m.changes);
