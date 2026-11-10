@@ -905,7 +905,7 @@ if(employeeLink){
  load().then(()=>{if(index&&!photoLoaded)loadPhotos();});
 }else{
  applyQuickPeriod();
- activateView(location.hash==='#competitor-watch'?'competitors':location.hash==='#promotion'?'promotion':'employees');
+ activateView(location.hash==='#competitor-watch'?'competitors':location.hash==='#promotion'?'promotion':location.hash==='#top-promotion'?'leaders':'employees');
  load();
 }
 // Poll the tiny committed checkpoint, not the full historical CSV on every tick.
