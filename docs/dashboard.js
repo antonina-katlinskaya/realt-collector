@@ -505,7 +505,12 @@ function renderPromotions(m){
  $('promoLastSeen').textContent='последний обход '+promoShortDate(index.times.at(-1))+' '+date(index.times.at(-1)).slice(-5);
  const activations=promotionActivations(index,m.from,m.to,matcher,preciseBounds);
  $('promoActivationCount').textContent='· '+activations.length;
- $('promoActivationRows').innerHTML=activations.length?makeTable(['Сотрудник','Объявление','Продвижение','Зафиксировано между обходами'],activations.slice(0,100).map(e=>`<tr><td>${employeeBadge(e.row)}</td><td class="wrap">${adLink(e.row)}</td><td>${esc(promotionName(e.row,index))}</td><td>${date(e.from)} — ${date(e.to)}</td></tr>`)):'<div class="promo-empty">Новых включений платной рекламы за период не обнаружено.</div>';
+ $('promoActivationRows').innerHTML=activations.length?makeTable(['Сотрудник','Объявление','Продвижение','Просмотры всего','Прирост при рекламе','Включение замечено'],activations.slice(0,100).map(e=>{
+ const latest=index.histories.get(e.row.uuid)?.at(-1)||e.row;
+ const paidIntervals=m.events.filter(v=>v.id===e.row.uuid&&v.category==='paid'&&v.start>=e.to);
+ const increase=paidIntervals.length?paidIntervals.reduce((sum,v)=>sum+v.delta,0):null;
+ return `<tr><td>${employeeBadge(latest)}</td><td class="wrap">${adLink(latest)}</td><td>${esc(promotionName(latest,index))}</td><td>${fmt(number(latest.views))}</td><td>${increase===null?'Пока нет замера':'+'+fmt(increase)}</td><td>${date(e.from)} — ${date(e.to)}</td></tr>`;
+ })):'<div class="promo-empty">Новых включений платной рекламы за период не обнаружено.</div>';
  const active=new Map();for(const r of summary.active){if(!active.has(r.userUuid))active.set(r.userUuid,[]);active.get(r.userUuid).push(r);}
  $('livePromo').innerHTML=[...active].sort((a,b)=>b[1].length-a[1].length).map(([id,ads])=>liveAgentCard(id,ads)).join('')||'<div class="promo-empty">На последнем обходе рекламы нет.</div>';
  const ranked=[...summary.agents.values()].filter(a=>a.measured).sort((a,b)=>b.views-a.views||b.ids.size-a.ids.size);
@@ -789,12 +794,21 @@ function renderPromotedGallery(m){
  const introduction=fallback?
  `<p class="muted">За период замечено ${fmt(total)} объявлений с платным статусом. Пока нет достаточных проверенных интервалов для рейтинга по эффективности. Ниже — история рекламы, начиная с недавно замеченных; это НЕ рейтинг по просмотрам.</p>`:
  `<p class="muted">ТОП-${Math.min(30,total)} по достоверному приросту просмотров в платных интервалах. Открытия номера Realt не предоставляет.</p>`;
- const newCards=newlyActivated.slice(0,40).map(e=>kufarStyleCard(e.row,
-   'Прирост при рекламе: —',
-   'Нужно два последовательных платных замера',
-   'Новое включение между '+date(e.from)+' и '+date(e.to)+' · '+esc(promotionName(e.row,index))
- )).join('');
- const pendingHeading=newlyActivated.length?'<h3>Новые включения продвижения · '+fmt(newlyActivated.length)+'</h3><p class="muted">Показаны сразу после первого подтверждённого платного статуса. Не включены в рейтинг по просмотрам до двух последовательных платных замеров.</p><div class="cgrid">'+newCards+'</div>':'';
+ // Display immediately observable figures, without postponing a card until
+ // a second paid snapshot exists. Count only intervals where both samples
+ // are paid; transitions from free to paid stay visibly unallocated.
+ const newCards=newlyActivated.slice(0,40).map(e=>{
+   const latest=historical.get(e.row.uuid)?.row||e.row;
+   const measured=m.events.filter(v=>v.id===e.row.uuid&&v.category==='paid'&&v.start>=e.to);
+   const growth=measured.length?measured.reduce((n,v)=>n+v.delta,0):null;
+   const totalViews=number(latest.views);
+   return kufarStyleCard(latest,
+     growth===null?'Прирост при рекламе: пока не измерен':'Прирост при рекламе: +'+fmt(growth),
+     'Просмотры всего: '+(totalViews===null?'—':fmt(totalViews))+(growth===null?' · включение уже зафиксировано':' · подтверждено между платными замерами'),
+     'Включение между '+date(e.from)+' и '+date(e.to)+' · '+esc(promotionName(latest,index))
+   );
+ }).join('');
+ const pendingHeading=newlyActivated.length?'<h3>Новые включения продвижения · '+fmt(newlyActivated.length)+'</h3><p class="muted">Количество просмотров показывается сразу с первого платного снимка. Прирост уточняется по следующим обходам; просмотры в интервале переключения тарифа не приписываются рекламе.</p><div class="cgrid">'+newCards+'</div>':'';
  $('promotedGallery').innerHTML=pendingHeading+introduction+'<h3>По комнатности</h3>'+roomTable+'<h3>Объявления с продвижением</h3>'+
  '<div class="cgrid">'+items.map(v=>kufarStyleCard(v.row,
   v.delta===null?'Прирост: —':'+'+fmt(v.delta)+' просм.',
