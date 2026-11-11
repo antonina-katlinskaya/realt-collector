@@ -3691,5 +3691,18 @@
       "archive": "verified-github-release",
       "packet_bytes": 898754
     }
+  },
+  {
+    "started_at": "2026-11-11T08:37:17.256736+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 106,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-11T11:10:00+03:00",
+    "retryable_pagination": true,
+    "error": "SourcePaginationChanged: Missing or repeated UUID across source pages",
+    "duration_seconds": 529.259
   }
 ]
