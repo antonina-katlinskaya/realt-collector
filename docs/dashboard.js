@@ -307,9 +307,13 @@ document.addEventListener('error',event=>{
  else{const placeholder=document.createElement('div');placeholder.className='noimg';placeholder.textContent='Фото недоступно';img.replaceWith(placeholder);}
 },true);
 function kufarStyleCard(r,primary,subline,secondary){
+ const latestSnapshot=index?.times?.at(-1);
+ const absentInLatest=!!(latestSnapshot && index?.byTime?.get(latestSnapshot) && !index.byTime.get(latestSnapshot).has(r.uuid));
+ const removalMark=absentInLatest?' <span class="card-removed-label">Нет в последнем снимке</span>':'';
+ const removalClass=absentInLatest?' acard-removed':'';
  const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" data-photo-id="${esc(r.uuid)}" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
- return `<article class="acard" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
-  <div class="at">${esc(r.title||r.address||'Объявление')}</div>
+ return `<article class="acard${removalClass}" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
+  <div class="at">${esc(r.title||r.address||'Объявление')}${removalMark}</div>
   <div class="am">${esc(r.address||'Адрес не указан')}</div>
   <div class="aw"><span class="card-agent-name">${esc(agentName(r))}</span> · ${esc(r.rooms||'?')}K · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
   <div class="ad8">${secondary||''}${p.length&&photoDates[r.uuid]&&photoDates[r.uuid]!==photoDate?' · Фото из снимка '+date(photoDates[r.uuid]):''}</div>
