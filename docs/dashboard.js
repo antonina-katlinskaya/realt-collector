@@ -428,6 +428,54 @@ function renderDaily(m){
  for(const r of m.newly){const d=day(index.histories.get(r.uuid)[0].snapshot_at);if(groups.has(d))groups.get(d).newly++;}
  $('dailyTable').innerHTML=makeTable(['Дата конца замера','Снимков','Впервые замечены после базового','Прирост'],[...groups].map(([d,g])=>`<tr><td>${d}</td><td>${g.snapshots}</td><td>${g.newly}</td><td>${fmt(g.views)}</td></tr>`));
 }
+
+let blockedArchive=null;
+function acceptBlockedArchive(items){
+ if(!items||typeof items!=='object'||Array.isArray(items))return;
+ blockedArchive=Object.values(items).filter(x=>x&&/^[0-9]{4,12}$/.test(String(x.id||''))).map(x=>({
+  id:String(x.id),employeeEmail:String(x.employeeEmail||'').trim().toLowerCase(),
+  firstDetectedAt:String(x.firstDetectedAt||''),detectionType:String(x.detectionType||'')
+ }));
+ if(index&&activeView==='employees')render();
+}
+window.addEventListener('message',e=>{
+ if(e.source!==window||e.origin!==location.origin||e.data?.type!=='REALT_BLOCKED_JOURNAL_RESPONSE')return;
+ acceptBlockedArchive(e.data.items);
+});
+function requestBlockedArchive(){
+ window.postMessage({type:'REALT_BLOCKED_JOURNAL_REQUEST'},location.origin);
+ const token=localStorage.getItem('realt_blocked_read_token');
+ if(token)fetch('https://realt-blocked-private.katlinskaya-antonina.workers.dev/data',
+  {headers:{Authorization:'Bearer '+token},cache:'no-store'})
+  .then(r=>r.ok?r.json():null).then(j=>{if(j?.data?.items)acceptBlockedArchive(j.data.items);}).catch(()=>{});
+}
+window.addEventListener('focus',requestBlockedArchive);
+setInterval(()=>{if(!document.hidden)requestBlockedArchive();},300000);
+function blockedByEmployee(m,agents){
+ const result=new Map();if(!blockedArchive)return result;
+ const lookup=new Map();
+ for(const history of index.histories.values()){const row=history.at(-1);if(row?.code)lookup.set(String(row.code),row);}
+ const boriskina=agents.find(a=>agentName(a.row).toLowerCase().includes('борискина'));
+ for(const a of agents)result.set(a.row.userUuid,{new:0,old:0,total:0,unknown:0});
+ for(const item of blockedArchive){
+  // Initial archive has no verified blocking date.
+  if(item.detectionType==='initial_baseline'||!item.firstDetectedAt||Number.isNaN(Date.parse(item.firstDetectedAt)))continue;
+  const detected=day(item.firstDetectedAt);
+  if(detected<m.from||detected>m.to||!m.selectDate(item.firstDetectedAt))continue;
+  const matched=lookup.get(item.id);
+  const agent=matched?agents.find(a=>a.row.userUuid===matched.userUuid):
+   item.employeeEmail==='e.v.boriskina@minsk.etagi.com'?boriskina:null;
+  if(!agent)continue;
+  const entry=result.get(agent.row.userUuid);entry.total++;
+  const placed=matched?.createdAt&&!Number.isNaN(Date.parse(matched.createdAt))?day(matched.createdAt):null;
+  if(!placed)entry.unknown++;
+  else if(placed>=m.from&&placed<=m.to&&m.selectDate(matched.createdAt))entry.new++;
+  else if(placed<m.from)entry.old++;
+  else entry.unknown++;
+ }
+ return result;
+}
+
 function agentsFor(m){const out=new Map();const publication=r=>{if(!r.createdAt||Number.isNaN(Date.parse(r.createdAt)))return 'unknown';const d=day(r.createdAt);return d<m.from?'old':d<=m.to&&m.selectDate(r.createdAt)?'new':'unknown';};const ensure=r=>{if(!out.has(r.userUuid))out.set(r.userUuid,{row:r,current:0,paid:0,observed:new Set(),delta:0,deltaNew:0,deltaOld:0,deltaUnknown:0,published:new Set(),changes:0,newly:0,total:0});return out.get(r.userUuid);};for(const r of m.current){const a=ensure(r);a.current++;a.paid+=paid(r)?1:0;a.total+=number(r.views)||0;}for(const r of m.observed){const a=ensure(r);a.observed.add(r.uuid);if(publication(r)==='new')a.published.add(r.uuid);}for(const e of m.events){const a=ensure(e.row);a.delta+=e.delta;const k=publication(e.row);if(k==='new')a.deltaNew+=e.delta;else if(k==='old')a.deltaOld+=e.delta;else a.deltaUnknown+=e.delta;}for(const c of m.changes)ensure(c.row).changes++;for(const r of m.newly)ensure(r).newly++;return [...out.values()].sort((a,b)=>b.delta-a.delta||b.current-a.current);}
 function renderUnified(m){
  if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
@@ -440,6 +488,7 @@ function renderUnified(m){
  $('employeeChanges').innerHTML=changesHTML(m.changes);
  const agents=agentsFor(m);const maxDelta=Math.max(1,...agents.map(a=>a.delta));$('employeeHighlights').innerHTML=agents.slice(0,18).map(a=>`<article class="employee-highlight"><button data-select-agent="${esc(a.row.userUuid)}">${employeeBadge(a.row)}</button><div class="big">${m.events.length?'+'+fmt(a.delta):'—'}</div><div class="track"><span style="width:${Math.max(0,a.delta)/maxDelta*100}%"></span></div><small>${fmt(a.current)} активных · ${fmt(a.paid)} с продвижением</small></article>`).join('');const rankedAgents=agents.slice().sort((a,b)=>b.deltaNew-a.deltaNew||b.published.size-a.published.size||b.current-a.current);
  const medals=['🥇','🥈','🥉'];
+ const blocked=blockedByEmployee(m,agents);
  const metrics=['current','published','deltaNew','deltaOld','paid','changes'];
  const value=(agent,key)=>key==='published'?agent.published.size:agent[key];
  const best=metrics.map(key=>Math.max(0,...agents.map(agent=>value(agent,key))));
@@ -448,8 +497,16 @@ function renderUnified(m){
    const measured=!key.startsWith('delta')||m.events.length>0;
    return `<td class="num${measured&&n>0&&n===best[index]?' employee-best':''}">${measured?fmt(n):'—'}</td>`;
  };
- $('employeeTable').innerHTML='<div class="tbl-wrap emp"><table class="kufar-employee-table"><thead><tr class="grp"><th rowspan="2" scope="col">Сотрудник</th><th rowspan="2" scope="col">Объявлений сейчас</th><th colspan="2" scope="colgroup">Объявления, размещённые в выбранном периоде</th><th scope="col">Объявления, размещённые до выбранного периода</th><th colspan="2" scope="colgroup">Все объявления</th></tr><tr><th scope="col">Сколько размещено</th><th scope="col">Просмотры</th><th scope="col">Просмотры</th><th scope="col">В рекламе сейчас</th><th scope="col">Изменений</th></tr></thead><tbody>'+
- rankedAgents.map((a,i)=>`<tr class="employee-row-link"><th scope="row"><a target="_blank" rel="noopener" href="${esc(employeeAdsUrl(a.row.userUuid,m))}">${a.deltaNew>0&&medals[i]?`<strong>${medals[i]} ${employeeBadge(a.row)}</strong>`:employeeBadge(a.row)}</a></th>${cell(a,'current',0)}${cell(a,'published',1)}${cell(a,'deltaNew',2)}${cell(a,'deltaOld',3)}${cell(a,'paid',4)}${cell(a,'changes',5)}</tr>`).join('')+'</tbody></table></div>';
+
+ const blockedCell=(agent,key)=>{
+  const v=blocked.get(agent.row.userUuid);
+  if(!blockedArchive)return '<td class="num blocked-value" title="Журнал блокировок ещё не подключён">—</td>';
+  if(!v)return '<td class="num blocked-value" title="Сотрудник не подтверждён в журнале">—</td>';
+  if(key!=='total'&&v.unknown>0)return '<td class="num blocked-value" title="Есть блокировки без подтверждённой даты размещения">'+(v[key]?fmt(v[key])+'+':'—')+'</td>';
+  return '<td class="num blocked-value" title="Впервые обнаружено за период; первоначальный архив исключён">'+fmt(v[key])+'</td>';
+ };
+ $('employeeTable').innerHTML='<div class="tbl-wrap emp"><table class="kufar-employee-table"><thead><tr class="grp"><th rowspan="2" scope="col">Сотрудник</th><th rowspan="2" scope="col">Объявлений<br>сейчас</th><th colspan="3" scope="colgroup">Размещены<br>за период</th><th colspan="2" scope="colgroup">Размещены<br>ранее</th><th colspan="3" scope="colgroup">Все объявления</th></tr><tr><th scope="col">Размещено</th><th scope="col">Блокировок</th><th scope="col">Просмотры</th><th scope="col">Просмотры</th><th scope="col">Блокировок</th><th scope="col">Блокировок<br>за период</th><th scope="col">В рекламе</th><th scope="col">Изменений</th></tr></thead><tbody>'+
+ rankedAgents.map((a,i)=>`<tr class="employee-row-link"><th scope="row"><a target="_blank" rel="noopener" href="${esc(employeeAdsUrl(a.row.userUuid,m))}">${a.deltaNew>0&&medals[i]?`<strong>${medals[i]} ${employeeBadge(a.row)}</strong>`:employeeBadge(a.row)}</a></th>${cell(a,'current',0)}${cell(a,'published',1)}${blockedCell(a,'new')}${cell(a,'deltaNew',2)}${cell(a,'deltaOld',3)}${blockedCell(a,'old')}${blockedCell(a,'total')}${cell(a,'paid',4)}${cell(a,'changes',5)}</tr>`).join('')+'</tbody></table></div>';
 
  }
  if(activeView==='promotion')renderPromotions(m);
@@ -951,3 +1008,5 @@ window.addEventListener('pageshow',()=>{if(!document.hidden)checkForUpdates();})
 }
 
 
+
+requestBlockedArchive();
