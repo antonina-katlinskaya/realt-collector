@@ -53,6 +53,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 /* Per-tab metrics replace legacy global KPI clutter. */
 #cards,#coverage{display:none}
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
+.viewtabs>a.blocked-nav{display:inline-flex;align-items:center;text-decoration:none;color:#234e79;font-weight:700;font-size:15px;padding:11px 13px;border-radius:7px;white-space:nowrap}.viewtabs>a.blocked-nav:hover{background:#e9eeeb}
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
 <script src="dashboard.js?v=20261110-live-metrics-v7" defer></script>
@@ -280,7 +281,7 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <div class="filter-search"><input id="search" type="search" placeholder="Поиск по заголовку, адресу или номеру объявления" aria-label="Поиск объявлений"><span class="newbuild-label">✓ Только новостройки</span><button id="reset">Сбросить фильтры</button></div>
 <div hidden><select id="agent"><option value="">Все сотрудники</option></select><select id="company"><option value="">Все</option></select><select id="rooms"><option value="">Все</option></select><select id="promo"><option value="">Любое</option></select><select id="quarter"><option value="">Все</option></select><select id="house"><option value="">Все</option></select><input id="areaMin" type="number"><input id="areaMax" type="number"></div>
 </details>
-<nav id="views" class="viewtabs" aria-label="Основные разделы радара"><button data-view="competitors">Конкуренты</button><button data-view="promotion" class="active">Продвижение</button><button data-view="ads">Объявления за период</button><button data-view="employees">Сотрудники</button><button data-view="works">Топ органика</button><button data-view="leaders">Топ продвижение</button><button data-view="demand">Спрос</button></nav>
+<nav id="views" class="viewtabs" aria-label="Основные разделы радара"><button data-view="competitors">Конкуренты</button><button data-view="promotion" class="active">Продвижение</button><button data-view="ads">Объявления за период</button><button data-view="employees">Сотрудники</button><button data-view="works">Топ органика</button><button data-view="leaders">Топ продвижение</button><button data-view="demand">Спрос</button><a href="blocked.html" class="blocked-nav">Блокировки</a></nav>
 <section class="panel" id="competitor-watch" data-section="competitors" hidden aria-labelledby="competitor-watch-title">
 <h2 id="competitor-watch-title">Конкуренты под наблюдением · 30 дней</h2>
 <p class="muted">Активные карточки Realt, созданные за последние 30 дней. Дни размещения считаются по Минску.</p>

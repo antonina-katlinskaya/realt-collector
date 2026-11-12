@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Радар REALT — Блокировки</title>
+<link rel="icon" href="favicon-realt.svg" type="image/svg+xml">
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f6f5f2;color:#192e44}
+*{box-sizing:border-box}body{margin:0}main{max-width:1450px;margin:auto;padding:22px 25px 70px}
+header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+h1{font-size:28px;margin:5px 0}h2{font-size:19px;margin:2px 0 14px}.muted{color:#617489}.eyebrow{font-size:12px;color:#647c95;text-transform:uppercase;letter-spacing:.09em}
+nav{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 20px;background:#f1f2f1;border:1px solid #e1e5e7;border-radius:13px;padding:7px}
+nav a{text-decoration:none;color:#33465b;font-size:14px;padding:10px 13px;border-radius:8px}nav a.active{background:#234e79;color:white;font-weight:700}
+.panel{background:white;border:1px solid #dce4ed;border-radius:15px;padding:17px;margin:13px 0}
+.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.row>button,.row>select,.row>input{font:inherit;border:1px solid #cbd7e3;border-radius:9px;padding:10px;background:#fff;color:#243e56}
+button{cursor:pointer}.primary{background:#1b6551!important;color:#fff!important;border-color:#1b6551!important}.row>input{min-width:180px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.metric{background:#fff;border:1px solid #dce4ed;border-radius:13px;padding:16px}.metric b{display:block;font-size:28px}.metric .muted{font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:15px}
+.card{overflow:hidden;border:1px solid #dce4ed;border-radius:12px;background:white;min-width:0}
+.photo{height:155px;display:flex;align-items:center;justify-content:center;background:#e8edf3;position:relative;color:#65778b;font-size:12px}
+.photo img{height:100%;width:100%;object-fit:cover}.blocked{position:absolute;left:9px;top:9px;background:#bd3048;color:white;padding:5px 8px;border-radius:30px;font-size:11px;font-weight:700}
+.details{padding:11px 12px;font-size:12px;overflow-wrap:anywhere}.details h3{font-size:14px;line-height:1.35;margin:0 0 7px}.details a{color:#1e619c}.badge{display:inline-block;color:#245a4b;background:#e4f2e9;padding:4px 7px;border-radius:5px;margin:7px 0}.stat{display:flex;justify-content:space-between;gap:5px;padding:5px 0;border-top:1px solid #edf1f3}.stat strong{text-align:right}
+.info{font-size:12px;color:#71839a;margin:7px 0}.warn{color:#a55025}.hidden{display:none!important}.status{font-size:13px;color:#276449}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:650px){main{padding:14px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metrics{grid-template-columns:1fr}}
+</style></head><body><main>
+<header><div><div class="eyebrow">Радар REALT · общий закрытый журнал</div><h1>⛔ Заблокированные объявления</h1><div class="muted">Ваши блокировки Realt, синхронизация из Opera. Только для обладателей защищённой ссылки.</div></div><div class="row"><button id="reload" class="primary">Обновить данные</button><button id="share">Скопировать ссылку для сестры</button></div></header>
+<nav><a href="./">Радар REALT</a><a class="active" href="blocked.html">Блокировки</a></nav>
+<section class="panel" id="authPanel"><h2>Доступ к журналу</h2><p class="muted">Введите ключ просмотра из защищённой ссылки. При первом переходе по ссылке ключ сохранится только в этом браузере.</p><div class="row"><input id="token" type="password" placeholder="Ключ просмотра" autocomplete="off"><button class="primary" id="connect">Открыть журнал</button></div><p id="authError" class="warn"></p></section>
+<div id="content" class="hidden"><div class="panel status" id="status">Загрузка…</div>
+<section class="metrics"><div class="metric"><div class="muted">Всего зафиксировано</div><b id="total">—</b></div><div class="metric"><div class="muted">Обнаружено при последней проверке</div><b id="latestCount">—</b></div><div class="metric"><div class="muted">Последняя синхронизация</div><b id="lastSync" style="font-size:18px">—</b></div></section>
+<section class="panel"><h2>Журнал блокировок</h2><div class="row">
+<select id="sort"><option value="recent">Недавно обнаруженные</option><option value="views">Больше просмотров</option><option value="old">Самые старые</option></select>
+<input id="search" placeholder="Поиск по ID, адресу, сотруднику">
+<select id="scope"><option value="all">Все блокировки</option><option value="initial_baseline">Первоначальный архив</option><option value="newly_detected">Впервые после запуска</option></select>
+<span class="muted" id="shown" style="margin-left:auto"></span></div>
+<div id="cards" class="grid"></div></section>
+<div class="info">Время обнаружения блокировки не равно точному времени решения модератора Realt. Старые записи сохраняются, даже если пропадают из текущего списка.</div>
+</div></main><script src="blocked.js?v=1" defer></script></body></html>
