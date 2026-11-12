@@ -55,8 +55,25 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 .promo-history-card{background:#fcfcfb;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 0}.promo-history-title{font-weight:700;margin-bottom:5px}.promo-history-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}.promo-history-stats>div{display:flex;flex-direction:column;gap:4px}.promo-history-stats small{color:var(--muted);font-size:11px}.promo-history-stats b{font-size:14px;overflow-wrap:anywhere}
 .viewtabs>a.blocked-nav{display:inline-flex;align-items:center;text-decoration:none;color:#234e79;font-weight:700;font-size:15px;padding:11px 13px;border-radius:7px;white-space:nowrap}.viewtabs>a.blocked-nav:hover{background:#e9eeeb}
 </style>
+<style>
+/* Historical adverts no longer present in the newest Realt snapshot.
+   Do not call this a confirmed moderation block or archive event. */
+[data-section="ads"] .acard.acard-removed,
+[data-section="works"] .acard.acard-removed{
+  border:3px solid #d52c42!important;
+  box-shadow:0 0 0 1px rgba(213,44,66,.12);
+  position:relative;
+}
+[data-section="ads"] .acard-removed .at,
+[data-section="works"] .acard-removed .at{white-space:normal;line-height:1.35}
+.card-removed-label{
+  display:inline-block;margin-left:6px;padding:3px 7px;
+  border-radius:5px;background:#b42339;color:#fff;
+  font-size:11px;font-weight:750;vertical-align:middle;white-space:nowrap;
+}
+</style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
-<script src="dashboard.js?v=20261112-employee-blocks-v1" defer></script>
+<script src="dashboard.js?v=20261112-removed-border-v1" defer></script>
 
 <style>
 
