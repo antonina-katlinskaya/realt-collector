@@ -73,7 +73,7 @@ main{max-width:1280px;padding:22px 24px}header{align-items:flex-start;margin-bot
 }
 </style>
 <link rel="stylesheet" href="kufar-cards.css?v=20261027a">
-<script src="dashboard.js?v=20261113-ui-blocks-v4" defer></script>
+<script src="dashboard.js?v=20261114-ui-topbar-v5" defer></script>
 
 <style>
 
@@ -343,11 +343,51 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 .noimg.photo-retry{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center}
 .noimg.photo-retry button{border:1px solid #bac9d9;background:#fff;border-radius:7px;color:#285d90;font-size:11px;padding:5px 8px;cursor:pointer}
 </style>
+
+<style>
+/* Match the Kufar radar: one horizontal top panel, filters left and leaders right. */
+#topDashboard{
+ display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);
+ gap:10px;align-items:stretch;width:86.6%;margin:12px auto 10px;
+}
+#topDashboard>#filterBox,#topDashboard>#periodLeaders{
+ min-width:0;width:100%;margin:0;box-sizing:border-box;height:100%;
+}
+#topDashboard>#filterBox{padding:13px 14px}
+#topDashboard #filterBox>summary{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#topDashboard #filterBox .filter-caption{flex-basis:62px}
+#topDashboard #filterBox .filter-row{gap:7px;margin:7px 0}
+#topDashboard #filterBox .combined-filters{align-items:center}
+#topDashboard #filterBox .filter-group{gap:5px}
+#topDashboard #filterBox .quick,#topDashboard #filterBox .filter-chips{gap:4px}
+#topDashboard #filterBox .quick button,#topDashboard #filterBox .filter-chips button{padding:5px 8px;font-size:11.5px}
+#topDashboard #filterBox .employee-picker>summary{min-width:120px;padding:6px 8px}
+#topDashboard #filterBox .filter-search{gap:5px;flex-wrap:wrap;margin-top:8px}
+#topDashboard #filterBox .filter-search>input{flex:1 1 180px}
+#topDashboard #filterBox .filter-search .newbuild-label,
+#topDashboard #filterBox .filter-search>button{padding:6px 8px;font-size:11px}
+#topDashboard>#periodLeaders{padding:13px 12px;border-radius:14px;background:linear-gradient(115deg,#2186ab,#80bac8);color:#fff}
+#topDashboard #periodLeaders .period-leaders-title{font-size:17px;line-height:1.25;margin:0 0 8px}
+#topDashboard #periodLeaders .period-leaders-note{display:none}
+#topDashboard .period-leaders-columns{gap:6px;grid-template-columns:repeat(2,minmax(0,1fr))}
+#topDashboard .period-leaders-column{padding:9px 7px;border-radius:11px;background:#f5f9fb}
+#topDashboard .period-leaders-column h3{font-size:10px;line-height:1.3;min-height:30px;margin:0 0 6px;overflow-wrap:anywhere;color:#113a4d}
+#topDashboard .period-leaders-row{gap:3px;padding:5px 4px;font-size:10px;margin-top:4px}
+#topDashboard .period-leaders-row button{font-size:10px;line-height:1.2;overflow-wrap:anywhere}
+#topDashboard .period-leaders-row b{font-size:10px}
+@media(max-width:930px){
+ #topDashboard{grid-template-columns:1fr;gap:8px;width:100%}
+ #topDashboard>#filterBox,#topDashboard>#periodLeaders{height:auto}
+ #topDashboard .period-leaders-column h3{font-size:12px;min-height:0}
+ #topDashboard .period-leaders-row button,#topDashboard .period-leaders-row b{font-size:11px}
+}
+</style>
 </head>
 <body><main>
 <header><div><h1>Радар REALT</h1><div class="muted">Минск Мир · Зелёная гавань · объявления и продвижение</div></div><div class="meta"><div id="freshness">Загружаем данные…</div><div class="headerlinks"><button id="refresh" title="Перечитать сохранённые снимки; новый сбор запускается по расписанию">Обновить данные</button></div></div></header>
 <script src="competitor-watch.js?v=1" defer></script>
 <div class="notice error" id="freshnessWarning" role="status" aria-live="polite" hidden></div>
+<div id="topDashboard" class="top-dashboard">
 <details class="filterbox" id="filterBox" open>
 <summary><strong>Фильтры</strong><span id="filtersSummaryPeriod">Сегодня</span></summary>
 <div class="filter-row"><span class="filter-caption">Период</span><div id="quick" class="quick"><button data-days="1" class="active">Сегодня</button><button data-days="yesterday">Вчера</button><button data-days="dayBefore">Позавчера</button><button data-days="7">7 дней</button><button data-days="14">14 дней</button><button data-days="30">30 дней</button><button data-days="90">90 дней</button><button data-days="custom">Свой период</button></div></div>
@@ -358,6 +398,7 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <div hidden><select id="agent"><option value="">Все сотрудники</option></select><select id="company"><option value="">Все</option></select><select id="rooms"><option value="">Все</option></select><select id="promo"><option value="">Любое</option></select><select id="quarter"><option value="">Все</option></select><select id="house"><option value="">Все</option></select><input id="areaMin" type="number"><input id="areaMax" type="number"></div>
 </details>
 <section id="periodLeaders" aria-label="Лидеры за выбранный период"><h2 class="period-leaders-title">🏆 Лидеры за период</h2><p class="period-leaders-note">Размещения — по дате публикации. Просмотры — подтверждённый прирост счётчиков за период, включая более ранние и впоследствии исчезнувшие объявления, когда сохранились замеры.</p><div class="period-leaders-columns"><div class="period-leaders-column"><h3>📣 По количеству размещённых объявлений</h3><div id="leaderPublished" role="status">Загрузка…</div></div><div class="period-leaders-column"><h3>👁 По просмотрам за период</h3><div id="leaderViews" role="status">Загрузка…</div></div></div></section>
+</div>
 <nav id="views" class="viewtabs" aria-label="Основные разделы радара"><button data-view="competitors">Конкуренты</button><button data-view="promotion" class="active">Продвижение</button><button data-view="ads">Объявления за период</button><button data-view="employees">Сотрудники</button><button data-view="works">Топ органика</button><button data-view="leaders">Топ продвижение</button><button data-view="demand">Спрос</button><a href="blocked.html" class="blocked-nav">Блокировки</a></nav>
 <section class="panel" id="competitor-watch" data-section="competitors" hidden aria-labelledby="competitor-watch-title">
 <h2 id="competitor-watch-title">Конкуренты под наблюдением · 30 дней</h2>
