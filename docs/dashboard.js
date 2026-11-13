@@ -180,6 +180,7 @@ const knownById={'77ff7ab0-6e68-11ee-818e-0935d63487ea':'Ирина Бараше
 };
 function agentName(r){const email=(r.contactEmail||'').split('@')[0];return knownById[r.userUuid]||known[email]||(r.contactName?.trim()||(r.agency==='tvoya_stolitsa'?'Твоя столица':r.agency==='bir_bay'?'Бир Бай':r.agencyName)||'Без имени');}
 function employeeBadge(r){return '<span class="employee-name">'+esc(agentName(r))+'</span>';}
+const isOwnAdvert=r=>r?.userUuid==='ff985560-a80d-11f0-bfef-45b6701187ce'||String(r?.contactEmail||'').trim().toLowerCase()==='e.v.boriskina@minsk.etagi.com';
 let index,rows=[],baseRows=[],seen=null,seenPromise=null,selectedTab='published',page=0,currentModel=null,loadSeq=0,developerIds=new Set();
 const ARCHIVE_START='2026-10-05',archiveRows=new Map(),archiveMissing=new Set();let archiveRequestSeq=0;
 let preciseBounds=null,activeView='promotion',hiddenAgents=new Set(),chosenInterval=null,photos=new Map(),photoLoaded=false,photoDate=null;
@@ -310,10 +311,11 @@ function kufarStyleCard(r,primary,subline,secondary){
  const latestSnapshot=index?.times?.at(-1);
  const absentInLatest=!!(latestSnapshot && index?.byTime?.get(latestSnapshot) && !index.byTime.get(latestSnapshot).has(r.uuid));
  const removalMark=absentInLatest?' <span class="card-removed-label">Нет в последнем снимке</span>':'';
- const removalClass=absentInLatest?' acard-removed':'';
+ const removalClass=(absentInLatest?' acard-removed':'')+(isOwnAdvert(r)?' acard-own':'');
+ const ownTag=isOwnAdvert(r)?'<span class="own-tag">СВОЁ</span>':'';
  const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" data-photo-id="${esc(r.uuid)}" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
  return `<article class="acard${removalClass}" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
-  <div class="at">${esc(r.title||r.address||'Объявление')}${removalMark}</div>
+  <div class="at">${ownTag}${esc(r.title||r.address||'Объявление')}${removalMark}</div>
   <div class="am">${esc(r.address||'Адрес не указан')}</div>
   <div class="aw"><span class="card-agent-name">${esc(agentName(r))}</span> · ${esc(r.rooms||'?')}K · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
   <div class="ad8">${secondary||''}${p.length&&photoDates[r.uuid]&&photoDates[r.uuid]!==photoDate?' · Фото из снимка '+date(photoDates[r.uuid]):''}</div>
@@ -372,7 +374,7 @@ $('search').addEventListener('input',()=>{page=0;clearTimeout(searchRenderTimer)
 const recentOffsets={'1':0,yesterday:1,dayBefore:2};
 let recentDays=new Set(),quickPeriod='1';
 const linkedParams=new URLSearchParams(location.search);
-const employeeLink=linkedParams.get('employee');
+let employeeLink=linkedParams.get('employee');
 let linkedDays=new Set();
 function employeeAdsUrl(id,m){
  const params=new URLSearchParams({employee:id,from:m.from,to:m.to});
@@ -485,7 +487,7 @@ function renderUnified(m){
  if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
  if(activeView==='leaders'){
  const promoted=new Map();for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}const sort=$('promotedSort').value;const list=[...promoted.values()].sort((a,b)=>sort==='views'?b.delta-a.delta:comparePublication(a.row,b.row,sort));
- $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Всего просмотров страницы',''],list.slice(0,100).map((v,i)=>`<tr><td>${i+1}</td><td>${employeeBadge(v.row)}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
+ $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Всего просмотров страницы',''],list.slice(0,Number($('promotedLimit').value)||30).map((v,i)=>`<tr><td>${i+1}</td><td>${employeeBadge(v.row)}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
  renderPromotedGallery(m);
  }
  if(activeView==='employees'){
@@ -627,7 +629,8 @@ function organicSets(m){
    ||(number(b.r.views)||0)-(number(a.r.views)||0)
    || comparePublication(a.r,b.r,'recent');
  };
- return {newAds:newer.sort(sorter).slice(0,30),oldAds:older.sort(sorter).slice(0,30)};
+ const limit=Number($('organicLimit').value)||30;
+ return {newAds:newer.sort(sorter).slice(0,limit),oldAds:older.sort(sorter).slice(0,limit),newTotal:newer.length,oldTotal:older.length};
 }
 function renderWorks(m){
  const sets=organicSets(m);
@@ -811,8 +814,10 @@ function renderGallery(m,sets=organicSets(m)){
   v.delta===null?'— · нет двух замеров':'+'+fmt(v.delta)+' просм. за период',
   'Всего: '+fmt(number(v.r.views))+' просмотров',
   'Бесплатно · '+(v.r.createdAt?'размещено '+date(v.r.createdAt):'дата неизвестна'));
- $('organicNewCount').textContent='· '+fmt(sets.newAds.length);
- $('organicOldCount').textContent='· '+fmt(sets.oldAds.length);
+ $('organicNewLimit').textContent='Топ-'+(Number($('organicLimit').value)||30);
+ $('organicOldLimit').textContent='Топ-'+(Number($('organicLimit').value)||30);
+ $('organicNewCount').textContent='· '+fmt(sets.newTotal);
+ $('organicOldCount').textContent='· '+fmt(sets.oldTotal);
  $('gallery').innerHTML=sets.newAds.map(card).join('')||empty('Нет новых органических объявлений с подтверждённой датой публикации.');
  $('galleryOld').innerHTML=sets.oldAds.map(card).join('')||empty('Нет ранее опубликованных органических объявлений для выбранного периода.');
 }
@@ -851,10 +856,11 @@ function renderPromotedGallery(m){
   rooms.set(k,g);
  }
  const roomTable=makeTable(['Комнат','Объявлений','Проверенный прирост'],[...rooms].sort((a,b)=>Number(a[0])-Number(b[0])).map(([n,v])=>`<tr><td>${esc(n)}</td><td>${v.count}</td><td>${v.measured?'+'+fmt(v.delta):'—'}</td></tr>`));
- const items=ranked.slice(0,30);
+ const limit=Number($('promotedLimit').value)||30;
+ const items=ranked.slice(0,limit);
  const introduction=fallback?
  `<p class="muted">За период замечено ${fmt(total)} объявлений с платным статусом. Пока нет достаточных проверенных интервалов для рейтинга по эффективности. Ниже — история рекламы, начиная с недавно замеченных; это НЕ рейтинг по просмотрам.</p>`:
- `<p class="muted">ТОП-${Math.min(30,total)} по достоверному приросту просмотров в платных интервалах. Открытия номера Realt не предоставляет.</p>`;
+ `<p class="muted">ТОП-${Math.min(limit,total)} по достоверному приросту просмотров в платных интервалах. Открытия номера Realt не предоставляет.</p>`;
  // Display immediately observable figures, without postponing a card until
  // a second paid snapshot exists. Count only intervals where both samples
  // are paid; transitions from free to paid stay visibly unallocated.
@@ -870,12 +876,12 @@ function renderPromotedGallery(m){
    );
  }).join('');
  const pendingHeading=newlyActivated.length?'<h3>Новые включения продвижения · '+fmt(newlyActivated.length)+'</h3><p class="muted">Количество просмотров показывается сразу с первого платного снимка. Прирост уточняется по следующим обходам; просмотры в интервале переключения тарифа не приписываются рекламе.</p><div class="cgrid">'+newCards+'</div>':'';
- $('promotedGallery').innerHTML=pendingHeading+introduction+'<h3>По комнатности</h3>'+roomTable+'<h3>Объявления с продвижением</h3>'+
+ $('promotedGallery').innerHTML=introduction+
  '<div class="cgrid">'+items.map(v=>kufarStyleCard(v.row,
   v.delta===null?'Прирост: —':'+'+fmt(v.delta)+' просм.',
   v.delta===null?'Достоверного прироста ещё нет':'При продвижении',
   (v.first?'Реклама с '+date(v.first)+' до '+date(v.last):'Наблюдаемая реклама')+' · '+esc(v.kind||label(v.row))
- )).join('')+'</div>'+(items.length?'':empty('Не найдено подходящих объявлений с продвижением.'));
+ )).join('')+'</div>'+(items.length?'':empty('Не найдено подходящих объявлений с продвижением.'))+'<details><summary>Новые включения продвижения · '+fmt(newlyActivated.length)+'</summary>'+pendingHeading+'</details><details><summary>По комнатности</summary>'+roomTable+'</details>';
 
 }
 
@@ -904,6 +910,8 @@ function detailExtras(id){
 }
 function activateView(view){$('methods').hidden=view==='promotion';const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(view==='demand'){const d=demandDates();restoreArchiveRange(d.from,d.to);}if(['works','leaders','ads','demand'].includes(view)&&!photoLoaded)loadPhotos();}}
 for(const id of ['organicSort','promotedSort'])$(id).addEventListener('change',render);
+$('organicLimit').addEventListener('change',()=>{if(index)render();});
+$('promotedLimit').addEventListener('change',()=>{if(index)render();});
 
 $('demandPeriods').onclick=e=>{
  const button=e.target.closest('[data-demand-period]');if(!button)return;
