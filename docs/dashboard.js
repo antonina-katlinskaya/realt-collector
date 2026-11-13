@@ -180,6 +180,7 @@ const knownById={'77ff7ab0-6e68-11ee-818e-0935d63487ea':'Ирина Бараше
 };
 function agentName(r){const email=(r.contactEmail||'').split('@')[0];return knownById[r.userUuid]||known[email]||(r.contactName?.trim()||(r.agency==='tvoya_stolitsa'?'Твоя столица':r.agency==='bir_bay'?'Бир Бай':r.agencyName)||'Без имени');}
 function employeeBadge(r){return '<span class="employee-name">'+esc(agentName(r))+'</span>';}
+const isOwnAdvert=r=>r?.userUuid==='ff985560-a80d-11f0-bfef-45b6701187ce'||String(r?.contactEmail||'').trim().toLowerCase()==='e.v.boriskina@minsk.etagi.com';
 let index,rows=[],baseRows=[],seen=null,seenPromise=null,selectedTab='published',page=0,currentModel=null,loadSeq=0,developerIds=new Set();
 const ARCHIVE_START='2026-10-05',archiveRows=new Map(),archiveMissing=new Set();let archiveRequestSeq=0;
 let preciseBounds=null,activeView='promotion',hiddenAgents=new Set(),chosenInterval=null,photos=new Map(),photoLoaded=false,photoDate=null;
@@ -273,7 +274,7 @@ function svgBars(groups){
     if(groups.length<16||i%Math.ceil(groups.length/12)===0)s+=`<text x="${x+step*.3}" y="${bottom+20}" text-anchor="middle" font-size="10" fill="#62758a">${esc(g.label)}</text>`;
   });return s+'</svg>';
 }
-function render(){if(!index)return;$('status').hidden=['promotion','competitors'].includes(activeView);updateEmployeeSummary();const m=model();currentModel=m;if(employeeLink){const employee=m.observed[0]||index.histories.values().next().value?.find(r=>r.userUuid===employeeLink);$('employeeAdsTitle').textContent=(employee?agentName(employee)+' · ':'')+m.from+' — '+m.to;}
+function render(){if(!index)return;$('status').hidden=['promotion','competitors'].includes(activeView);updateEmployeeSummary();const m=model();currentModel=m;renderPeriodLeaders(m);$('backEmployees').hidden=!employeeLink;$('employeeAds').hidden=!employeeLink;$('employeeAdsTitle').hidden=!employeeLink;document.querySelector('[data-section="ads"]').classList.toggle('employee-ads-view',!!employeeLink);if(employeeLink){const employee=m.observed[0]||index.histories.values().next().value?.find(r=>r.userUuid===employeeLink);$('employeeAdsTitle').textContent=(employee?agentName(employee)+' · ':'')+m.from+' — '+m.to;}
   if(m.from>m.to){$('status').textContent='Дата начала должна быть раньше даты окончания.';return;}
   const comparable=m.events.length>0,delta=m.events.reduce((s,e)=>s+e.delta,0),advertised=m.current.filter(paid).length;
   const activations=m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus'&&![2,3,4].includes(number(x.old))&&[2,3,4].includes(number(x.new)))).length;
@@ -304,16 +305,17 @@ document.addEventListener('error',event=>{
  const next=Number(img.dataset.photoIndex||0)+1;
  const fallback=photos.get(img.dataset.photoId)?.[next];
  if(fallback){img.dataset.photoIndex=String(next);img.src=fallback;}
- else{const placeholder=document.createElement('div');placeholder.className='noimg';placeholder.textContent='Фото недоступно';img.replaceWith(placeholder);}
+ else{const placeholder=document.createElement('div');placeholder.className='noimg photo-retry';placeholder.innerHTML='<span>Фото недоступно</span><button type="button" data-photo-retry="'+esc(img.dataset.photoId)+'">Повторить загрузку</button>';img.replaceWith(placeholder);}
 },true);
 function kufarStyleCard(r,primary,subline,secondary){
  const latestSnapshot=index?.times?.at(-1);
  const absentInLatest=!!(latestSnapshot && index?.byTime?.get(latestSnapshot) && !index.byTime.get(latestSnapshot).has(r.uuid));
  const removalMark=absentInLatest?' <span class="card-removed-label">Нет в последнем снимке</span>':'';
- const removalClass=absentInLatest?' acard-removed':'';
- const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" data-photo-id="${esc(r.uuid)}" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
+ const removalClass=(absentInLatest?' acard-removed':'')+(isOwnAdvert(r)?' acard-own':'');
+ const ownTag=isOwnAdvert(r)?'<span class="own-tag">СВОЁ</span>':'';
+ const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" decoding="async" referrerpolicy="no-referrer" data-photo-id="${esc(r.uuid)}" data-photo-index="0" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
  return `<article class="acard${removalClass}" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
-  <div class="at">${esc(r.title||r.address||'Объявление')}${removalMark}</div>
+  <div class="at">${ownTag}${esc(r.title||r.address||'Объявление')}${removalMark}</div>
   <div class="am">${esc(r.address||'Адрес не указан')}</div>
   <div class="aw"><span class="card-agent-name">${esc(agentName(r))}</span> · ${esc(r.rooms||'?')}K · ${esc(r.areaTotal||'?')} м² · ${price(r)}</div>
   <div class="ad8">${secondary||''}${p.length&&photoDates[r.uuid]&&photoDates[r.uuid]!==photoDate?' · Фото из снимка '+date(photoDates[r.uuid]):''}</div>
@@ -355,7 +357,7 @@ rows=baseRows.concat(...archiveRows.values());index=buildIndex(rows.filter(r=>de
   const prevAgent=$('agent').value,prevQuarter=$('quarter').value;
   $('agent').innerHTML='<option value="">Все агенты</option>'+[...agents.values()].sort((a,b)=>agentName(a).localeCompare(agentName(b),'ru')).map(r=>`<option value="${esc(r.userUuid)}">${esc(agentName(r))} · ${esc(r.contactPhone||r.userUuid.slice(0,8))}</option>`).join('');$('agent').value=prevAgent;
   $('quarter').innerHTML='<option value="">Все</option>'+[...new Set(rows.map(r=>r.quarter||'(не определён)'))].sort().map(q=>`<option>${esc(q)}</option>`).join('');$('quarter').value=prevQuarter;
-  if(!$('from').value)$('from').value=day(index.times[0]);if(!$('to').value)$('to').value=day(last);applyQuickPeriod();seen=null;seenPromise=null;populateUnified(agents);await restoreArchiveRange();render();
+  if(!$('from').value)$('from').value=day(index.times[0]);if(!$('to').value)$('to').value=day(last);applyQuickPeriod();seen=null;seenPromise=null;populateUnified(agents);await restoreArchiveRange();if(photoDate&&photoDate!==last)photoLoaded=false;render();if(['ads','works','leaders','demand'].includes(activeView)&&!photoLoaded)loadPhotos();
 }catch(e){$('status').hidden=false;$('status').textContent='Не удалось загрузить данные: '+e.message+'. Нажми «Обновить данные», чтобы повторить.';}finally{$('refresh').disabled=false;}}
 function detailChart(h){if(!h.length)return '';const vals=h.filter(r=>number(r.views)!==null);if(!vals.length)return '<div class="empty">Счётчики не получены</div>';const W=740,H=210,min=0,max=Math.max(1,...vals.map(r=>Number(r.views)));const x=i=>48+(W-75)*i/Math.max(1,vals.length-1),y=v=>170-v/max*140;let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Общий счётчик просмотров объявления"><line x1="48" y1="170" x2="${W-15}" y2="170" stroke="#dce4ed"/><text x="40" y="30" text-anchor="end" font-size="11">${fmt(max)}</text><polyline points="${vals.map((r,i)=>x(i)+','+y(Number(r.views))).join(' ')}" fill="none" stroke="#396cc1" stroke-width="3"/>`;
   vals.forEach((r,i)=>{s+=`<circle cx="${x(i)}" cy="${y(Number(r.views))}" r="5" fill="${paid(r)?'#147b73':'#396cc1'}"><title>${date(r.snapshot_at)} · ${r.views} просмотров · ${esc(label(r))}</title></circle>`;if(vals.length<12||i%Math.ceil(vals.length/10)===0)s+=`<text x="${x(i)}" y="195" text-anchor="middle" font-size="10">${date(r.snapshot_at).slice(0,5)}</text>`;});return s+'</svg>';}
@@ -372,7 +374,7 @@ $('search').addEventListener('input',()=>{page=0;clearTimeout(searchRenderTimer)
 const recentOffsets={'1':0,yesterday:1,dayBefore:2};
 let recentDays=new Set(),quickPeriod='1';
 const linkedParams=new URLSearchParams(location.search);
-const employeeLink=linkedParams.get('employee');
+let employeeLink=linkedParams.get('employee');
 let linkedDays=new Set();
 function employeeAdsUrl(id,m){
  const params=new URLSearchParams({employee:id,from:m.from,to:m.to});
@@ -436,10 +438,15 @@ function renderDaily(m){
 let blockedArchive=null;
 function acceptBlockedArchive(items){
  if(!items||typeof items!=='object'||Array.isArray(items))return;
- blockedArchive=Object.values(items).filter(x=>x&&/^[0-9]{4,12}$/.test(String(x.id||''))).map(x=>({
-  id:String(x.id),employeeEmail:String(x.employeeEmail||'').trim().toLowerCase(),
-  firstDetectedAt:String(x.firstDetectedAt||''),detectionType:String(x.detectionType||'')
- }));
+ const current=new Map((blockedArchive||[]).map(x=>[x.id,x]));
+ for(const x of Object.values(items)){
+  if(!x||!/^\d{4,12}$/.test(String(x.id||'')))continue;
+  const id=String(x.id),old=current.get(id)||{};
+  current.set(id,{id,employeeEmail:String(x.employeeEmail||old.employeeEmail||'').trim().toLowerCase(),
+   firstDetectedAt:String(old.firstDetectedAt||x.firstDetectedAt||''),
+   detectionType:String(old.detectionType||x.detectionType||'')});
+ }
+ blockedArchive=[...current.values()];
  if(index&&activeView==='employees')render();
 }
 window.addEventListener('message',e=>{
@@ -456,19 +463,24 @@ function requestBlockedArchive(){
 window.addEventListener('focus',requestBlockedArchive);
 setInterval(()=>{if(!document.hidden)requestBlockedArchive();},300000);
 function blockedByEmployee(m,agents){
- const result=new Map();if(!blockedArchive)return result;
+ const result=new Map();if(!blockedArchive?.length)return result;
  const lookup=new Map();
  for(const history of index.histories.values()){const row=history.at(-1);if(row?.code)lookup.set(String(row.code),row);}
- const boriskina=agents.find(a=>agentName(a.row).toLowerCase().includes('борискина'));
+ const byId=new Map(agents.map(a=>[a.row.userUuid,a]));
+ const byEmail=new Map();for(const a of agents){const email=String(a.row.contactEmail||'').trim().toLowerCase();if(email)byEmail.set(email,a);}
  for(const a of agents)result.set(a.row.userUuid,{new:0,old:0,total:0,unknown:0});
  for(const item of blockedArchive){
-  // Initial archive has no verified blocking date.
+  // The initial import is an archive, not evidence of a block in this period.
   if(item.detectionType==='initial_baseline'||!item.firstDetectedAt||Number.isNaN(Date.parse(item.firstDetectedAt)))continue;
   const detected=day(item.firstDetectedAt);
   if(detected<m.from||detected>m.to||!m.selectDate(item.firstDetectedAt))continue;
   const matched=lookup.get(item.id);
-  const agent=matched?agents.find(a=>a.row.userUuid===matched.userUuid):
-   item.employeeEmail==='e.v.boriskina@minsk.etagi.com'?boriskina:null;
+  let agent=matched?byId.get(matched.userUuid):null;
+  if(!agent&&item.employeeEmail)agent=byEmail.get(item.employeeEmail);
+  if(!agent&&item.employeeEmail){
+   const matchedName=known[item.employeeEmail.split('@')[0]];
+   if(matchedName){const candidates=agents.filter(a=>agentName(a.row)===matchedName);if(candidates.length===1)agent=candidates[0];}
+  }
   if(!agent)continue;
   const entry=result.get(agent.row.userUuid);entry.total++;
   const placed=matched?.createdAt&&!Number.isNaN(Date.parse(matched.createdAt))?day(matched.createdAt):null;
@@ -481,11 +493,22 @@ function blockedByEmployee(m,agents){
 }
 
 function agentsFor(m){const out=new Map();const publication=r=>{if(!r.createdAt||Number.isNaN(Date.parse(r.createdAt)))return 'unknown';const d=day(r.createdAt);return d<m.from?'old':d<=m.to&&m.selectDate(r.createdAt)?'new':'unknown';};const ensure=r=>{if(!out.has(r.userUuid))out.set(r.userUuid,{row:r,current:0,paid:0,observed:new Set(),delta:0,deltaNew:0,deltaOld:0,deltaUnknown:0,published:new Set(),changes:0,newly:0,total:0});return out.get(r.userUuid);};for(const r of m.current){const a=ensure(r);a.current++;a.paid+=paid(r)?1:0;a.total+=number(r.views)||0;}for(const r of m.observed){const a=ensure(r);a.observed.add(r.uuid);if(publication(r)==='new')a.published.add(r.uuid);}for(const e of m.events){const a=ensure(e.row);a.delta+=e.delta;const k=publication(e.row);if(k==='new')a.deltaNew+=e.delta;else if(k==='old')a.deltaOld+=e.delta;else a.deltaUnknown+=e.delta;}for(const c of m.changes)ensure(c.row).changes++;for(const r of m.newly)ensure(r).newly++;return [...out.values()].sort((a,b)=>b.delta-a.delta||b.current-a.current);}
+function renderPeriodLeaders(m){
+ const agents=agentsFor(m);
+ const cards=[
+  {id:'leaderPublished',metric:a=>a.published.size,ready:true,empty:'Нет подтверждённых размещений за выбранный период'},
+  {id:'leaderViews',metric:a=>a.delta,ready:m.events.length>0,empty:'Для просмотров нужны два сопоставимых снимка'}
+ ];
+ for(const card of cards){
+  const top=card.ready?agents.filter(a=>card.metric(a)>0).sort((a,b)=>card.metric(b)-card.metric(a)||agentName(a.row).localeCompare(agentName(b.row),'ru')).slice(0,3):[];
+  $(card.id).innerHTML=top.length?top.map((a,i)=>'<div class="period-leaders-row"><button type="button" data-inline-employee="'+esc(a.row.userUuid)+'">'+['🥇','🥈','🥉'][i]+' '+esc(agentName(a.row))+'</button><b>'+fmt(card.metric(a))+'</b></div>').join(''):'<div class="muted" style="font-size:12px">'+card.empty+'</div>';
+ }
+}
 function renderUnified(m){
  if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
  if(activeView==='leaders'){
  const promoted=new Map();for(const e of m.events){if(e.category!=='paid')continue;const v=promoted.get(e.id)||{row:e.row,delta:0};v.delta+=e.delta;v.row=e.row;promoted.set(e.id,v);}const sort=$('promotedSort').value;const list=[...promoted.values()].sort((a,b)=>sort==='views'?b.delta-a.delta:comparePublication(a.row,b.row,sort));
- $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Всего просмотров страницы',''],list.slice(0,100).map((v,i)=>`<tr><td>${i+1}</td><td>${employeeBadge(v.row)}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
+ $('leadersTable').innerHTML=list.length?makeTable(['Место','Агент','Объявление','Прирост','Всего просмотров страницы',''],list.slice(0,Number($('promotedLimit').value)||30).map((v,i)=>`<tr><td>${i+1}</td><td>${employeeBadge(v.row)}</td><td class="wrap">${adLink(v.row)}</td><td>+${fmt(v.delta)}</td><td>${fmt(number(v.row.views))}</td><td>${detailButton(v.row)}</td></tr>`)):empty('Нет сопоставимых интервалов с платным продвижением за выбранный период.');
  renderPromotedGallery(m);
  }
  if(activeView==='employees'){
@@ -504,13 +527,13 @@ function renderUnified(m){
 
  const blockedCell=(agent,key)=>{
   const v=blocked.get(agent.row.userUuid);
-  if(!blockedArchive)return '<td class="num blocked-value" title="Журнал блокировок ещё не подключён">—</td>';
+  if(!blockedArchive?.length)return '<td class="num blocked-value" title="Подтверждённый журнал блокировок ещё не загружен; ноль показывать нельзя">—</td>';
   if(!v)return '<td class="num blocked-value" title="Сотрудник не подтверждён в журнале">—</td>';
   if(key!=='total'&&v.unknown>0)return '<td class="num blocked-value" title="Есть блокировки без подтверждённой даты размещения">'+(v[key]?fmt(v[key])+'+':'—')+'</td>';
-  return '<td class="num blocked-value" title="Впервые обнаружено за период; первоначальный архив исключён">'+fmt(v[key])+'</td>';
+  return '<td class="num blocked-value" title="По доступному журналу: впервые обнаружено за период; первоначальный архив исключён">'+fmt(v[key])+'</td>';
  };
  $('employeeTable').innerHTML='<div class="tbl-wrap emp"><table class="kufar-employee-table"><thead><tr class="grp"><th rowspan="2" scope="col">Сотрудник</th><th rowspan="2" scope="col">Объявлений<br>сейчас</th><th colspan="3" scope="colgroup">Размещены<br>за период</th><th colspan="2" scope="colgroup">Размещены<br>ранее</th><th colspan="3" scope="colgroup">Все объявления</th></tr><tr><th scope="col">Размещено</th><th scope="col">Блокировок</th><th scope="col">Просмотры</th><th scope="col">Просмотры</th><th scope="col">Блокировок</th><th scope="col">Блокировок<br>за период</th><th scope="col">В рекламе</th><th scope="col">Изменений</th></tr></thead><tbody>'+
- rankedAgents.map((a,i)=>`<tr class="employee-row-link"><th scope="row"><a target="_blank" rel="noopener" href="${esc(employeeAdsUrl(a.row.userUuid,m))}">${a.deltaNew>0&&medals[i]?`<strong>${medals[i]} ${employeeBadge(a.row)}</strong>`:employeeBadge(a.row)}</a></th>${cell(a,'current',0)}${cell(a,'published',1)}${blockedCell(a,'new')}${cell(a,'deltaNew',2)}${cell(a,'deltaOld',3)}${blockedCell(a,'old')}${blockedCell(a,'total')}${cell(a,'paid',4)}${cell(a,'changes',5)}</tr>`).join('')+'</tbody></table></div>';
+ rankedAgents.map((a,i)=>`<tr class="employee-row-link${a.published.size?'':' employee-inactive'}" data-employee="${esc(a.row.userUuid)}" ${a.published.size?'':'hidden'}><th scope="row"><button type="button" data-employee="${esc(a.row.userUuid)}">${a.deltaNew>0&&medals[i]?`<strong>${medals[i]} ${employeeBadge(a.row)}</strong>`:employeeBadge(a.row)}</button></th>${cell(a,'current',0)}${cell(a,'published',1)}${blockedCell(a,'new')}${cell(a,'deltaNew',2)}${cell(a,'deltaOld',3)}${blockedCell(a,'old')}${blockedCell(a,'total')}${cell(a,'paid',4)}${cell(a,'changes',5)}</tr>`).join('')+'</tbody></table></div>'+(rankedAgents.some(a=>!a.published.size)?'<button type="button" class="employee-show-more" id="toggleInactiveEmployees" aria-expanded="false">▶ Показать остальных сотрудников без размещений ('+fmt(rankedAgents.filter(a=>!a.published.size).length)+')</button>':'');
 
  }
  if(activeView==='promotion')renderPromotions(m);
@@ -627,7 +650,8 @@ function organicSets(m){
    ||(number(b.r.views)||0)-(number(a.r.views)||0)
    || comparePublication(a.r,b.r,'recent');
  };
- return {newAds:newer.sort(sorter).slice(0,30),oldAds:older.sort(sorter).slice(0,30)};
+ const limit=Number($('organicLimit').value)||30;
+ return {newAds:newer.sort(sorter).slice(0,limit),oldAds:older.sort(sorter).slice(0,limit),newTotal:newer.length,oldTotal:older.length};
 }
 function renderWorks(m){
  const sets=organicSets(m);
@@ -811,8 +835,10 @@ function renderGallery(m,sets=organicSets(m)){
   v.delta===null?'— · нет двух замеров':'+'+fmt(v.delta)+' просм. за период',
   'Всего: '+fmt(number(v.r.views))+' просмотров',
   'Бесплатно · '+(v.r.createdAt?'размещено '+date(v.r.createdAt):'дата неизвестна'));
- $('organicNewCount').textContent='· '+fmt(sets.newAds.length);
- $('organicOldCount').textContent='· '+fmt(sets.oldAds.length);
+ $('organicNewLimit').textContent='Топ-'+(Number($('organicLimit').value)||30);
+ $('organicOldLimit').textContent='Топ-'+(Number($('organicLimit').value)||30);
+ $('organicNewCount').textContent='· '+fmt(sets.newTotal);
+ $('organicOldCount').textContent='· '+fmt(sets.oldTotal);
  $('gallery').innerHTML=sets.newAds.map(card).join('')||empty('Нет новых органических объявлений с подтверждённой датой публикации.');
  $('galleryOld').innerHTML=sets.oldAds.map(card).join('')||empty('Нет ранее опубликованных органических объявлений для выбранного периода.');
 }
@@ -851,10 +877,11 @@ function renderPromotedGallery(m){
   rooms.set(k,g);
  }
  const roomTable=makeTable(['Комнат','Объявлений','Проверенный прирост'],[...rooms].sort((a,b)=>Number(a[0])-Number(b[0])).map(([n,v])=>`<tr><td>${esc(n)}</td><td>${v.count}</td><td>${v.measured?'+'+fmt(v.delta):'—'}</td></tr>`));
- const items=ranked.slice(0,30);
+ const limit=Number($('promotedLimit').value)||30;
+ const items=ranked.slice(0,limit);
  const introduction=fallback?
  `<p class="muted">За период замечено ${fmt(total)} объявлений с платным статусом. Пока нет достаточных проверенных интервалов для рейтинга по эффективности. Ниже — история рекламы, начиная с недавно замеченных; это НЕ рейтинг по просмотрам.</p>`:
- `<p class="muted">ТОП-${Math.min(30,total)} по достоверному приросту просмотров в платных интервалах. Открытия номера Realt не предоставляет.</p>`;
+ `<p class="muted">ТОП-${Math.min(limit,total)} по достоверному приросту просмотров в платных интервалах. Открытия номера Realt не предоставляет.</p>`;
  // Display immediately observable figures, without postponing a card until
  // a second paid snapshot exists. Count only intervals where both samples
  // are paid; transitions from free to paid stay visibly unallocated.
@@ -870,17 +897,17 @@ function renderPromotedGallery(m){
    );
  }).join('');
  const pendingHeading=newlyActivated.length?'<h3>Новые включения продвижения · '+fmt(newlyActivated.length)+'</h3><p class="muted">Количество просмотров показывается сразу с первого платного снимка. Прирост уточняется по следующим обходам; просмотры в интервале переключения тарифа не приписываются рекламе.</p><div class="cgrid">'+newCards+'</div>':'';
- $('promotedGallery').innerHTML=pendingHeading+introduction+'<h3>По комнатности</h3>'+roomTable+'<h3>Объявления с продвижением</h3>'+
+ $('promotedGallery').innerHTML=introduction+
  '<div class="cgrid">'+items.map(v=>kufarStyleCard(v.row,
   v.delta===null?'Прирост: —':'+'+fmt(v.delta)+' просм.',
   v.delta===null?'Достоверного прироста ещё нет':'При продвижении',
   (v.first?'Реклама с '+date(v.first)+' до '+date(v.last):'Наблюдаемая реклама')+' · '+esc(v.kind||label(v.row))
- )).join('')+'</div>'+(items.length?'':empty('Не найдено подходящих объявлений с продвижением.'));
+ )).join('')+'</div>'+(items.length?'':empty('Не найдено подходящих объявлений с продвижением.'))+'<details><summary>Новые включения продвижения · '+fmt(newlyActivated.length)+'</summary>'+pendingHeading+'</details><details><summary>По комнатности</summary>'+roomTable+'</details>';
 
 }
 
 async function loadPhotos(){if(photoLoaded){if(activeView==='ads')renderTable(currentModel);else if(activeView==='leaders')renderPromotedGallery(currentModel);else if(activeView==='demand')renderDemand();else renderGallery(currentModel);return;}$('photoStatus').textContent='Загружаем обложки объявлений…';try{
- const manifestResponse=await fetch(ROOT+'photo_manifest.json',{cache:'no-store'});
+ const manifestResponse=await fetch(ROOT+'photo_manifest.json?refresh='+Date.now(),{cache:'no-store'});
  if(manifestResponse.ok){
   const manifest=await manifestResponse.json();
   photos=new Map(Object.entries(manifest.images||{}).filter(([,images])=>Array.isArray(images)&&images.length&&images.every(u=>typeof u==='string'&&u.startsWith('https://'))));
@@ -902,8 +929,10 @@ function detailExtras(id){
  const html=`<section class="panel"><h3>Прирост за выбранный период</h3><div class="detailgrid">${split}</div><p class="muted tiny">Пусто означает отсутствие сопоставимого интервала. Нули появляются только при двух полученных одинаковых счётчиках.</p>${makeTable(['Начало','Конец','Прирост','Статус'],ev.map(e=>`<tr><td>${date(e.start)}</td><td>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td></tr>`))}<h3>Изменения за период</h3>${changesHTML(changes).replace(/<button data-detail="[^"]+">История<\/button>/g,'')}</section>`;
  $('detail').insertAdjacentHTML('beforeend',html);
 }
-function activateView(view){$('methods').hidden=view==='promotion';const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(view==='demand'){const d=demandDates();restoreArchiveRange(d.from,d.to);}if(['works','leaders','ads','demand'].includes(view)&&!photoLoaded)loadPhotos();}}
+function activateView(view){if(view!=='ads'&&employeeLink){employeeLink=null;$('agent').value='';cachedModelKey='';} $('methods').hidden=view==='promotion';const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(view==='demand'){const d=demandDates();restoreArchiveRange(d.from,d.to);}if(['works','leaders','ads','demand'].includes(view)&&!photoLoaded)loadPhotos();}}
 for(const id of ['organicSort','promotedSort'])$(id).addEventListener('change',render);
+$('organicLimit').addEventListener('change',()=>{if(index)render();});
+$('promotedLimit').addEventListener('change',()=>{if(index)render();});
 
 $('demandPeriods').onclick=e=>{
  const button=e.target.closest('[data-demand-period]');if(!button)return;
@@ -934,7 +963,7 @@ $('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','ro
 $('intervalButtons').onclick=e=>{const b=e.target.closest('[data-interval]');if(b){chosenInterval=b.dataset.interval;renderInterval(currentModel);}};
 
 for(const id of ['areaMin','areaMax'])$(id).addEventListener('input',()=>{page=0;render();});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b&&!b.closest('#listings')&&!b.closest('#drawer')&&!e.target.closest('a[href]'))showDetail(b.dataset.detail);const a=e.target.closest('[data-select-agent]');if(a){$('agent').value=a.dataset.selectAgent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();activateView('ads');}});
+document.addEventListener('click',e=>{const retry=e.target.closest('[data-photo-retry]');if(retry){e.preventDefault();e.stopPropagation();const id=retry.dataset.photoRetry,url=photos.get(id)?.[0];if(!url)return;const img=document.createElement('img');img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';img.dataset.photoId=id;img.dataset.photoIndex='0';img.src=url;img.alt='Фото объявления';retry.closest('.photo-retry')?.replaceWith(img);return;}const b=e.target.closest('[data-detail]');if(b&&!b.closest('#listings')&&!b.closest('#drawer')&&!e.target.closest('a[href]'))showDetail(b.dataset.detail);const a=e.target.closest('[data-select-agent]');if(a){$('agent').value=a.dataset.selectAgent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();activateView('ads');}});
 
 function updateEmployeeSummary(){
  const selected=checks('multiAgents'),single=$('agent').value;
@@ -962,9 +991,13 @@ $('promoEmployeeChips').onclick=e=>{const b=e.target.closest('[data-promo-agent]
 $('promoChartLegend').onclick=e=>{const b=e.target.closest('[data-promo-line]');if(!b)return;const id=b.dataset.promoLine;if(promoHiddenLines.has(id))promoHiddenLines.delete(id);else promoHiddenLines.add(id);if(promoSummary)renderPromoChart(promoSummary);};
 
 $('employeeTable').addEventListener('click',e=>{
- const row=e.target.closest('.employee-row-link');
- if(row&&!e.target.closest('a'))row.querySelector('a').click();
+ const toggle=e.target.closest('#toggleInactiveEmployees');
+ if(toggle){const showing=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(showing));for(const row of $('employeeTable').querySelectorAll('.employee-inactive'))row.hidden=!showing;toggle.textContent=(showing?'▼ Свернуть':'▶ Показать')+' остальных сотрудников без размещений ('+$('employeeTable').querySelectorAll('.employee-inactive').length+')';return;}
+ const row=e.target.closest('[data-employee]');if(row)openEmployeeInline(row.dataset.employee);
 });
+$('periodLeaders').addEventListener('click',e=>{const b=e.target.closest('[data-inline-employee]');if(b)openEmployeeInline(b.dataset.inlineEmployee);});
+function openEmployeeInline(id){if(!index||!id)return;employeeLink=id;$('agent').value=id;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;cachedModelKey='';$('sort').value='growth';page=0;const previous=activeView;activateView('ads');if(previous==='ads')render();if(!photoLoaded)loadPhotos();}
+$('backEmployees').onclick=()=>{employeeLink=null;$('agent').value='';cachedModelKey='';activateView('employees');};
 if(employeeLink){
  $('sort').value='growth';
  const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(Date.parse(value));
