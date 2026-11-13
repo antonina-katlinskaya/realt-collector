@@ -438,10 +438,15 @@ function renderDaily(m){
 let blockedArchive=null;
 function acceptBlockedArchive(items){
  if(!items||typeof items!=='object'||Array.isArray(items))return;
- blockedArchive=Object.values(items).filter(x=>x&&/^[0-9]{4,12}$/.test(String(x.id||''))).map(x=>({
-  id:String(x.id),employeeEmail:String(x.employeeEmail||'').trim().toLowerCase(),
-  firstDetectedAt:String(x.firstDetectedAt||''),detectionType:String(x.detectionType||'')
- }));
+ const current=new Map((blockedArchive||[]).map(x=>[x.id,x]));
+ for(const x of Object.values(items)){
+  if(!x||!/^\d{4,12}$/.test(String(x.id||'')))continue;
+  const id=String(x.id),old=current.get(id)||{};
+  current.set(id,{id,employeeEmail:String(x.employeeEmail||old.employeeEmail||'').trim().toLowerCase(),
+   firstDetectedAt:String(old.firstDetectedAt||x.firstDetectedAt||''),
+   detectionType:String(old.detectionType||x.detectionType||'')});
+ }
+ blockedArchive=[...current.values()];
  if(index&&activeView==='employees')render();
 }
 window.addEventListener('message',e=>{
@@ -458,19 +463,24 @@ function requestBlockedArchive(){
 window.addEventListener('focus',requestBlockedArchive);
 setInterval(()=>{if(!document.hidden)requestBlockedArchive();},300000);
 function blockedByEmployee(m,agents){
- const result=new Map();if(!blockedArchive)return result;
+ const result=new Map();if(!blockedArchive?.length)return result;
  const lookup=new Map();
  for(const history of index.histories.values()){const row=history.at(-1);if(row?.code)lookup.set(String(row.code),row);}
- const boriskina=agents.find(a=>agentName(a.row).toLowerCase().includes('борискина'));
+ const byId=new Map(agents.map(a=>[a.row.userUuid,a]));
+ const byEmail=new Map();for(const a of agents){const email=String(a.row.contactEmail||'').trim().toLowerCase();if(email)byEmail.set(email,a);}
  for(const a of agents)result.set(a.row.userUuid,{new:0,old:0,total:0,unknown:0});
  for(const item of blockedArchive){
-  // Initial archive has no verified blocking date.
+  // The initial import is an archive, not evidence of a block in this period.
   if(item.detectionType==='initial_baseline'||!item.firstDetectedAt||Number.isNaN(Date.parse(item.firstDetectedAt)))continue;
   const detected=day(item.firstDetectedAt);
   if(detected<m.from||detected>m.to||!m.selectDate(item.firstDetectedAt))continue;
   const matched=lookup.get(item.id);
-  const agent=matched?agents.find(a=>a.row.userUuid===matched.userUuid):
-   item.employeeEmail==='e.v.boriskina@minsk.etagi.com'?boriskina:null;
+  let agent=matched?byId.get(matched.userUuid):null;
+  if(!agent&&item.employeeEmail)agent=byEmail.get(item.employeeEmail);
+  if(!agent&&item.employeeEmail){
+   const matchedName=known[item.employeeEmail.split('@')[0]];
+   if(matchedName){const candidates=agents.filter(a=>agentName(a.row)===matchedName);if(candidates.length===1)agent=candidates[0];}
+  }
   if(!agent)continue;
   const entry=result.get(agent.row.userUuid);entry.total++;
   const placed=matched?.createdAt&&!Number.isNaN(Date.parse(matched.createdAt))?day(matched.createdAt):null;
@@ -517,10 +527,10 @@ function renderUnified(m){
 
  const blockedCell=(agent,key)=>{
   const v=blocked.get(agent.row.userUuid);
-  if(!blockedArchive)return '<td class="num blocked-value" title="Журнал блокировок ещё не подключён">—</td>';
+  if(!blockedArchive?.length)return '<td class="num blocked-value" title="Подтверждённый журнал блокировок ещё не загружен; ноль показывать нельзя">—</td>';
   if(!v)return '<td class="num blocked-value" title="Сотрудник не подтверждён в журнале">—</td>';
   if(key!=='total'&&v.unknown>0)return '<td class="num blocked-value" title="Есть блокировки без подтверждённой даты размещения">'+(v[key]?fmt(v[key])+'+':'—')+'</td>';
-  return '<td class="num blocked-value" title="Впервые обнаружено за период; первоначальный архив исключён">'+fmt(v[key])+'</td>';
+  return '<td class="num blocked-value" title="По доступному журналу: впервые обнаружено за период; первоначальный архив исключён">'+fmt(v[key])+'</td>';
  };
  $('employeeTable').innerHTML='<div class="tbl-wrap emp"><table class="kufar-employee-table"><thead><tr class="grp"><th rowspan="2" scope="col">Сотрудник</th><th rowspan="2" scope="col">Объявлений<br>сейчас</th><th colspan="3" scope="colgroup">Размещены<br>за период</th><th colspan="2" scope="colgroup">Размещены<br>ранее</th><th colspan="3" scope="colgroup">Все объявления</th></tr><tr><th scope="col">Размещено</th><th scope="col">Блокировок</th><th scope="col">Просмотры</th><th scope="col">Просмотры</th><th scope="col">Блокировок</th><th scope="col">Блокировок<br>за период</th><th scope="col">В рекламе</th><th scope="col">Изменений</th></tr></thead><tbody>'+
  rankedAgents.map((a,i)=>`<tr class="employee-row-link${a.published.size?'':' employee-inactive'}" data-employee="${esc(a.row.userUuid)}" ${a.published.size?'':'hidden'}><th scope="row"><button type="button" data-employee="${esc(a.row.userUuid)}">${a.deltaNew>0&&medals[i]?`<strong>${medals[i]} ${employeeBadge(a.row)}</strong>`:employeeBadge(a.row)}</button></th>${cell(a,'current',0)}${cell(a,'published',1)}${blockedCell(a,'new')}${cell(a,'deltaNew',2)}${cell(a,'deltaOld',3)}${blockedCell(a,'old')}${blockedCell(a,'total')}${cell(a,'paid',4)}${cell(a,'changes',5)}</tr>`).join('')+'</tbody></table></div>'+(rankedAgents.some(a=>!a.published.size)?'<button type="button" class="employee-show-more" id="toggleInactiveEmployees" aria-expanded="false">▶ Показать остальных сотрудников без размещений ('+fmt(rankedAgents.filter(a=>!a.published.size).length)+')</button>':'');
