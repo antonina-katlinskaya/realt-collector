@@ -290,6 +290,45 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
  [data-section="demand"] .demand-gallery-grid{grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr))}
 }
 </style>
+
+<style>
+/* Compact ranking controls and the two-column blue leaders board. */
+#periodLeaders{width:86.6%;margin:10px auto 12px;padding:15px 18px;border-radius:15px;color:#fff;background:linear-gradient(115deg,#174b79 0%,#367ba9 58%,#7eafca 100%);border:1px solid #3c80ad}
+#periodLeaders .period-leaders-title{font-size:19px;font-weight:750;margin:0 0 3px}
+#periodLeaders .period-leaders-note{font-size:12px;line-height:1.35;opacity:.94;margin:0 0 12px}
+.period-leaders-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.period-leaders-column{background:#ffffffed;color:#143554;border-radius:11px;padding:11px 12px;min-width:0}
+.period-leaders-column h3{font-size:13px;line-height:1.25;margin:0 0 8px}
+.period-leaders-row{display:flex;justify-content:space-between;gap:9px;align-items:center;padding:5px 7px;margin-top:4px;border-radius:7px;background:#ecf4fa;font-size:12px}
+.period-leaders-row:nth-child(2){background:#fff0bf}.period-leaders-row:nth-child(3){background:#e5edf4}.period-leaders-row:nth-child(4){background:#f2e7dd}
+.period-leaders-row button{border:0;background:transparent;text-align:left;min-width:0;padding:0;font-weight:650;font-size:12px;color:#173b5c}
+.period-leaders-row b{white-space:nowrap;font-variant-numeric:tabular-nums}
+[data-section="ads"]>.tablehead{margin:0 0 2px;align-items:flex-start}
+[data-section="ads"]>.tablehead h2{margin:0}
+[data-section="ads"]>.tablehead p{margin:2px 0 0;line-height:1.32;font-size:12px}
+[data-section="ads"] .listing-toolbar{margin:0 0 8px;min-height:36px;align-items:center}
+[data-section="ads"] .listing-sort{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:9px;width:auto;margin-left:auto;white-space:nowrap}
+[data-section="ads"] .listing-sort select{width:min(325px,45vw);min-height:36px;padding:7px 10px}
+[data-section="ads"] #backEmployees{padding:7px 10px;font-size:12px}
+.ranking-tools{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;margin:5px 0 9px}
+.ranking-tools .ranking-mode{background:#234e79;color:#fff;border-color:#234e79;font-size:13px;font-weight:650;padding:8px 11px}
+.ranking-tools label{display:flex;flex-direction:row;align-items:center;gap:7px;color:#334155;font-size:13px}
+.ranking-tools select{padding:7px 9px;min-width:75px}
+[data-section="works"]>.panel>p.muted,[data-section="leaders"]>p.muted{font-size:12px;line-height:1.3;margin:3px 0 6px}
+[data-section="works"]>.panel h2,[data-section="leaders"]>h2{margin-bottom:0}
+[data-section="works"] .organic-block-title{margin:9px 0 1px}
+[data-section="works"] .organic-block-title+p.muted{margin:1px 0 6px;font-size:12px}
+#employeeTable tbody tr.employee-inactive>th,#employeeTable tbody tr.employee-inactive>td{background:#f0f1f2;color:#747d86}
+#employeeTable tbody tr.employee-inactive a{color:#747d86}
+#employeeTable .employee-show-more{display:block;border:1px solid #d4dbe0;background:#f2f3f4;color:#243e56;border-radius:9px;padding:9px 13px;margin-top:9px;font-size:13px;font-weight:650}
+#employeeTable .employee-show-more:hover{background:#e6ebef}
+[data-section="ads"] .acard-own,[data-section="works"] .acard-own,[data-section="leaders"] .acard-own,[data-section="demand"] .acard-own{border:3px solid #2f73da;box-shadow:0 0 0 2px #bcd7ff}
+[data-section="ads"] .acard-own .ab,[data-section="works"] .acard-own .ab,[data-section="leaders"] .acard-own .ab,[data-section="demand"] .acard-own .ab{background:#eaf3ff}
+[data-section="ads"] .acard-own .card-agent-name,[data-section="works"] .acard-own .card-agent-name,[data-section="leaders"] .acard-own .card-agent-name,[data-section="demand"] .acard-own .card-agent-name{color:#0a1525;background:#a8d1ff;font-weight:800}
+.acard-own .own-tag{float:right;background:#226bc5;color:#fff;border-radius:10px;padding:2px 7px;font-size:11px;font-weight:700;margin:0 0 4px 6px}
+@media(max-width:900px){#periodLeaders{width:100%}}
+@media(max-width:620px){.period-leaders-columns{grid-template-columns:1fr}[data-section="ads"] .listing-sort{width:100%;justify-content:flex-start}[data-section="ads"] .listing-sort select{width:auto;max-width:75%}}
+</style>
 </head>
 <body><main>
 <header><div><h1>Радар REALT</h1><div class="muted">Минск Мир · Зелёная гавань · объявления и продвижение</div></div><div class="meta"><div id="freshness">Загружаем данные…</div><div class="headerlinks"><button id="refresh" title="Перечитать сохранённые снимки; новый сбор запускается по расписанию">Обновить данные</button></div></div></header>
@@ -304,6 +343,7 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <div class="filter-search"><input id="search" type="search" placeholder="Поиск по заголовку, адресу или номеру объявления" aria-label="Поиск объявлений"><span class="newbuild-label">✓ Только новостройки</span><button id="reset">Сбросить фильтры</button></div>
 <div hidden><select id="agent"><option value="">Все сотрудники</option></select><select id="company"><option value="">Все</option></select><select id="rooms"><option value="">Все</option></select><select id="promo"><option value="">Любое</option></select><select id="quarter"><option value="">Все</option></select><select id="house"><option value="">Все</option></select><input id="areaMin" type="number"><input id="areaMax" type="number"></div>
 </details>
+<section id="periodLeaders" aria-label="Лидеры за выбранный период"><h2 class="period-leaders-title">🏆 Лидеры за период</h2><p class="period-leaders-note">Размещения — по дате публикации. Просмотры — проверенный прирост счётчиков за период, включая ранее размещённые и исчезнувшие объявления.</p><div class="period-leaders-columns"><div class="period-leaders-column"><h3>📣 По количеству размещённых объявлений</h3><div id="leaderPublished" role="status">Загрузка…</div></div><div class="period-leaders-column"><h3>👁 По просмотрам за период</h3><div id="leaderViews" role="status">Загрузка…</div></div></div></section>
 <nav id="views" class="viewtabs" aria-label="Основные разделы радара"><button data-view="competitors">Конкуренты</button><button data-view="promotion" class="active">Продвижение</button><button data-view="ads">Объявления за период</button><button data-view="employees">Сотрудники</button><button data-view="works">Топ органика</button><button data-view="leaders">Топ продвижение</button><button data-view="demand">Спрос</button><a href="blocked.html" class="blocked-nav">Блокировки</a></nav>
 <section class="panel" id="competitor-watch" data-section="competitors" hidden aria-labelledby="competitor-watch-title">
 <h2 id="competitor-watch-title">Конкуренты под наблюдением · 30 дней</h2>
@@ -319,10 +359,10 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <section class="panel" data-section="ads" hidden>
 <div class="tablehead"><div><h2>Объявления за период <span id="publishedCount"></span></h2><p class="muted">Размещены в выбранном периоде · подтверждённые новостройки Минск-Мира. «Всего просмотров» — счётчик открытий страницы объявления; «прирост» — разница достоверных замеров. Ни то ни другое не означает открытие телефона.</p></div></div>
 <div class="tabs" id="tabs" hidden><button data-tab="published" class="active">Размещены за период</button></div>
-<div class="listing-toolbar"><div id="employeeAdsTitle" class="muted" hidden></div><label class="listing-sort"><span>Сортировка</span><select id="sort" aria-label="Сортировка"><option value="views">По просмотрам</option><option value="recent">От новых к старым</option><option value="oldest">От старых к новым</option><option value="duration">Дольше опубликованные сверху</option><option value="price">По цене</option><option value="growth">По приросту просмотров</option></select></label></div><div id="employeeAds" hidden></div><div id="adCards" class="cgrid"></div>
+<div class="listing-toolbar"><button id="backEmployees" type="button" hidden>← К результатам сотрудников</button><div id="employeeAdsTitle" class="muted" hidden></div><label class="listing-sort"><span>Сортировка</span><select id="sort" aria-label="Сортировка"><option value="views">По просмотрам</option><option value="recent">От новых к старым</option><option value="oldest">От старых к новым</option><option value="duration">Дольше опубликованные сверху</option><option value="price">По цене</option><option value="growth">По приросту просмотров</option></select></label></div><div id="employeeAds" hidden></div><div id="adCards" class="cgrid"></div>
 <div class="pagination"><span id="rowcount"></span><div><button id="prev" class="pagebtn">← Назад</button><button id="next" class="pagebtn">Далее →</button></div></div>
 <details class="adTableDetails"><summary>Подробная таблица</summary><button id="export">Скачать выбранные строки CSV</button><div class="tablewrap"><table><thead><tr><th>Агент</th><th>Объявление</th><th>Цена</th><th>Продвижение</th><th>Наблюдается с</th><th>Просмотры всего</th><th>Прирост за период</th><th></th></tr></thead><tbody id="listings"></tbody></table></div></details></section>
-<section data-section="leaders" class="panel" hidden><h2>Топ продвижение</h2><p class="muted">Объявления с платным продвижением показываются сразу. Просмотры всего доступны с первого замера, прирост считается по сопоставимым снимкам; момент переключения тарифа не приписывается рекламе.</p><div class="listing-toolbar"><label class="listing-sort"><span>Сортировка</span><select id="promotedSort"><option value="views">По просмотрам</option><option value="recent">От новых к старым</option><option value="oldest">От старых к новым</option><option value="duration">Дольше опубликованные сверху</option></select></label></div><div id="promotedGallery" class="promo-layout"></div><details><summary>Подробная таблица рейтинга</summary><div id="leadersTable"></div></details></section>
+<section data-section="leaders" class="panel" hidden><h2>Топ продвижение</h2><p class="muted">Объявления с платным продвижением показываются сразу. Просмотры всего доступны с первого замера, прирост считается по сопоставимым снимкам; момент переключения тарифа не приписывается рекламе.</p><div class="ranking-tools"><button class="ranking-mode" type="button" disabled>По просмотрам</button><label>Показать <select id="promotedLimit" aria-label="Сколько объявлений в рейтинге продвижения"><option>30</option><option>40</option><option>50</option><option>60</option><option>70</option><option>80</option><option>90</option><option>100</option></select></label><select id="promotedSort" hidden aria-label="Внутренняя сортировка"><option value="views">По просмотрам</option></select></div><div id="promotedGallery" class="promo-layout"></div><details><summary>Подробная таблица рейтинга</summary><div id="leadersTable"></div></details></section>
 <section data-section="employees" class="panel" hidden><h2>Результаты сотрудников</h2><p class="employee-legend">🥇🥈🥉 — больше всего просмотров новых объявлений. <span class="employee-swatch"></span> — лучший показатель. Блокировки — по первому обнаружению за период. «—» — нет подтверждённых данных; «+» — есть объявления без установленной даты размещения. Первоначальный архив не считается блокировками дня.</p><div id="employeeTable"></div><details><summary>Карточки сотрудников</summary><div id="employeeHighlights" class="employee-highlights"></div></details><h3>Действия сотрудников</h3><div id="employeeChanges"></div></section>
 <section data-section="promotion">
 <div class="cards" id="promoOverviewKpi"></div>
@@ -339,11 +379,11 @@ main>header,#filterBox,#views,#status,[data-section="employees"]{width:86.6%;mar
 <section class="panel">
 <h2>Топ органика</h2>
 <p class="muted">Без платного продвижения на сопоставимых замерах. Прирост за выбранный период считается отдельно от накопленных просмотров. Если двух замеров нет, прирост не рассчитывается.</p>
-<div class="listing-toolbar"><div id="photoStatus" role="status"></div><label class="listing-sort"><span>Сортировка</span><select id="organicSort"><option value="views">По просмотрам за период</option><option value="recent">От новых к старым</option><option value="oldest">От старых к новым</option><option value="duration">Дольше опубликованные сверху</option></select></label></div>
-<h3 class="organic-block-title">Топ-30 · Размещены в выбранном периоде <span id="organicNewCount"></span></h3>
+<div class="ranking-tools"><span id="photoStatus" role="status" style="margin-right:auto;font-size:12px"></span><button class="ranking-mode" type="button" disabled>По просмотрам</button><label>Показать <select id="organicLimit" aria-label="Сколько объявлений в рейтинге органики"><option>30</option><option>40</option><option>50</option><option>60</option><option>70</option><option>80</option><option>90</option><option>100</option></select></label><select id="organicSort" hidden aria-label="Внутренняя сортировка"><option value="views">По просмотрам</option></select></div>
+<h3 class="organic-block-title"><span id="organicNewLimit">Топ-30</span> · Размещены в выбранном периоде <span id="organicNewCount"></span></h3>
 <p class="muted">Новые публикации, отсортированные по измеренному органическому приросту.</p>
 <div id="gallery" class="cgrid"></div>
-<h3 class="organic-block-title">Топ-30 · Размещены до выбранного периода <span id="organicOldCount"></span></h3>
+<h3 class="organic-block-title"><span id="organicOldLimit">Топ-30</span> · Размещены до выбранного периода <span id="organicOldCount"></span></h3>
 <p class="muted">Ранее размещённые объявления — отдельно прирост и просмотры всего.</p>
 <div id="galleryOld" class="cgrid"></div>
 </section>
