@@ -7,8 +7,9 @@ const num=x=>Number.isFinite(x)?new Intl.NumberFormat('ru-RU').format(x):'—';
 let token='',all=[];
 const PUBLIC_DATA='https://raw.githubusercontent.com/antonina-katlinskaya/realt-collector/main/data/';
 let photoLookupAttempted=false;
+const recoveredPhotoByCode=new Map();
 function csvCodesToUuids(text,wanted){
- const map=new Map();let row=[],field='',quoted=false,headers=null,codeCol=-1,uuidCol=-1;
+ text=text.replace(/^\uFEFF/,'');const map=new Map();let row=[],field='',quoted=false,headers=null,codeCol=-1,uuidCol=-1;
  const finish=()=>{row.push(field);field='';if(!headers){headers=row;codeCol=headers.indexOf('code');uuidCol=headers.indexOf('uuid');}
   else if(codeCol>=0&&uuidCol>=0&&wanted.has(row[codeCol]))map.set(row[codeCol],row[uuidCol]);row=[];};
  for(let i=0;i<text.length;i++){const c=text[i];
@@ -28,7 +29,7 @@ async function recoverArchivedPhotos(){
   const manifest=await r1.json(),matches=csvCodesToUuids(await r2.text(),new Set(missing.map(x=>String(x.id))));
   let found=0;
   for(const x of missing){const urls=manifest.images?.[matches.get(String(x.id))];
-   if(Array.isArray(urls)&&urls.length){x.photoCandidates=urls.filter(url=>typeof url==='string'&&/^https:\/\//.test(url)).slice(0,8);if(x.photoCandidates.length){x.photoUrl=x.photoCandidates[0];found++;}}
+   if(Array.isArray(urls)&&urls.length){x.photoCandidates=urls.filter(url=>typeof url==='string'&&/^https:\/\//.test(url)).slice(0,8);if(x.photoCandidates.length){x.photoUrl=x.photoCandidates[0];recoveredPhotoByCode.set(String(x.id),x.photoCandidates);found++;}}
   }
   if(found)render();
   else if(!all.some(x=>x.photoUrl))$('status').textContent+=' В сохранённых публичных снимках фотографии этих объявлений пока не найдены.';
@@ -68,7 +69,7 @@ async function load(){
   if(r.status===401){$('authError').textContent='Неверный ключ доступа.'; $('authPanel').classList.remove('hidden');$('content').classList.add('hidden');return;}
   if(!r.ok)throw Error('Сервис вернул код '+r.status);
   const j=await r.json(),data=j.data||{};
-  all=Object.values(data.items||{});$('total').textContent=num(all.length);
+  all=Object.values(data.items||{});for(const x of all){const saved=recoveredPhotoByCode.get(String(x.id));if(!x.photoUrl&&saved?.length){x.photoCandidates=saved;x.photoUrl=saved[0];}}$('total').textContent=num(all.length);
   $('latestCount').textContent=num(data.lastScan?.count);
   $('lastSync').textContent=date(data.updatedAt);
   $('status').textContent=data.updatedAt?'Последнее получение данных: '+date(data.updatedAt)+' · проверок страниц: '+(data.lastScan?.pages||'—'):'Общий журнал пуст: данные из Opera ещё не поступали на сервер. Вводить сюда пароль Realt не нужно — требуется ключ просмотра из защищённой ссылки. Местный архив остаётся в Opera.';
