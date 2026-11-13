@@ -305,7 +305,7 @@ document.addEventListener('error',event=>{
  const next=Number(img.dataset.photoIndex||0)+1;
  const fallback=photos.get(img.dataset.photoId)?.[next];
  if(fallback){img.dataset.photoIndex=String(next);img.src=fallback;}
- else{const placeholder=document.createElement('div');placeholder.className='noimg';placeholder.textContent='Фото недоступно';img.replaceWith(placeholder);}
+ else{const placeholder=document.createElement('div');placeholder.className='noimg photo-retry';placeholder.innerHTML='<span>Фото недоступно</span><button type="button" data-photo-retry="'+esc(img.dataset.photoId)+'">Повторить загрузку</button>';img.replaceWith(placeholder);}
 },true);
 function kufarStyleCard(r,primary,subline,secondary){
  const latestSnapshot=index?.times?.at(-1);
@@ -313,7 +313,7 @@ function kufarStyleCard(r,primary,subline,secondary){
  const removalMark=absentInLatest?' <span class="card-removed-label">Нет в последнем снимке</span>':'';
  const removalClass=(absentInLatest?' acard-removed':'')+(isOwnAdvert(r)?' acard-own':'');
  const ownTag=isOwnAdvert(r)?'<span class="own-tag">СВОЁ</span>':'';
- const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" data-photo-id="${esc(r.uuid)}" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
+ const p=photos.get(r.uuid)||[],image=p.length?`<img loading="lazy" decoding="async" referrerpolicy="no-referrer" data-photo-id="${esc(r.uuid)}" data-photo-index="0" src="${esc(p[0])}" alt="Фото объявления ${esc(r.code)}">`:'<div class="noimg">Нет фотографии</div>';
  return `<article class="acard${removalClass}" data-detail="${esc(r.uuid)}" role="button" tabindex="0">${image}<div class="ab">
   <div class="at">${ownTag}${esc(r.title||r.address||'Объявление')}${removalMark}</div>
   <div class="am">${esc(r.address||'Адрес не указан')}</div>
@@ -357,7 +357,7 @@ rows=baseRows.concat(...archiveRows.values());index=buildIndex(rows.filter(r=>de
   const prevAgent=$('agent').value,prevQuarter=$('quarter').value;
   $('agent').innerHTML='<option value="">Все агенты</option>'+[...agents.values()].sort((a,b)=>agentName(a).localeCompare(agentName(b),'ru')).map(r=>`<option value="${esc(r.userUuid)}">${esc(agentName(r))} · ${esc(r.contactPhone||r.userUuid.slice(0,8))}</option>`).join('');$('agent').value=prevAgent;
   $('quarter').innerHTML='<option value="">Все</option>'+[...new Set(rows.map(r=>r.quarter||'(не определён)'))].sort().map(q=>`<option>${esc(q)}</option>`).join('');$('quarter').value=prevQuarter;
-  if(!$('from').value)$('from').value=day(index.times[0]);if(!$('to').value)$('to').value=day(last);applyQuickPeriod();seen=null;seenPromise=null;populateUnified(agents);await restoreArchiveRange();render();
+  if(!$('from').value)$('from').value=day(index.times[0]);if(!$('to').value)$('to').value=day(last);applyQuickPeriod();seen=null;seenPromise=null;populateUnified(agents);await restoreArchiveRange();if(photoDate&&photoDate!==last)photoLoaded=false;render();if(['ads','works','leaders','demand'].includes(activeView)&&!photoLoaded)loadPhotos();
 }catch(e){$('status').hidden=false;$('status').textContent='Не удалось загрузить данные: '+e.message+'. Нажми «Обновить данные», чтобы повторить.';}finally{$('refresh').disabled=false;}}
 function detailChart(h){if(!h.length)return '';const vals=h.filter(r=>number(r.views)!==null);if(!vals.length)return '<div class="empty">Счётчики не получены</div>';const W=740,H=210,min=0,max=Math.max(1,...vals.map(r=>Number(r.views)));const x=i=>48+(W-75)*i/Math.max(1,vals.length-1),y=v=>170-v/max*140;let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Общий счётчик просмотров объявления"><line x1="48" y1="170" x2="${W-15}" y2="170" stroke="#dce4ed"/><text x="40" y="30" text-anchor="end" font-size="11">${fmt(max)}</text><polyline points="${vals.map((r,i)=>x(i)+','+y(Number(r.views))).join(' ')}" fill="none" stroke="#396cc1" stroke-width="3"/>`;
   vals.forEach((r,i)=>{s+=`<circle cx="${x(i)}" cy="${y(Number(r.views))}" r="5" fill="${paid(r)?'#147b73':'#396cc1'}"><title>${date(r.snapshot_at)} · ${r.views} просмотров · ${esc(label(r))}</title></circle>`;if(vals.length<12||i%Math.ceil(vals.length/10)===0)s+=`<text x="${x(i)}" y="195" text-anchor="middle" font-size="10">${date(r.snapshot_at).slice(0,5)}</text>`;});return s+'</svg>';}
@@ -907,7 +907,7 @@ function renderPromotedGallery(m){
 }
 
 async function loadPhotos(){if(photoLoaded){if(activeView==='ads')renderTable(currentModel);else if(activeView==='leaders')renderPromotedGallery(currentModel);else if(activeView==='demand')renderDemand();else renderGallery(currentModel);return;}$('photoStatus').textContent='Загружаем обложки объявлений…';try{
- const manifestResponse=await fetch(ROOT+'photo_manifest.json',{cache:'no-store'});
+ const manifestResponse=await fetch(ROOT+'photo_manifest.json?refresh='+Date.now(),{cache:'no-store'});
  if(manifestResponse.ok){
   const manifest=await manifestResponse.json();
   photos=new Map(Object.entries(manifest.images||{}).filter(([,images])=>Array.isArray(images)&&images.length&&images.every(u=>typeof u==='string'&&u.startsWith('https://'))));
@@ -963,7 +963,7 @@ $('reset').onclick=()=>{for(const id of ['agent','promo','quarter','company','ro
 $('intervalButtons').onclick=e=>{const b=e.target.closest('[data-interval]');if(b){chosenInterval=b.dataset.interval;renderInterval(currentModel);}};
 
 for(const id of ['areaMin','areaMax'])$(id).addEventListener('input',()=>{page=0;render();});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-detail]');if(b&&!b.closest('#listings')&&!b.closest('#drawer')&&!e.target.closest('a[href]'))showDetail(b.dataset.detail);const a=e.target.closest('[data-select-agent]');if(a){$('agent').value=a.dataset.selectAgent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();activateView('ads');}});
+document.addEventListener('click',e=>{const retry=e.target.closest('[data-photo-retry]');if(retry){e.preventDefault();e.stopPropagation();const id=retry.dataset.photoRetry,url=photos.get(id)?.[0];if(!url)return;const img=document.createElement('img');img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';img.dataset.photoId=id;img.dataset.photoIndex='0';img.src=url;img.alt='Фото объявления';retry.closest('.photo-retry')?.replaceWith(img);return;}const b=e.target.closest('[data-detail]');if(b&&!b.closest('#listings')&&!b.closest('#drawer')&&!e.target.closest('a[href]'))showDetail(b.dataset.detail);const a=e.target.closest('[data-select-agent]');if(a){$('agent').value=a.dataset.selectAgent;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;page=0;render();activateView('ads');}});
 
 function updateEmployeeSummary(){
  const selected=checks('multiAgents'),single=$('agent').value;
