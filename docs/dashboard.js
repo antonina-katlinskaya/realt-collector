@@ -274,7 +274,7 @@ function svgBars(groups){
     if(groups.length<16||i%Math.ceil(groups.length/12)===0)s+=`<text x="${x+step*.3}" y="${bottom+20}" text-anchor="middle" font-size="10" fill="#62758a">${esc(g.label)}</text>`;
   });return s+'</svg>';
 }
-function render(){if(!index)return;$('status').hidden=['promotion','competitors'].includes(activeView);updateEmployeeSummary();const m=model();currentModel=m;if(employeeLink){const employee=m.observed[0]||index.histories.values().next().value?.find(r=>r.userUuid===employeeLink);$('employeeAdsTitle').textContent=(employee?agentName(employee)+' · ':'')+m.from+' — '+m.to;}
+function render(){if(!index)return;$('status').hidden=['promotion','competitors'].includes(activeView);updateEmployeeSummary();const m=model();currentModel=m;renderPeriodLeaders(m);$('backEmployees').hidden=!employeeLink;$('employeeAds').hidden=!employeeLink;$('employeeAdsTitle').hidden=!employeeLink;document.querySelector('[data-section="ads"]').classList.toggle('employee-ads-view',!!employeeLink);if(employeeLink){const employee=m.observed[0]||index.histories.values().next().value?.find(r=>r.userUuid===employeeLink);$('employeeAdsTitle').textContent=(employee?agentName(employee)+' · ':'')+m.from+' — '+m.to;}
   if(m.from>m.to){$('status').textContent='Дата начала должна быть раньше даты окончания.';return;}
   const comparable=m.events.length>0,delta=m.events.reduce((s,e)=>s+e.delta,0),advertised=m.current.filter(paid).length;
   const activations=m.changes.filter(c=>c.changes.some(x=>x.key==='paymentStatus'&&![2,3,4].includes(number(x.old))&&[2,3,4].includes(number(x.new)))).length;
@@ -483,6 +483,17 @@ function blockedByEmployee(m,agents){
 }
 
 function agentsFor(m){const out=new Map();const publication=r=>{if(!r.createdAt||Number.isNaN(Date.parse(r.createdAt)))return 'unknown';const d=day(r.createdAt);return d<m.from?'old':d<=m.to&&m.selectDate(r.createdAt)?'new':'unknown';};const ensure=r=>{if(!out.has(r.userUuid))out.set(r.userUuid,{row:r,current:0,paid:0,observed:new Set(),delta:0,deltaNew:0,deltaOld:0,deltaUnknown:0,published:new Set(),changes:0,newly:0,total:0});return out.get(r.userUuid);};for(const r of m.current){const a=ensure(r);a.current++;a.paid+=paid(r)?1:0;a.total+=number(r.views)||0;}for(const r of m.observed){const a=ensure(r);a.observed.add(r.uuid);if(publication(r)==='new')a.published.add(r.uuid);}for(const e of m.events){const a=ensure(e.row);a.delta+=e.delta;const k=publication(e.row);if(k==='new')a.deltaNew+=e.delta;else if(k==='old')a.deltaOld+=e.delta;else a.deltaUnknown+=e.delta;}for(const c of m.changes)ensure(c.row).changes++;for(const r of m.newly)ensure(r).newly++;return [...out.values()].sort((a,b)=>b.delta-a.delta||b.current-a.current);}
+function renderPeriodLeaders(m){
+ const agents=agentsFor(m);
+ const cards=[
+  {id:'leaderPublished',metric:a=>a.published.size,ready:true,empty:'Нет подтверждённых размещений за выбранный период'},
+  {id:'leaderViews',metric:a=>a.delta,ready:m.events.length>0,empty:'Для просмотров нужны два сопоставимых снимка'}
+ ];
+ for(const card of cards){
+  const top=card.ready?agents.filter(a=>card.metric(a)>0).sort((a,b)=>card.metric(b)-card.metric(a)||agentName(a.row).localeCompare(agentName(b.row),'ru')).slice(0,3):[];
+  $(card.id).innerHTML=top.length?top.map((a,i)=>'<div class="period-leaders-row"><button type="button" data-inline-employee="'+esc(a.row.userUuid)+'">'+['🥇','🥈','🥉'][i]+' '+esc(agentName(a.row))+'</button><b>'+fmt(card.metric(a))+'</b></div>').join(''):'<div class="muted" style="font-size:12px">'+card.empty+'</div>';
+ }
+}
 function renderUnified(m){
  if(activeView==='overview'){renderDaily(m);$('changesFeed').innerHTML=changesHTML(m.changes);}
  if(activeView==='leaders'){
@@ -512,7 +523,7 @@ function renderUnified(m){
   return '<td class="num blocked-value" title="Впервые обнаружено за период; первоначальный архив исключён">'+fmt(v[key])+'</td>';
  };
  $('employeeTable').innerHTML='<div class="tbl-wrap emp"><table class="kufar-employee-table"><thead><tr class="grp"><th rowspan="2" scope="col">Сотрудник</th><th rowspan="2" scope="col">Объявлений<br>сейчас</th><th colspan="3" scope="colgroup">Размещены<br>за период</th><th colspan="2" scope="colgroup">Размещены<br>ранее</th><th colspan="3" scope="colgroup">Все объявления</th></tr><tr><th scope="col">Размещено</th><th scope="col">Блокировок</th><th scope="col">Просмотры</th><th scope="col">Просмотры</th><th scope="col">Блокировок</th><th scope="col">Блокировок<br>за период</th><th scope="col">В рекламе</th><th scope="col">Изменений</th></tr></thead><tbody>'+
- rankedAgents.map((a,i)=>`<tr class="employee-row-link"><th scope="row"><a target="_blank" rel="noopener" href="${esc(employeeAdsUrl(a.row.userUuid,m))}">${a.deltaNew>0&&medals[i]?`<strong>${medals[i]} ${employeeBadge(a.row)}</strong>`:employeeBadge(a.row)}</a></th>${cell(a,'current',0)}${cell(a,'published',1)}${blockedCell(a,'new')}${cell(a,'deltaNew',2)}${cell(a,'deltaOld',3)}${blockedCell(a,'old')}${blockedCell(a,'total')}${cell(a,'paid',4)}${cell(a,'changes',5)}</tr>`).join('')+'</tbody></table></div>';
+ rankedAgents.map((a,i)=>`<tr class="employee-row-link${a.published.size?'':' employee-inactive'}" data-employee="${esc(a.row.userUuid)}" ${a.published.size?'':'hidden'}><th scope="row"><button type="button" data-employee="${esc(a.row.userUuid)}">${a.deltaNew>0&&medals[i]?`<strong>${medals[i]} ${employeeBadge(a.row)}</strong>`:employeeBadge(a.row)}</button></th>${cell(a,'current',0)}${cell(a,'published',1)}${blockedCell(a,'new')}${cell(a,'deltaNew',2)}${cell(a,'deltaOld',3)}${blockedCell(a,'old')}${blockedCell(a,'total')}${cell(a,'paid',4)}${cell(a,'changes',5)}</tr>`).join('')+'</tbody></table></div>'+(rankedAgents.some(a=>!a.published.size)?'<button type="button" class="employee-show-more" id="toggleInactiveEmployees" aria-expanded="false">▶ Показать остальных сотрудников без размещений ('+fmt(rankedAgents.filter(a=>!a.published.size).length)+')</button>':'');
 
  }
  if(activeView==='promotion')renderPromotions(m);
@@ -908,7 +919,7 @@ function detailExtras(id){
  const html=`<section class="panel"><h3>Прирост за выбранный период</h3><div class="detailgrid">${split}</div><p class="muted tiny">Пусто означает отсутствие сопоставимого интервала. Нули появляются только при двух полученных одинаковых счётчиках.</p>${makeTable(['Начало','Конец','Прирост','Статус'],ev.map(e=>`<tr><td>${date(e.start)}</td><td>${date(e.end)}</td><td>+${fmt(e.delta)}</td><td>${categoryName[e.category]}</td></tr>`))}<h3>Изменения за период</h3>${changesHTML(changes).replace(/<button data-detail="[^"]+">История<\/button>/g,'')}</section>`;
  $('detail').insertAdjacentHTML('beforeend',html);
 }
-function activateView(view){$('methods').hidden=view==='promotion';const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(view==='demand'){const d=demandDates();restoreArchiveRange(d.from,d.to);}if(['works','leaders','ads','demand'].includes(view)&&!photoLoaded)loadPhotos();}}
+function activateView(view){if(view!=='ads'&&employeeLink){employeeLink=null;$('agent').value='';cachedModelKey='';} $('methods').hidden=view==='promotion';const changed=activeView!==view;activeView=view;for(const x of document.querySelectorAll('[data-section]'))x.hidden=x.dataset.section!==view;for(const b of $('views').querySelectorAll('button'))b.classList.toggle('active',b.dataset.view===view);if(changed&&index){render();if(view==='demand'){const d=demandDates();restoreArchiveRange(d.from,d.to);}if(['works','leaders','ads','demand'].includes(view)&&!photoLoaded)loadPhotos();}}
 for(const id of ['organicSort','promotedSort'])$(id).addEventListener('change',render);
 $('organicLimit').addEventListener('change',()=>{if(index)render();});
 $('promotedLimit').addEventListener('change',()=>{if(index)render();});
@@ -970,9 +981,13 @@ $('promoEmployeeChips').onclick=e=>{const b=e.target.closest('[data-promo-agent]
 $('promoChartLegend').onclick=e=>{const b=e.target.closest('[data-promo-line]');if(!b)return;const id=b.dataset.promoLine;if(promoHiddenLines.has(id))promoHiddenLines.delete(id);else promoHiddenLines.add(id);if(promoSummary)renderPromoChart(promoSummary);};
 
 $('employeeTable').addEventListener('click',e=>{
- const row=e.target.closest('.employee-row-link');
- if(row&&!e.target.closest('a'))row.querySelector('a').click();
+ const toggle=e.target.closest('#toggleInactiveEmployees');
+ if(toggle){const showing=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(showing));for(const row of $('employeeTable').querySelectorAll('.employee-inactive'))row.hidden=!showing;toggle.textContent=(showing?'▼ Свернуть':'▶ Показать')+' остальных сотрудников без размещений ('+$('employeeTable').querySelectorAll('.employee-inactive').length+')';return;}
+ const row=e.target.closest('[data-employee]');if(row)openEmployeeInline(row.dataset.employee);
 });
+$('periodLeaders').addEventListener('click',e=>{const b=e.target.closest('[data-inline-employee]');if(b)openEmployeeInline(b.dataset.inlineEmployee);});
+function openEmployeeInline(id){if(!index||!id)return;employeeLink=id;$('agent').value=id;for(const x of $('multiAgents').querySelectorAll('input'))x.checked=false;cachedModelKey='';$('sort').value='growth';page=0;const previous=activeView;activateView('ads');if(previous==='ads')render();if(!photoLoaded)loadPhotos();}
+$('backEmployees').onclick=()=>{employeeLink=null;$('agent').value='';cachedModelKey='';activateView('employees');};
 if(employeeLink){
  $('sort').value='growth';
  const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(Date.parse(value));
