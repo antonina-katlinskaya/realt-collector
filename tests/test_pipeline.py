@@ -13,12 +13,16 @@ from pipeline.budget import evaluate
 class ScheduleTests(unittest.TestCase):
     def test_daytime_slots(self):
         day=dt.date(2026,10,26)
-        self.assertEqual(len(slots(day,60)),15)
-        self.assertEqual(len(slots(day,30)),30)
+        self.assertEqual(len(slots(day,60)),18)
+        self.assertEqual(len(slots(day,30)),35)
         self.assertEqual(slots(day,30)[0].strftime("%H:%M"),"07:10")
-        self.assertEqual(slots(day,30)[-1].strftime("%H:%M"),"21:40")
+        self.assertEqual(slots(day,30)[-2].strftime("%H:%M"),"23:40")
+        self.assertEqual(slots(day,30)[-1].strftime("%H:%M"),"00:00")
+        self.assertEqual(slots(day,30)[-1].date(),day+dt.timedelta(days=1))
     def test_no_night_and_no_fresh_repeat(self):
-        self.assertFalse(due("",dt.datetime(2026,10,26,20,tzinfo=UTC)))
+        self.assertFalse(due("",dt.datetime(2026,10,26,22,tzinfo=UTC)))
+        self.assertTrue(due("2026-10-26T20:10:00Z",dt.datetime(2026,10,26,21,5,tzinfo=UTC)))
+        self.assertFalse(due("2026-10-26T21:01:00Z",dt.datetime(2026,10,26,21,5,tzinfo=UTC)))
         now=dt.datetime(2026,10,26,5,12,tzinfo=UTC)
         self.assertTrue(due("2026-10-26T04:10:00Z",now))
         self.assertFalse(due("2026-10-26T05:11:00Z",now))
