@@ -1,4 +1,4 @@
-"""One shared Minsk daytime policy for collection and watchdog."""
+"""One shared Minsk collection window with a final midnight snapshot."""
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -10,7 +10,11 @@ def slots(day, interval=60):
     if interval not in (30, 60):
         raise ValueError("Only free hourly/half-hourly stages are supported")
     start = datetime.combine(day, datetime.min.time(), MINSK).replace(hour=7, minute=10)
-    return [start + timedelta(minutes=n) for n in range(0, 15 * 60, interval)]
+    # The ordinary cadence runs until 23:40 (30-minute mode) or 23:10 (hourly).
+    ordinary = [start + timedelta(minutes=n) for n in range(0, 17 * 60, interval)]
+    # Explicit final checkpoint at 00:00 of the next Minsk day.
+    midnight = datetime.combine(day + timedelta(days=1), datetime.min.time(), MINSK)
+    return ordinary + [midnight]
 
 
 def expected_slot(now, interval=60, grace=0):
@@ -20,7 +24,9 @@ def expected_slot(now, interval=60, grace=0):
 
 
 def is_daytime(now):
-    return 7 <= now.astimezone(MINSK).hour < 22
+    local = now.astimezone(MINSK)
+    # Allow a delayed scheduled 00:00 pass within the first hour after midnight.
+    return local.hour >= 7 or local.hour == 0
 
 
 def due(last, now, interval=60):
