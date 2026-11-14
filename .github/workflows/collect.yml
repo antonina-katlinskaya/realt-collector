@@ -2,8 +2,9 @@ name: Realt collector
 
 on:
   schedule:
-    # 07:10/07:40..21:40 Minsk; freshness gate starts hourly.
-    - cron: "10,40 4-18 * * *"
+    # 07:10/07:40..23:40 Minsk; the 00:00 close-of-day pass is separate.
+    - cron: "10,40 4-20 * * *"
+    - cron: "0 21 * * *"
   workflow_dispatch: {}
   push:
     branches: [main]
