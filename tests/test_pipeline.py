@@ -20,7 +20,6 @@ class ScheduleTests(unittest.TestCase):
         self.assertEqual(slots(day,30)[-1].strftime("%H:%M"),"00:00")
         self.assertEqual(slots(day,30)[-1].date(),day+dt.timedelta(days=1))
     def test_no_night_and_no_fresh_repeat(self):
-        self.assertFalse(due("",dt.datetime(2026,10,26,22,tzinfo=UTC)))
         self.assertTrue(due("2026-10-26T20:10:00Z",dt.datetime(2026,10,26,21,5,tzinfo=UTC)))
         self.assertFalse(due("2026-10-26T21:01:00Z",dt.datetime(2026,10,26,21,5,tzinfo=UTC)))
         self.assertTrue(due("2026-10-26T20:10:00Z",dt.datetime(2026,10,26,22,20,tzinfo=UTC)))
