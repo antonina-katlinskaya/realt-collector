@@ -25,8 +25,8 @@ def expected_slot(now, interval=60, grace=0):
 
 def is_daytime(now):
     local = now.astimezone(MINSK)
-    # Allow a delayed scheduled 00:00 pass within the first hour after midnight.
-    return local.hour >= 7 or local.hour == 0
+    # Allow the final midnight collection and a bounded catch-up until 02:00 Minsk.
+    return local.hour >= 7 or local.hour in (0, 1)
 
 
 def due(last, now, interval=60):
