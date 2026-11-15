@@ -1,5 +1,5 @@
 {
-  "snapshot_at": "2026-11-15T16:37:14Z",
+  "snapshot_at": "2026-11-15T17:07:13Z",
   "rule_version": 2,
   "ids": [
     "001713f0-dbfc-11f1-944f-490f455d63c4",
@@ -305,6 +305,7 @@
     "1502b130-dfa2-11f1-944f-490f455d63c4",
     "15034b4a-28d2-11f1-bbe6-0242ac120002",
     "151a50d0-9ec8-11f1-aaf2-3b3f3469305e",
+    "15237a20-e117-11f1-9ba1-eb55d25cdcac",
     "15251be0-e0d7-11f1-944f-490f455d63c4",
     "152eb520-dfa0-11f1-944f-490f455d63c4",
     "15320580-e019-11f1-9ba1-eb55d25cdcac",
@@ -652,6 +653,7 @@
     "2eb29310-d91d-11f1-a46c-87fe997ab043",
     "2eb55fd0-df8c-11f1-a2d5-4f30b32a1f06",
     "2ec39b70-d79b-11f1-a46c-87fe997ab043",
+    "2ed18850-e116-11f1-a2d5-4f30b32a1f06",
     "2ed1e8a0-de04-11f1-a2d5-4f30b32a1f06",
     "2ee17b20-ded7-11f1-9ba1-eb55d25cdcac",
     "2f1f4fca-28d1-11f1-9663-0242ac120002",
@@ -1469,6 +1471,7 @@
     "69db6ef0-ccc8-11f1-be3e-159bbaa58dfa",
     "69e0bd50-e0d8-11f1-9ba1-eb55d25cdcac",
     "69fc9a10-e025-11f1-9ba1-eb55d25cdcac",
+    "6a16e9e0-e117-11f1-a2d5-4f30b32a1f06",
     "6a1732e0-c0a8-11f1-be3e-159bbaa58dfa",
     "6a37a850-c47b-11f1-8601-c18b4014f71a",
     "6a415780-d69e-11f1-afbe-b9db0c310dee",
@@ -3666,6 +3669,7 @@
     "14f90300-e0fc-11f1-9ba1-eb55d25cdcac",
     "1502b130-dfa2-11f1-944f-490f455d63c4",
     "15034b4a-28d2-11f1-bbe6-0242ac120002",
+    "15237a20-e117-11f1-9ba1-eb55d25cdcac",
     "15251be0-e0d7-11f1-944f-490f455d63c4",
     "152eb520-dfa0-11f1-944f-490f455d63c4",
     "15b3a720-d84e-11f1-afbe-b9db0c310dee",
@@ -3815,6 +3819,7 @@
     "2eaafa60-df9e-11f1-944f-490f455d63c4",
     "2eb29310-d91d-11f1-a46c-87fe997ab043",
     "2ec39b70-d79b-11f1-a46c-87fe997ab043",
+    "2ed18850-e116-11f1-a2d5-4f30b32a1f06",
     "2f1f4fca-28d1-11f1-9663-0242ac120002",
     "2f729d60-dbff-11f1-9ba1-eb55d25cdcac",
     "2f8e27e0-df71-11f1-a2d5-4f30b32a1f06",
@@ -4216,6 +4221,7 @@
     "69b7798a-28d3-11f1-9c46-0242ac120002",
     "69bf4650-d68a-11f1-afbe-b9db0c310dee",
     "69e0bd50-e0d8-11f1-9ba1-eb55d25cdcac",
+    "6a16e9e0-e117-11f1-a2d5-4f30b32a1f06",
     "6abc8240-d9d0-11f1-afb0-431d8804ce48",
     "6acf4a70-d11e-11f1-ae7e-35bbd4f2b7bd",
     "6b2b25dc-28d3-11f1-8f70-0242ac120002",
@@ -5097,5 +5103,5 @@
     "ffa01d00-c7b4-11f1-be3e-159bbaa58dfa",
     "ffe7cd0c-28d2-11f1-9aef-0242ac120002"
   ],
-  "current_total": 2714
+  "current_total": 2717
 }
