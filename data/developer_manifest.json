@@ -1,5 +1,5 @@
 {
-  "snapshot_at": "2026-11-15T05:07:22Z",
+  "snapshot_at": "2026-11-15T05:37:21Z",
   "rule_version": 2,
   "ids": [
     "001713f0-dbfc-11f1-944f-490f455d63c4",
@@ -97,6 +97,7 @@
     "06ade7f0-d91f-11f1-9f25-cd6b2db0521a",
     "06c7bfa0-d6fd-11f1-9f25-cd6b2db0521a",
     "06dae710-d5cc-11f1-afbe-b9db0c310dee",
+    "06dd9d20-e0b7-11f1-a2d5-4f30b32a1f06",
     "06f20f00-df84-11f1-944f-490f455d63c4",
     "06f2a850-b07e-11f1-93e0-6d2d12349d12",
     "073e0c60-d2b0-11f1-9610-d72449d271e5",
@@ -1217,6 +1218,7 @@
     "5b1e1780-bf00-11f1-adf4-739d039bb084",
     "5b316f7a-28d2-11f1-a4ca-0242ac120002",
     "5b3fcce0-df58-11f1-9ba1-eb55d25cdcac",
+    "5b71cb50-e0b6-11f1-9ba1-eb55d25cdcac",
     "5b7debf8-28d1-11f1-8bab-0242ac120002",
     "5b95a6a0-d919-11f1-9f25-cd6b2db0521a",
     "5bb26b90-d5e6-11f1-9f25-cd6b2db0521a",
@@ -3427,6 +3429,7 @@
     "0685c300-da7e-11f1-b5aa-b5e26b717a51",
     "06ade7f0-d91f-11f1-9f25-cd6b2db0521a",
     "06c7bfa0-d6fd-11f1-9f25-cd6b2db0521a",
+    "06dd9d20-e0b7-11f1-a2d5-4f30b32a1f06",
     "0744e9f0-df84-11f1-944f-490f455d63c4",
     "07653bd0-df87-11f1-944f-490f455d63c4",
     "077b67a0-dfa2-11f1-9ba1-eb55d25cdcac",
@@ -3979,6 +3982,7 @@
     "5ae14280-d79f-11f1-afbe-b9db0c310dee",
     "5b11c23c-28d3-11f1-8e1e-0242ac120002",
     "5b316f7a-28d2-11f1-a4ca-0242ac120002",
+    "5b71cb50-e0b6-11f1-9ba1-eb55d25cdcac",
     "5b7debf8-28d1-11f1-8bab-0242ac120002",
     "5b95a6a0-d919-11f1-9f25-cd6b2db0521a",
     "5bbb0cd0-da75-11f1-afb0-431d8804ce48",
@@ -5006,5 +5010,5 @@
     "ffa01d00-c7b4-11f1-be3e-159bbaa58dfa",
     "ffe7cd0c-28d2-11f1-9aef-0242ac120002"
   ],
-  "current_total": 2771
+  "current_total": 2773
 }
