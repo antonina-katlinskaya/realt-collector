@@ -2816,6 +2816,24 @@
         "2026-11-15_11-07_tvoya_stolitsa.json.gz"
       ],
       "csv_member": "rows.csv.gz"
+    },
+    {
+      "tag": "realt-data-2026-W46",
+      "asset_id": 750838188,
+      "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W46/snapshot-2026-11-15_11-37-12-df1f2ab4074c.zip",
+      "name": "snapshot-2026-11-15_11-37-12-df1f2ab4074c.zip",
+      "bytes": 995322,
+      "sha256": "df1f2ab4074c3cd684959750564839242a13e78d64f178bee2d5c3a4c6d989d2",
+      "verified": true,
+      "snapshot_at": "2026-11-15T11:37:12Z",
+      "completed_at": "2026-11-15T11:50:51.395624+00:00",
+      "rows": 2696,
+      "raw_members": [
+        "2026-11-15_11-37_bir_bay.json.gz",
+        "2026-11-15_11-37_etazhi.json.gz",
+        "2026-11-15_11-37_tvoya_stolitsa.json.gz"
+      ],
+      "csv_member": "rows.csv.gz"
     }
   ]
 }
