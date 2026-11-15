@@ -1,5 +1,5 @@
 {
-  "snapshot_at": "2026-11-15T17:07:13Z",
+  "snapshot_at": "2026-11-15T17:37:17Z",
   "rule_version": 2,
   "ids": [
     "001713f0-dbfc-11f1-944f-490f455d63c4",
@@ -529,6 +529,7 @@
     "24aff670-e0ff-11f1-9ba1-eb55d25cdcac",
     "24c82980-cc9f-11f1-8601-c18b4014f71a",
     "24e97f70-b20c-11f1-9a81-f524b79d226b",
+    "24f09f90-e118-11f1-a2d5-4f30b32a1f06",
     "24f14b80-dce9-11f1-a2d5-4f30b32a1f06",
     "2506cce0-dfea-11f1-9ba1-eb55d25cdcac",
     "2531fee0-dbf5-11f1-944f-490f455d63c4",
@@ -987,6 +988,7 @@
     "45503290-dfe3-11f1-944f-490f455d63c4",
     "455e0800-c3c5-11f1-adf4-739d039bb084",
     "45974520-b8bc-11f1-8434-6fe1437f6a99",
+    "45a8abf0-e119-11f1-944f-490f455d63c4",
     "45bdb612-28d2-11f1-b35d-0242ac120002",
     "45e24c50-d130-11f1-881e-9d26b24b7a71",
     "45e26dd0-d5da-11f1-a46c-87fe997ab043",
@@ -1313,6 +1315,7 @@
     "5ea01870-c6fa-11f1-be3e-159bbaa58dfa",
     "5eb69040-dc3b-11f1-a2d5-4f30b32a1f06",
     "5ecc8360-d131-11f1-ae7e-35bbd4f2b7bd",
+    "5ee64510-e118-11f1-a2d5-4f30b32a1f06",
     "5ee733a0-dc2f-11f1-9ba1-eb55d25cdcac",
     "5f041b20-df48-11f1-a2d5-4f30b32a1f06",
     "5f1113e0-dece-11f1-a2d5-4f30b32a1f06",
@@ -2390,6 +2393,7 @@
     "adb93d00-dc18-11f1-9ba1-eb55d25cdcac",
     "adc6c160-cb8c-11f1-be3e-159bbaa58dfa",
     "adc75ba0-df2a-11f1-9ba1-eb55d25cdcac",
+    "ade59e00-e117-11f1-944f-490f455d63c4",
     "ae170220-9ec7-11f1-954d-23ed0b06d759",
     "ae1e0810-d3ae-11f1-9f25-cd6b2db0521a",
     "ae5df480-dcf4-11f1-9ba1-eb55d25cdcac",
@@ -3308,6 +3312,7 @@
     "f13dcac0-de73-11f1-9ba1-eb55d25cdcac",
     "f1547280-b07d-11f1-9a81-f524b79d226b",
     "f17a7640-d9ec-11f1-afb0-431d8804ce48",
+    "f18aaa10-e117-11f1-944f-490f455d63c4",
     "f19f615c-28d1-11f1-91c5-0242ac120002",
     "f1a7f49c-d2ae-11f1-b55d-b295db31e5cb",
     "f1ad24d0-de67-11f1-a2d5-4f30b32a1f06",
@@ -3765,6 +3770,7 @@
     "24aca220-dfee-11f1-9ba1-eb55d25cdcac",
     "24aff670-e0ff-11f1-9ba1-eb55d25cdcac",
     "24c82980-cc9f-11f1-8601-c18b4014f71a",
+    "24f09f90-e118-11f1-a2d5-4f30b32a1f06",
     "24f14b80-dce9-11f1-a2d5-4f30b32a1f06",
     "2506cce0-dfea-11f1-9ba1-eb55d25cdcac",
     "2531fee0-dbf5-11f1-944f-490f455d63c4",
@@ -3985,6 +3991,7 @@
     "453666f0-d6f9-11f1-9f25-cd6b2db0521a",
     "45427ca0-b783-11f1-8a0c-e10022ff4b7c",
     "45503290-dfe3-11f1-944f-490f455d63c4",
+    "45a8abf0-e119-11f1-944f-490f455d63c4",
     "45bdb612-28d2-11f1-b35d-0242ac120002",
     "463c19b2-28d2-11f1-80c7-0242ac120002",
     "46539830-c7ce-11f1-8601-c18b4014f71a",
@@ -4143,6 +4150,7 @@
     "5de64ff0-e0c5-11f1-9ba1-eb55d25cdcac",
     "5e94a080-d8f2-11f1-a46c-87fe997ab043",
     "5ea01870-c6fa-11f1-be3e-159bbaa58dfa",
+    "5ee64510-e118-11f1-a2d5-4f30b32a1f06",
     "5f041b20-df48-11f1-a2d5-4f30b32a1f06",
     "5f2d2430-deca-11f1-a2d5-4f30b32a1f06",
     "5f78ba5c-28d2-11f1-851e-0242ac120002",
@@ -4634,6 +4642,7 @@
     "ad178a80-c3c9-11f1-8601-c18b4014f71a",
     "ad2d0b10-c6fa-11f1-be3e-159bbaa58dfa",
     "ad570010-da68-11f1-8bb3-e31d3ea1504f",
+    "ade59e00-e117-11f1-944f-490f455d63c4",
     "ae1e0810-d3ae-11f1-9f25-cd6b2db0521a",
     "ae5f6850-e05b-11f1-a2d5-4f30b32a1f06",
     "aeab7790-c0c1-11f1-adf4-739d039bb084",
@@ -4998,6 +5007,7 @@
     "f12bb7bb-cada-11f0-97d8-b295db31e5cb",
     "f13dcac0-de73-11f1-9ba1-eb55d25cdcac",
     "f17a7640-d9ec-11f1-afb0-431d8804ce48",
+    "f18aaa10-e117-11f1-944f-490f455d63c4",
     "f19f615c-28d1-11f1-91c5-0242ac120002",
     "f1a7f49c-d2ae-11f1-b55d-b295db31e5cb",
     "f1b3f616-28d2-11f1-88ef-0242ac120002",
@@ -5103,5 +5113,5 @@
     "ffa01d00-c7b4-11f1-be3e-159bbaa58dfa",
     "ffe7cd0c-28d2-11f1-9aef-0242ac120002"
   ],
-  "current_total": 2717
+  "current_total": 2722
 }
