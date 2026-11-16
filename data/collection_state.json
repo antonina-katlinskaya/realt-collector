@@ -1,25 +1,25 @@
 {
   "schema": 1,
   "complete": true,
-  "snapshot_at": "2026-11-16T06:37:13Z",
-  "completed_at": "2026-11-16T06:49:30.144770+00:00",
+  "snapshot_at": "2026-11-16T07:07:25Z",
+  "completed_at": "2026-11-16T07:19:35.736581+00:00",
   "rows": 2662,
   "raw_paths": [],
   "archive_entry": {
     "tag": "realt-data-2026-W47",
-    "asset_id": 753804036,
-    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W47/snapshot-2026-11-16_06-37-13-5c09bd54e07c.zip",
-    "name": "snapshot-2026-11-16_06-37-13-5c09bd54e07c.zip",
-    "bytes": 985868,
-    "sha256": "5c09bd54e07ca95a6e832279f95742cac110b9399693e0efc585566bb9b8c7f7",
+    "asset_id": 753885384,
+    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W47/snapshot-2026-11-16_07-07-25-809a7997f5c8.zip",
+    "name": "snapshot-2026-11-16_07-07-25-809a7997f5c8.zip",
+    "bytes": 985826,
+    "sha256": "809a7997f5c8916d0adf4c0b16365d6b704f4896e0d90c1b2cac3afb5b35b3ad",
     "verified": true,
-    "snapshot_at": "2026-11-16T06:37:13Z",
-    "completed_at": "2026-11-16T06:49:30.144770+00:00",
+    "snapshot_at": "2026-11-16T07:07:25Z",
+    "completed_at": "2026-11-16T07:19:35.736581+00:00",
     "rows": 2662,
     "raw_members": [
-      "2026-11-16_06-37_bir_bay.json.gz",
-      "2026-11-16_06-37_etazhi.json.gz",
-      "2026-11-16_06-37_tvoya_stolitsa.json.gz"
+      "2026-11-16_07-07_bir_bay.json.gz",
+      "2026-11-16_07-07_etazhi.json.gz",
+      "2026-11-16_07-07_tvoya_stolitsa.json.gz"
     ],
     "csv_member": "rows.csv.gz"
   },
@@ -41,7 +41,7 @@
     }
   },
   "quality_reason": "normal",
-  "history_backfill_pending": 1276,
+  "history_backfill_pending": 1264,
   "observed_at": "per-object in raw snapshots",
-  "duration_seconds": 736.205
+  "duration_seconds": 730.093
 }
