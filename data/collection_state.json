@@ -1,47 +1,47 @@
 {
   "schema": 1,
   "complete": true,
-  "snapshot_at": "2026-11-17T11:37:16Z",
-  "completed_at": "2026-11-17T11:49:25.942842+00:00",
-  "rows": 2741,
+  "snapshot_at": "2026-11-17T12:37:15Z",
+  "completed_at": "2026-11-17T12:49:39.805807+00:00",
+  "rows": 2751,
   "raw_paths": [],
   "archive_entry": {
     "tag": "realt-data-2026-W47",
-    "asset_id": 758858166,
-    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W47/snapshot-2026-11-17_11-37-16-ce6c61e192a0.zip",
-    "name": "snapshot-2026-11-17_11-37-16-ce6c61e192a0.zip",
-    "bytes": 1013022,
-    "sha256": "ce6c61e192a097300a702d01d443dbeeec162433a1e467b00236c641adb01656",
+    "asset_id": 759056519,
+    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W47/snapshot-2026-11-17_12-37-15-64420737cc6a.zip",
+    "name": "snapshot-2026-11-17_12-37-15-64420737cc6a.zip",
+    "bytes": 1021030,
+    "sha256": "64420737cc6a1dd1752b801be5b9e17825db09e349bc7e7fee56e5fae44ee065",
     "verified": true,
-    "snapshot_at": "2026-11-17T11:37:16Z",
-    "completed_at": "2026-11-17T11:49:25.942842+00:00",
-    "rows": 2741,
+    "snapshot_at": "2026-11-17T12:37:15Z",
+    "completed_at": "2026-11-17T12:49:39.805807+00:00",
+    "rows": 2751,
     "raw_members": [
-      "2026-11-17_11-37_bir_bay.json.gz",
-      "2026-11-17_11-37_etazhi.json.gz",
-      "2026-11-17_11-37_tvoya_stolitsa.json.gz"
+      "2026-11-17_12-37_bir_bay.json.gz",
+      "2026-11-17_12-37_etazhi.json.gz",
+      "2026-11-17_12-37_tvoya_stolitsa.json.gz"
     ],
     "csv_member": "rows.csv.gz"
   },
   "source_quality": {
     "60fcf380-4e01-11f1-943e-89d1a667d5d7": {
-      "reported": 1698,
-      "retrieved": 1698,
+      "reported": 1707,
+      "retrieved": 1707,
       "pages": 57
     },
     "46e1035d-7b00-11eb-8943-0cc47adabd66": {
-      "reported": 64,
-      "retrieved": 64,
+      "reported": 66,
+      "retrieved": 66,
       "pages": 3
     },
     "c10dd786-d272-11eb-b00f-dee111c4eff3": {
-      "reported": 1229,
-      "retrieved": 1229,
+      "reported": 1228,
+      "retrieved": 1228,
       "pages": 41
     }
   },
   "quality_reason": "normal",
-  "history_backfill_pending": 1097,
+  "history_backfill_pending": 1106,
   "observed_at": "per-object in raw snapshots",
-  "duration_seconds": 729.666
+  "duration_seconds": 744.157
 }
