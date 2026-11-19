@@ -4,7 +4,8 @@ name: Realt collector fallback
 # Reuses all existing due/cooldown/retry/budget and collection checks.
 on:
   schedule:
-    - cron: "25,55 4-18 * * *"
+    - cron: "25,55 4-20 * * *"
+    - cron: "15 21 * * *"
   workflow_dispatch: {}
   # Register the backup on main and allow recovery after independent watchdog runs.
   push:
