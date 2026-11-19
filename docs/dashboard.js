@@ -148,8 +148,11 @@ function promotionSummary(index,m,accept=()=>true,bounds=null){
 }
 function collectionFreshness(last,now=Date.now()){
  const grace=45*60*1000,d=new Date(now),midnight=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
- const slots=[];for(const base of [midnight-86400000,midnight])for(let hour=4;hour<=18;hour++)slots.push(base+(hour*60+10)*60000);
- const due=slots.filter(t=>t+grace<=now),expected=due.length?Math.max(...due):midnight-86400000+18*3600000+10*60000;
+ const slots=[];for(const base of [midnight-86400000,midnight]){
+  for(let hour=4;hour<=20;hour++)slots.push(base+(hour*60+10)*60000);
+  slots.push(base+21*3600000); // final 00:00 Minsk snapshot
+ }
+ const due=slots.filter(t=>t+grace<=now),expected=due.length?Math.max(...due):midnight-86400000+21*3600000;
  return {expected,stale:!Number.isFinite(Date.parse(last))||Date.parse(last)<expected};
 }
 function snapshotNeedsReload(state,loadedSnapshot) {
