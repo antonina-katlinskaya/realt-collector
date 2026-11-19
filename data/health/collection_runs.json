@@ -10408,5 +10408,18 @@
       "archive": "verified-github-release",
       "packet_bytes": 1079137
     }
+  },
+  {
+    "started_at": "2026-11-19T21:12:41.737097+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 3,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-20T00:00:00+03:00",
+    "retryable_pagination": false,
+    "error": "RuntimeError: запрос searchObjects не удался после 3 попыток: 503 Server Error: Service Temporarily Unavailable for url: https://realt.by/bff/graphql",
+    "duration_seconds": 20.953
   }
 ]
