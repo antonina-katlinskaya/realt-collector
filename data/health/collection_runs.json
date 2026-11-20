@@ -10861,5 +10861,18 @@
       "archive": "verified-github-release",
       "packet_bytes": 1115344
     }
+  },
+  {
+    "started_at": "2026-11-20T14:37:18.462311+00:00",
+    "status": "failed",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 42,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-20T17:10:00+03:00",
+    "retryable_pagination": true,
+    "error": "SourcePaginationChanged: Source total shrank during pagination",
+    "duration_seconds": 228.348
   }
 ]
