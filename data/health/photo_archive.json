@@ -1,5 +1,6 @@
 {
   "processed": [
+    "0159e2ef58a7aaf50d231be459103a51ec6eca4894a059b93a489ca3709895c9",
     "019ff89c1a4fa0891401717ade29a0d032b22f36c5514236ce4fafda1481e2a2",
     "026e419f734381b16dad3b246c89da948f592ed6f6fc92cacc9f7c03b53461d5",
     "02c0dd8f28393a1e433f43a16e1a4ffbc0fdfc11ad1cdd91e3af92d503157db3",
@@ -294,5 +295,5 @@
   ],
   "remaining": 0,
   "attempts": {},
-  "listings_with_photos": 7006
+  "listings_with_photos": 7012
 }
