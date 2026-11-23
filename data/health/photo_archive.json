@@ -193,6 +193,7 @@
     "9a8a810690da778d9742055daddee7ddb164d399821bb5f1bdd8d7e24f6f0f6b",
     "9b2a8c236fc1161ddcc3afd4b212e92c68722b52b0ad94b5a1ef8dab209419c7",
     "9b45e33e892f3abd8b3a1573d8b56e5fd667e38d03a81f77dc34f9695b836631",
+    "9b6c6cd7dffc06d505eec3ad6b2bfe291994d311ccc85b8c9cef08dd98392c77",
     "9bafc4d8ca8169e0414ac98944344b1633844be270b7cb4d4de8ff3e9b2fb788",
     "9cbe1b9ede29cba7b2b61096e06d6bb037c14bd485f71b22cd12860497817d4c",
     "9d49edee991130a80caddfa2e559ad0f272c6763039aaa728e8553f5d79cb478",
@@ -328,5 +329,5 @@
   ],
   "remaining": 0,
   "attempts": {},
-  "listings_with_photos": 7264
+  "listings_with_photos": 7278
 }
