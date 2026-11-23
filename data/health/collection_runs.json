@@ -13060,5 +13060,45 @@
       "archive": "verified-github-release",
       "packet_bytes": 897638
     }
+  },
+  {
+    "started_at": "2026-11-23T15:37:25.683927+00:00",
+    "status": "ok",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 230,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-23T18:10:00+03:00",
+    "completed_at": "2026-11-23T15:48:34.142219+00:00",
+    "snapshot_at": "2026-11-23T15:37:25Z",
+    "objects": 2446,
+    "duration_seconds": 668.458,
+    "source_quality": {
+      "60fcf380-4e01-11f1-943e-89d1a667d5d7": {
+        "reported": 1466,
+        "retrieved": 1466,
+        "pages": 49
+      },
+      "46e1035d-7b00-11eb-8943-0cc47adabd66": {
+        "reported": 59,
+        "retrieved": 59,
+        "pages": 2
+      },
+      "c10dd786-d272-11eb-b00f-dee111c4eff3": {
+        "reported": 1179,
+        "retrieved": 1179,
+        "pages": 40
+      }
+    },
+    "quality_reason": "normal",
+    "history_backfill_pending": 1135,
+    "storage": {
+      "recent_snapshots": 2,
+      "recent_rows": 4882,
+      "recent_csv_bytes": 2847615,
+      "archive": "verified-github-release",
+      "packet_bytes": 902459
+    }
   }
 ]
