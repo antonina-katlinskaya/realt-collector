@@ -1,25 +1,25 @@
 {
   "schema": 1,
   "complete": true,
-  "snapshot_at": "2026-11-24T12:07:19Z",
-  "completed_at": "2026-11-24T12:18:52.386511+00:00",
-  "rows": 2488,
+  "snapshot_at": "2026-11-24T12:37:19Z",
+  "completed_at": "2026-11-24T12:49:00.993601+00:00",
+  "rows": 2489,
   "raw_paths": [],
   "archive_entry": {
     "tag": "realt-data-2026-W48",
-    "asset_id": 787083452,
-    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W48/snapshot-2026-11-24_12-07-19-62692e0daf8b.zip",
-    "name": "snapshot-2026-11-24_12-07-19-62692e0daf8b.zip",
-    "bytes": 924002,
-    "sha256": "62692e0daf8bbc6bf426b912c99e41861f69776007f0e6737f5493091809ba0b",
+    "asset_id": 787187462,
+    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W48/snapshot-2026-11-24_12-37-19-0a3888308c86.zip",
+    "name": "snapshot-2026-11-24_12-37-19-0a3888308c86.zip",
+    "bytes": 925901,
+    "sha256": "0a3888308c869ca33e04d7fbb8b6e4dfa6c8c8c3d68732771767de70e3188e85",
     "verified": true,
-    "snapshot_at": "2026-11-24T12:07:19Z",
-    "completed_at": "2026-11-24T12:18:52.386511+00:00",
-    "rows": 2488,
+    "snapshot_at": "2026-11-24T12:37:19Z",
+    "completed_at": "2026-11-24T12:49:00.993601+00:00",
+    "rows": 2489,
     "raw_members": [
-      "2026-11-24_12-07_bir_bay.json.gz",
-      "2026-11-24_12-07_etazhi.json.gz",
-      "2026-11-24_12-07_tvoya_stolitsa.json.gz"
+      "2026-11-24_12-37_bir_bay.json.gz",
+      "2026-11-24_12-37_etazhi.json.gz",
+      "2026-11-24_12-37_tvoya_stolitsa.json.gz"
     ],
     "csv_member": "rows.csv.gz"
   },
@@ -35,13 +35,13 @@
       "pages": 2
     },
     "c10dd786-d272-11eb-b00f-dee111c4eff3": {
-      "reported": 1179,
-      "retrieved": 1179,
+      "reported": 1180,
+      "retrieved": 1180,
       "pages": 40
     }
   },
   "quality_reason": "normal",
-  "history_backfill_pending": 1108,
+  "history_backfill_pending": 1104,
   "observed_at": "per-object in raw snapshots",
-  "duration_seconds": 692.666
+  "duration_seconds": 701.456
 }
