@@ -1,33 +1,33 @@
 {
   "schema": 1,
   "complete": true,
-  "snapshot_at": "2026-11-23T18:37:18Z",
-  "completed_at": "2026-11-23T18:48:59.664965+00:00",
-  "rows": 2513,
+  "snapshot_at": "2026-11-24T04:07:17Z",
+  "completed_at": "2026-11-24T04:18:53.268918+00:00",
+  "rows": 2481,
   "raw_paths": [],
   "archive_entry": {
     "tag": "realt-data-2026-W48",
-    "asset_id": 784143144,
-    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W48/snapshot-2026-11-23_18-37-18-f47934ae3e2f.zip",
-    "name": "snapshot-2026-11-23_18-37-18-f47934ae3e2f.zip",
-    "bytes": 931329,
-    "sha256": "f47934ae3e2f663171f07dadcd237a3640030376307ad038827324616d58ea1e",
+    "asset_id": 785669501,
+    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W48/snapshot-2026-11-24_04-07-17-0b0df73148c0.zip",
+    "name": "snapshot-2026-11-24_04-07-17-0b0df73148c0.zip",
+    "bytes": 914777,
+    "sha256": "0b0df73148c01d5aedfe8b4cf515228addf4be4b4184634170a3471c951534ca",
     "verified": true,
-    "snapshot_at": "2026-11-23T18:37:18Z",
-    "completed_at": "2026-11-23T18:48:59.664965+00:00",
-    "rows": 2513,
+    "snapshot_at": "2026-11-24T04:07:17Z",
+    "completed_at": "2026-11-24T04:18:53.268918+00:00",
+    "rows": 2481,
     "raw_members": [
-      "2026-11-23_18-37_bir_bay.json.gz",
-      "2026-11-23_18-37_etazhi.json.gz",
-      "2026-11-23_18-37_tvoya_stolitsa.json.gz"
+      "2026-11-24_04-07_bir_bay.json.gz",
+      "2026-11-24_04-07_etazhi.json.gz",
+      "2026-11-24_04-07_tvoya_stolitsa.json.gz"
     ],
     "csv_member": "rows.csv.gz"
   },
   "source_quality": {
     "60fcf380-4e01-11f1-943e-89d1a667d5d7": {
-      "reported": 1533,
-      "retrieved": 1533,
-      "pages": 52
+      "reported": 1501,
+      "retrieved": 1501,
+      "pages": 51
     },
     "46e1035d-7b00-11eb-8943-0cc47adabd66": {
       "reported": 59,
@@ -41,7 +41,7 @@
     }
   },
   "quality_reason": "normal",
-  "history_backfill_pending": 1190,
+  "history_backfill_pending": 1185,
   "observed_at": "per-object in raw snapshots",
-  "duration_seconds": 701.048
+  "duration_seconds": 695.499
 }
