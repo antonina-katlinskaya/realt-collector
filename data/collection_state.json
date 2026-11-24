@@ -1,32 +1,32 @@
 {
   "schema": 1,
   "complete": true,
-  "snapshot_at": "2026-11-24T14:07:22Z",
-  "completed_at": "2026-11-24T14:20:04.889054+00:00",
-  "rows": 2493,
+  "snapshot_at": "2026-11-24T14:37:19Z",
+  "completed_at": "2026-11-24T14:50:43.902376+00:00",
+  "rows": 2495,
   "raw_paths": [],
   "archive_entry": {
     "tag": "realt-data-2026-W48",
-    "asset_id": 787497624,
-    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W48/snapshot-2026-11-24_14-07-22-20661e241c0b.zip",
-    "name": "snapshot-2026-11-24_14-07-22-20661e241c0b.zip",
-    "bytes": 928731,
-    "sha256": "20661e241c0b0e95eba1cde20dbcfc8bd1d0600d6da031b15ab770b3c28314ee",
+    "asset_id": 787609945,
+    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W48/snapshot-2026-11-24_14-37-19-4c6ec9091477.zip",
+    "name": "snapshot-2026-11-24_14-37-19-4c6ec9091477.zip",
+    "bytes": 929358,
+    "sha256": "4c6ec909147746ae7dfafbb607547cf9b8524eeaf9863360a52ce4280edb06a8",
     "verified": true,
-    "snapshot_at": "2026-11-24T14:07:22Z",
-    "completed_at": "2026-11-24T14:20:04.889054+00:00",
-    "rows": 2493,
+    "snapshot_at": "2026-11-24T14:37:19Z",
+    "completed_at": "2026-11-24T14:50:43.902376+00:00",
+    "rows": 2495,
     "raw_members": [
-      "2026-11-24_14-07_bir_bay.json.gz",
-      "2026-11-24_14-07_etazhi.json.gz",
-      "2026-11-24_14-07_tvoya_stolitsa.json.gz"
+      "2026-11-24_14-37_bir_bay.json.gz",
+      "2026-11-24_14-37_etazhi.json.gz",
+      "2026-11-24_14-37_tvoya_stolitsa.json.gz"
     ],
     "csv_member": "rows.csv.gz"
   },
   "source_quality": {
     "60fcf380-4e01-11f1-943e-89d1a667d5d7": {
-      "reported": 1509,
-      "retrieved": 1509,
+      "reported": 1511,
+      "retrieved": 1511,
       "pages": 51
     },
     "46e1035d-7b00-11eb-8943-0cc47adabd66": {
@@ -41,7 +41,7 @@
     }
   },
   "quality_reason": "normal",
-  "history_backfill_pending": 1084,
+  "history_backfill_pending": 1078,
   "observed_at": "per-object in raw snapshots",
-  "duration_seconds": 762.253
+  "duration_seconds": 804.704
 }
