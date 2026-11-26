@@ -14,7 +14,7 @@ function nextWakeAfter(afterMs) {
     const date = new Date(timestamp);
     const hour = date.getUTCHours();
     const minute = date.getUTCMinutes();
-    if (hour >= 4 && hour <= 18 && (minute === 7 || minute === 37)) return timestamp;
+    if (hour >= 4 && hour <= 22 && (minute === 7 || minute === 37)) return timestamp;
   }
   throw new Error('Next Realt alarm was not found');
 }
