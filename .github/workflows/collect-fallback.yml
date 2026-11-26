@@ -50,6 +50,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Fail closed if the workflow status cannot be verified.
+          runs=$(gh api --method GET "repos/${GITHUB_REPOSITORY}/actions/workflows/collect.yml/runs" -f branch=main -f per_page=100)
+          active=$(jq -er 'if (.workflow_runs | type) != "array" then error("Missing workflow runs") else [.workflow_runs[] | select(.status != "completed")] | length end' <<< "$runs")
+          if [ "$active" -gt 0 ]; then
+            echo "Collector already queued or running; no duplicate fallback dispatch."
+            exit 0
+          fi
           gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/collect.yml/dispatches" -f ref=main
           echo "Fallback dispatched the standard collector. Snapshot acceptance remains in collect.yml."
       - name: Log a healthy or cooldown-protected no-op
