@@ -1,37 +1,37 @@
 {
   "schema": 1,
   "complete": true,
-  "snapshot_at": "2026-11-27T09:37:19Z",
-  "completed_at": "2026-11-27T09:48:57.767999+00:00",
-  "rows": 2582,
+  "snapshot_at": "2026-11-27T10:37:19Z",
+  "completed_at": "2026-11-27T10:48:55.758523+00:00",
+  "rows": 2588,
   "raw_paths": [],
   "archive_entry": {
     "tag": "realt-data-2026-W48",
-    "asset_id": 799902004,
-    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W48/snapshot-2026-11-27_09-37-19-42da635a884e.zip",
-    "name": "snapshot-2026-11-27_09-37-19-42da635a884e.zip",
-    "bytes": 973961,
-    "sha256": "42da635a884ea291bdc6b5a1612826a15d1545ddc6097d463a064a51f0f13a62",
+    "asset_id": 800105162,
+    "url": "https://github.com/antonina-katlinskaya/realt-collector/releases/download/realt-data-2026-W48/snapshot-2026-11-27_10-37-19-82a8da66b536.zip",
+    "name": "snapshot-2026-11-27_10-37-19-82a8da66b536.zip",
+    "bytes": 978056,
+    "sha256": "82a8da66b53639f52462fce1fc91817a27975067d330ef07e322016717edb865",
     "verified": true,
-    "snapshot_at": "2026-11-27T09:37:19Z",
-    "completed_at": "2026-11-27T09:48:57.767999+00:00",
-    "rows": 2582,
+    "snapshot_at": "2026-11-27T10:37:19Z",
+    "completed_at": "2026-11-27T10:48:55.758523+00:00",
+    "rows": 2588,
     "raw_members": [
-      "2026-11-27_09-37_bir_bay.json.gz",
-      "2026-11-27_09-37_etazhi.json.gz",
-      "2026-11-27_09-37_tvoya_stolitsa.json.gz"
+      "2026-11-27_10-37_bir_bay.json.gz",
+      "2026-11-27_10-37_etazhi.json.gz",
+      "2026-11-27_10-37_tvoya_stolitsa.json.gz"
     ],
     "csv_member": "rows.csv.gz"
   },
   "source_quality": {
     "60fcf380-4e01-11f1-943e-89d1a667d5d7": {
-      "reported": 1624,
-      "retrieved": 1624,
+      "reported": 1631,
+      "retrieved": 1631,
       "pages": 55
     },
     "46e1035d-7b00-11eb-8943-0cc47adabd66": {
-      "reported": 59,
-      "retrieved": 59,
+      "reported": 58,
+      "retrieved": 58,
       "pages": 2
     },
     "c10dd786-d272-11eb-b00f-dee111c4eff3": {
@@ -43,5 +43,5 @@
   "quality_reason": "normal",
   "history_backfill_pending": 872,
   "observed_at": "per-object in raw snapshots",
-  "duration_seconds": 698.663
+  "duration_seconds": 696.507
 }
