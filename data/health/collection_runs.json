@@ -17965,5 +17965,45 @@
     "retryable_pagination": true,
     "error": "SourcePaginationChanged: Source total shrank during pagination",
     "duration_seconds": 409.274
+  },
+  {
+    "started_at": "2026-11-28T12:07:21.244052+00:00",
+    "status": "ok",
+    "http_403": 0,
+    "http_429": 0,
+    "requests": 248,
+    "d1_rows_read": 0,
+    "d1_rows_written": 0,
+    "slot": "2026-11-28T14:10:00+03:00",
+    "completed_at": "2026-11-28T12:20:23.608711+00:00",
+    "snapshot_at": "2026-11-28T12:07:21Z",
+    "objects": 2594,
+    "duration_seconds": 782.365,
+    "source_quality": {
+      "60fcf380-4e01-11f1-943e-89d1a667d5d7": {
+        "reported": 1652,
+        "retrieved": 1652,
+        "pages": 56
+      },
+      "46e1035d-7b00-11eb-8943-0cc47adabd66": {
+        "reported": 58,
+        "retrieved": 58,
+        "pages": 2
+      },
+      "c10dd786-d272-11eb-b00f-dee111c4eff3": {
+        "reported": 1144,
+        "retrieved": 1144,
+        "pages": 39
+      }
+    },
+    "quality_reason": "normal",
+    "history_backfill_pending": 809,
+    "storage": {
+      "recent_snapshots": 2,
+      "recent_rows": 5182,
+      "recent_csv_bytes": 3057764,
+      "archive": "verified-github-release",
+      "packet_bytes": 989797
+    }
   }
 ]
